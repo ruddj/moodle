@@ -1,0 +1,56 @@
+<?php
+
+// set to defaults if undefined
+if (!isset($config->ssofunc)) {
+    $config->ssofunc = "/srv/www/sites/apps/sso/functions.php";
+}
+if (!isset($config->redirect)) {
+    $config->redirect = "http://www.sydneyboyshigh.com/intranet/portal";
+}
+
+?>
+<table cellspacing="0" cellpadding="5" border="0">
+
+<tr valign="top" class="required">
+    <td align="right"><?php print_string('auth_sbhsssofunc_key', 'auth_sbhs') ?>: </td>
+    <td>
+        <input name="ssofunc" type="text" size="70" value="<?php echo $config->ssofunc ?>" />
+        <?php
+
+        if (isset($err["ssofunc"])) {
+            formerr($err["ssofunc"]);
+        }
+
+        ?>
+    </td>
+    <td>
+        <?php
+
+        print_string('auth_sbhsssofunc_eg', 'auth_sbhs');
+
+        ?>
+    </td>
+</tr>
+
+<tr valign="top" class="required">
+    <td align="right"><?php print_string('auth_sbhsredirect_key', 'auth_sbhs') ?>: </td>
+    <td>
+        <input name="redirect" type="text" size="70" value="<?php echo $config->redirect ?>" />
+        <?php
+
+        if (isset($err["redirect"])) {
+            formerr($err["redirect"]);
+        }
+
+        ?>
+    </td>
+    <td>
+        <?php
+
+        print_string('auth_sbhsredirect_desc', 'auth_sbhs');
+
+        ?>
+    </td>
+</tr>
+
+</table>
