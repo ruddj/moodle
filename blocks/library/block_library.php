@@ -44,7 +44,7 @@ class block_library extends block_base {
         // Prep the content
         $this->content = new stdClass;
 	
-	if (!empty($this->config->teacheronly)) {
+	/*if (!empty($this->config->teacheronly)) {
             $course = get_record('course', 'id', $this->instance->pageid);
             if (!isteacher($course->id)) {
 		            $this->content->text = '';
@@ -52,8 +52,8 @@ class block_library extends block_base {
                 return $this->content;
            }
         }
-	
-	$target = (!empty($this->config->newwindow)) ? ' target="_blank"' : '';
+	*/
+	$target = (empty($this->config->samewindow)) ? ' target="_blank"' : '';
 
 		$sbhslogo = '<img src="http://www.sydneyboyshigh.com/images/stories/gproxy/logo_sm.png" border="0" alt="Library Enquiry" width="150" />'."\n";
 
