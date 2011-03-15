@@ -1,0 +1,24 @@
+<table cellpadding="9" cellspacing="0">
+<tr valign="top">
+    <td align="right" colspan="2">
+        <?php print_string('newwindow', 'block_library'); ?>:
+    </td>
+    <td colspan="2">
+        <input type="checkbox" name="newwindow" value="1" <?php if (!empty($this->config->newwindow)) echo ' checked="checked"'; ?> />
+    </td>
+</tr>
+<tr valign="top">
+    <td align="right" colspan="2">
+        <?php print_string('teacheronly', 'block_library'); ?>:
+    </td>
+    <td colspan="2">
+        <input type="checkbox" name="teacheronly" value="1" <?php if (!empty($this->config->teacheronly)) echo ' checked="checked"'; ?> />
+    </td>
+</tr>
+<tr>
+    <td colspan="4" align="center">
+        <input type="submit" value="<?php print_string('savechanges') ?>" />
+    </td>
+</tr>
+</table>
+<?php use_html_editor(); ?>
