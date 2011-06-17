@@ -971,8 +971,7 @@ class assignment_base {
             $userfields = user_picture::fields('u', array('lastaccess'));
             $select = "SELECT $userfields,
                               s.id AS submissionid, s.grade, s.submissioncomment,
-                              s.timemodified, s.timemarked,
-                              COALESCE(SIGN(SIGN(s.timemarked) + SIGN(s.timemarked - s.timemodified)), 0) AS status ";
+                              s.timemodified, s.timemarked ";
             $sql = 'FROM {user} u '.
                    'LEFT JOIN {assignment_submissions} s ON u.id = s.userid
                    AND s.assignment = '.$this->assignment->id.' '.
@@ -1142,20 +1141,6 @@ class assignment_base {
         //hook to allow plagiarism plugins to update status/print links.
         plagiarism_update_status($this->course, $this->cm);
 
-        /// Print quickgrade form around the table
-        if ($quickgrade) {
-            $formattrs = array();
-            $formattrs['action'] = new moodle_url('/mod/assignment/submissions.php');
-            $formattrs['id'] = 'fastg';
-            $formattrs['method'] = 'post';
-
-            echo html_writer::start_tag('form', $formattrs);
-            echo html_writer::empty_tag('input', array('type'=>'hidden', 'name'=>'id',      'value'=> $this->cm->id));
-            echo html_writer::empty_tag('input', array('type'=>'hidden', 'name'=>'mode',    'value'=> 'fastgrade'));
-            echo html_writer::empty_tag('input', array('type'=>'hidden', 'name'=>'page',    'value'=> $page));
-            echo html_writer::empty_tag('input', array('type'=>'hidden', 'name'=>'sesskey', 'value'=> sesskey()));
-        }
-
         $course_context = get_context_instance(CONTEXT_COURSE, $course->id);
         if (has_capability('gradereport/grader:view', $course_context) && has_capability('moodle/grade:viewall', $course_context)) {
             echo '<div class="allcoursegrades"><a href="' . $CFG->wwwroot . '/grade/report/grader/index.php?id=' . $course->id . '">'
@@ -1174,6 +1159,20 @@ class assignment_base {
         $groupmode = groups_get_activity_groupmode($cm);
         $currentgroup = groups_get_activity_group($cm, true);
         groups_print_activity_menu($cm, $CFG->wwwroot . '/mod/assignment/submissions.php?id=' . $this->cm->id);
+
+        /// Print quickgrade form around the table
+        if ($quickgrade) {
+            $formattrs = array();
+            $formattrs['action'] = new moodle_url('/mod/assignment/submissions.php');
+            $formattrs['id'] = 'fastg';
+            $formattrs['method'] = 'post';
+
+            echo html_writer::start_tag('form', $formattrs);
+            echo html_writer::empty_tag('input', array('type'=>'hidden', 'name'=>'id',      'value'=> $this->cm->id));
+            echo html_writer::empty_tag('input', array('type'=>'hidden', 'name'=>'mode',    'value'=> 'fastgrade'));
+            echo html_writer::empty_tag('input', array('type'=>'hidden', 'name'=>'page',    'value'=> $page));
+            echo html_writer::empty_tag('input', array('type'=>'hidden', 'name'=>'sesskey', 'value'=> sesskey()));
+        }
 
         /// Get all ppl that are allowed to submit assignments
         list($esql, $params) = get_enrolled_sql($context, 'mod/assignment:view', $currentgroup);
@@ -1285,8 +1284,7 @@ class assignment_base {
         if (!empty($users)) {
             $select = "SELECT $ufields,
                               s.id AS submissionid, s.grade, s.submissioncomment,
-                              s.timemodified, s.timemarked,
-                              COALESCE(SIGN(SIGN(s.timemarked) + SIGN(s.timemarked - s.timemodified)), 0) AS status ";
+                              s.timemodified, s.timemarked ";
             $sql = 'FROM {user} u '.
                    'LEFT JOIN {assignment_submissions} s ON u.id = s.userid
                     AND s.assignment = '.$this->assignment->id.' '.
@@ -2772,6 +2770,8 @@ function assignment_grade_item_delete($assignment) {
 /**
  * Returns the users with data in one assignment (students and teachers)
  *
+ * @todo: deprecated - to be deleted in 2.2
+ *
  * @param $assignmentid int
  * @return array of user objects
  */
@@ -3714,3 +3714,17 @@ function assignment_get_file_areas($course, $cm, $context) {
     return $areas;
 }
 
+/**
+ * Return a list of page types
+ * @param string $pagetype current page type
+ * @param stdClass $parentcontext Block's parent context
+ * @param stdClass $currentcontext Current context of block
+ */
+function assignment_pagetypelist($pagetype, $parentcontext, $currentcontext) {
+    $module_pagetype = array(
+        'mod-assignment-*'=>get_string('page-mod-assignment-x', 'assignment'),
+        'mod-assignment-view'=>get_string('page-mod-assignment-view', 'assignment'),
+        'mod-assignment-submissions'=>get_string('page-mod-assignment-submissions', 'assignment')
+    );
+    return $module_pagetype;
+}

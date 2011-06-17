@@ -289,6 +289,7 @@ class plugin_manager {
             ),
 
             'local' => array(
+                'qeupgradehelper'
             ),
 
             'message' => array(
@@ -314,6 +315,13 @@ class plugin_manager {
 
             'profilefield' => array(
                 'checkbox', 'datetime', 'menu', 'text', 'textarea'
+            ),
+
+            'qbehaviour' => array(
+                'adaptive', 'adaptivenopenalty', 'deferredcbm',
+                'deferredfeedback', 'immediatecbm', 'immediatefeedback',
+                'informationitem', 'interactive', 'interactivecountback',
+                'manualgraded', 'missing'
             ),
 
             'qformat' => array(
@@ -347,10 +355,11 @@ class plugin_manager {
             ),
 
             'theme' => array(
-                'anomaly', 'arialist', 'base', 'binarius', 'boxxie', 'brick',
-                'canvas', 'formal_white', 'formfactor', 'fusion',
-                'leatherbound', 'magazine', 'nimble', 'nonzero', 'overlay',
-                'serenity', 'sky_high', 'splash', 'standard', 'standardold'
+                'afterburner', 'anomaly', 'arialist', 'base', 'binarius',
+                'boxxie', 'brick', 'canvas', 'formal_white', 'formfactor',
+                'fusion', 'leatherbound', 'magazine', 'nimble', 'nonzero',
+                'overlay', 'serenity', 'sky_high', 'splash', 'standard',
+                'standardold'
             ),
 
             'webservice' => array(

@@ -528,8 +528,8 @@ function lesson_grade_item_delete($lesson) {
  * for a given instance of lesson. Must include every user involved
  * in the instance, independent of his role (student, teacher, admin...)
  *
- * @global stdClass
- * @global object
+ * @todo: deprecated - to be deleted in 2.2
+ *
  * @param int $lessonid
  * @return array
  */
@@ -987,4 +987,16 @@ function lesson_get_file_info($browser, $areas, $course, $cm, $context, $fileare
         return null;
     }
     return new file_info_stored($browser, $context, $storedfile, $urlbase, $filearea, $itemid, true, true, false);
+}
+
+
+/**
+ * Return a list of page types
+ * @param string $pagetype current page type
+ * @param stdClass $parentcontext Block's parent context
+ * @param stdClass $currentcontext Current context of block
+ */
+function lesson_pagetypelist($pagetype, $parentcontext, $currentcontext) {
+    $module_pagetype = array('mod-lesson-*'=>get_string('page-mod-lesson-x', 'lesson'));
+    return $module_pagetype;
 }
