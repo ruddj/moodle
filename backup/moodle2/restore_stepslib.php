@@ -1,4 +1,3 @@
-
 <?php
 
 // This file is part of Moodle - http://moodle.org/
@@ -147,12 +146,18 @@ class restore_gradebook_structure_step extends restore_structure_step {
 
         $data->courseid = $this->get_courseid();
 
-        //manual grade items store category id in categoryid
         if ($data->itemtype=='manual') {
+            // manual grade items store category id in categoryid
             $data->categoryid = $this->get_mappingid('grade_category', $data->categoryid, NULL);
-        } //course and category grade items store their category id in iteminstance
-        else if ($data->itemtype=='course' || $data->itemtype=='category') {
+        } else if ($data->itemtype=='course') {
+            // course grade item stores their category id in iteminstance
+            $coursecat = grade_category::fetch_course_category($this->get_courseid());
+            $data->iteminstance = $coursecat->id;
+        } else if ($data->itemtype=='category') {
+            // category grade items store their category id in iteminstance
             $data->iteminstance = $this->get_mappingid('grade_category', $data->iteminstance, NULL);
+        } else {
+            throw new restore_step_exception('unexpected_grade_item_type', $data->itemtype);
         }
 
         $data->scaleid   = $this->get_mappingid('scale', $data->scaleid, NULL);
@@ -237,6 +242,7 @@ class restore_gradebook_structure_step extends restore_structure_step {
             //get the already created course level grade category
             $category = new stdclass();
             $category->courseid = $this->get_courseid();
+            $category->parent = null;
 
             $coursecategory = $DB->get_record('grade_categories', (array)$category);
             if (!empty($coursecategory)) {
@@ -274,7 +280,9 @@ class restore_gradebook_structure_step extends restore_structure_step {
         //$this->set_mapping('grade_setting', $oldid, $newitemid);
     }
 
-    //put all activity grade items in the correct grade category and mark all for recalculation
+    /**
+     * put all activity grade items in the correct grade category and mark all for recalculation
+     */
     protected function after_execute() {
         global $DB;
 
@@ -285,20 +293,80 @@ class restore_gradebook_structure_step extends restore_structure_step {
         );
         $rs = $DB->get_recordset('backup_ids_temp', $conditions);
 
+        // We need this for calculation magic later on.
+        $mappings = array();
+
         if (!empty($rs)) {
             foreach($rs as $grade_item_backup) {
+
+                // Store the oldid with the new id.
+                $mappings[$grade_item_backup->itemid] = $grade_item_backup->newitemid;
+
                 $updateobj = new stdclass();
                 $updateobj->id = $grade_item_backup->newitemid;
 
                 //if this is an activity grade item that needs to be put back in its correct category
                 if (!empty($grade_item_backup->parentitemid)) {
-                    $updateobj->categoryid = $this->get_mappingid('grade_category', $grade_item_backup->parentitemid);
+                    $oldcategoryid = $this->get_mappingid('grade_category', $grade_item_backup->parentitemid, null);
+                    if (!is_null($oldcategoryid)) {
+                        $updateobj->categoryid = $oldcategoryid;
+                        $DB->update_record('grade_items', $updateobj);
+                    }
                 } else {
                     //mark course and category items as needing to be recalculated
                     $updateobj->needsupdate=1;
+                    $DB->update_record('grade_items', $updateobj);
                 }
-                $DB->update_record('grade_items', $updateobj);
             }
+        }
+        $rs->close();
+
+        // We need to update the calculations for calculated grade items that may reference old
+        // grade item ids using ##gi\d+##.
+        list($sql, $params) = $DB->get_in_or_equal(array_values($mappings), SQL_PARAMS_NAMED);
+        $sql = "SELECT gi.id, gi.calculation
+                  FROM {grade_items} gi
+                 WHERE gi.id {$sql} AND
+                       calculation IS NOT NULL";
+        $rs = $DB->get_recordset_sql($sql, $params);
+        foreach ($rs as $gradeitem) {
+            // Collect all of the used grade item id references
+            if (preg_match_all('/##gi(\d+)##/', $gradeitem->calculation, $matches) < 1) {
+                // This calculation doesn't reference any other grade items... EASY!
+                continue;
+            }
+            // For this next bit we are going to do the replacement of id's in two steps:
+            // 1. We will replace all old id references with a special mapping reference.
+            // 2. We will replace all mapping references with id's
+            // Why do we do this?
+            // Because there potentially there will be an overlap of ids within the query and we
+            // we substitute the wrong id.. safest way around this is the two step system
+            $calculationmap = array();
+            $mapcount = 0;
+            foreach ($matches[1] as $match) {
+                // Check that the old id is known to us, if not it was broken to begin with and will
+                // continue to be broken.
+                if (!array_key_exists($match, $mappings)) {
+                    continue;
+                }
+                // Our special mapping key
+                $mapping = '##MAPPING'.$mapcount.'##';
+                // The old id that exists within the calculation now
+                $oldid = '##gi'.$match.'##';
+                // The new id that we want to replace the old one with.
+                $newid = '##gi'.$mappings[$match].'##';
+                // Replace in the special mapping key
+                $gradeitem->calculation = str_replace($oldid, $mapping, $gradeitem->calculation);
+                // And record the mapping
+                $calculationmap[$mapping] = $newid;
+                $mapcount++;
+            }
+            // Iterate all special mappings for this calculation and replace in the new id's
+            foreach ($calculationmap as $mapping => $newid) {
+                $gradeitem->calculation = str_replace($mapping, $newid, $gradeitem->calculation);
+            }
+            // Update the calculation now that its being remapped
+            $DB->update_record('grade_items', $gradeitem);
         }
         $rs->close();
 
@@ -1801,28 +1869,47 @@ class restore_activity_grades_structure_step extends restore_structure_step {
     }
 
     protected function process_grade_item($data) {
+        global $DB;
 
         $data = (object)($data);
         $oldid       = $data->id;        // We'll need these later
         $oldparentid = $data->categoryid;
+        $courseid = $this->get_courseid();
 
         // make sure top course category exists, all grade items will be associated
         // to it. Later, if restoring the whole gradebook, categories will be introduced
-        $coursecat = grade_category::fetch_course_category($this->get_courseid());
+        $coursecat = grade_category::fetch_course_category($courseid);
         $coursecatid = $coursecat->id; // Get the categoryid to be used
+
+        $idnumber = null;
+        if (!empty($data->idnumber)) {
+            // Don't get any idnumber from course module. Keep them as they are in grade_item->idnumber
+            // Reason: it's not clear what happens with outcomes->idnumber or activities with multiple items (workshop)
+            // so the best is to keep the ones already in the gradebook
+            // Potential problem: duplicates if same items are restored more than once. :-(
+            // This needs to be fixed in some way (outcomes & activities with multiple items)
+            // $data->idnumber     = get_coursemodule_from_instance($data->itemmodule, $data->iteminstance)->idnumber;
+            // In any case, verify always for uniqueness
+            $sql = "SELECT cm.id
+                      FROM {course_modules} cm
+                     WHERE cm.course = :courseid AND
+                           cm.idnumber = :idnumber AND
+                           cm.id <> :cmid";
+            $params = array(
+                'courseid' => $courseid,
+                'idnumber' => $data->idnumber,
+                'cmid' => $this->task->get_moduleid()
+            );
+            if (!$DB->record_exists_sql($sql, $params) && !$DB->record_exists('grade_items', array('courseid' => $courseid, 'idnumber' => $data->idnumber))) {
+                $idnumber = $data->idnumber;
+            }
+        }
 
         unset($data->id);
         $data->categoryid   = $coursecatid;
         $data->courseid     = $this->get_courseid();
         $data->iteminstance = $this->task->get_activityid();
-        // Don't get any idnumber from course module. Keep them as they are in grade_item->idnumber
-        // Reason: it's not clear what happens with outcomes->idnumber or activities with multiple items (workshop)
-        // so the best is to keep the ones already in the gradebook
-        // Potential problem: duplicates if same items are restored more than once. :-(
-        // This needs to be fixed in some way (outcomes & activities with multiple items)
-        // $data->idnumber     = get_coursemodule_from_instance($data->itemmodule, $data->iteminstance)->idnumber;
-        // In any case, verify always for uniqueness
-        $data->idnumber = grade_verify_idnumber($data->idnumber, $this->get_courseid()) ? $data->idnumber : null;
+        $data->idnumber     = $idnumber;
         $data->scaleid      = $this->get_mappingid('scale', $data->scaleid);
         $data->outcomeid    = $this->get_mappingid('outcome', $data->outcomeid);
         $data->timecreated  = $this->apply_date_offset($data->timecreated);
@@ -2115,6 +2202,7 @@ class restore_module_structure_step extends restore_structure_step {
  *  - Activity includes completion info (file_exists)
  */
 class restore_userscompletion_structure_step extends restore_structure_step {
+    private $done = array();
 
     /**
      * To conditionally decide if this step must be executed
@@ -2159,7 +2247,33 @@ class restore_userscompletion_structure_step extends restore_structure_step {
         $data->userid = $this->get_mappingid('user', $data->userid);
         $data->timemodified = $this->apply_date_offset($data->timemodified);
 
-        $DB->insert_record('course_modules_completion', $data);
+        // Check we didn't already insert one for this cmid and userid
+        // (there aren't supposed to be duplicates in that field, but
+        // it was possible until MDL-28021 was fixed).
+        $key = $data->coursemoduleid . ',' . $data->userid;
+        if (array_key_exists($key, $this->done)) {
+            // Find the existing record
+            $existing = $DB->get_record('course_modules_completion', array(
+                    'coursemoduleid' => $data->coursemoduleid,
+                    'userid' => $data->userid), 'id, timemodified');
+            // Update it to these new values, but only if the time is newer
+            if ($existing->timemodified < $data->timemodified) {
+                $data->id = $existing->id;
+                $DB->update_record('course_modules_completion', $data);
+            }
+        } else {
+            // Normal entry where it doesn't exist already
+            $DB->insert_record('course_modules_completion', $data);
+            // Remember this entry
+            $this->done[$key] = true;
+        }
+    }
+
+    protected function after_execute() {
+        // This gets called once per activity (according to my testing).
+        // Clearing the array isn't strictly required, but avoids using
+        // unnecessary memory.
+        $this->done = array();
     }
 }
 
@@ -2514,6 +2628,8 @@ class restore_create_question_files extends restore_execution_step {
                                               $oldctxid, $this->task->get_userid(), 'question_created', $question->itemid, $newctxid, true);
             restore_dbops::send_files_to_pool($this->get_basepath(), $this->get_restoreid(), 'question', 'generalfeedback',
                                               $oldctxid, $this->task->get_userid(), 'question_created', $question->itemid, $newctxid, true);
+            restore_dbops::send_files_to_pool($this->get_basepath(), $this->get_restoreid(), 'question', 'answer',
+                                              $oldctxid, $this->task->get_userid(), 'question_answer', null, $newctxid, true);
             restore_dbops::send_files_to_pool($this->get_basepath(), $this->get_restoreid(), 'question', 'answerfeedback',
                                               $oldctxid, $this->task->get_userid(), 'question_answer', null, $newctxid, true);
             restore_dbops::send_files_to_pool($this->get_basepath(), $this->get_restoreid(), 'question', 'hint',
@@ -2826,8 +2942,7 @@ abstract class restore_questions_activity_structure_step extends restore_activit
         $usage->preferredbehaviour = $quiz->preferredbehaviour;
         $usage->id = $DB->insert_record('question_usages', $usage);
 
-        $DB->set_field('quiz_attempts', 'uniqueid', $usage->id,
-                array('id' => $this->get_mappingid('quiz_attempt', $data->id)));
+        $this->inform_new_usage_id($usage->id);
 
         $data->uniqueid = $usage->id;
         $upgrader->save_usage($quiz->preferredbehaviour, $data, $qas, $quiz->questions);
@@ -2845,10 +2960,15 @@ abstract class restore_questions_activity_structure_step extends restore_activit
         $qstates = array();
         foreach ($data->states['state'] as $state) {
             if ($state['question'] == $questionid) {
-                $qstates[$state['seq_number']] = (object) $state;
+                // It would be natural to use $state['seq_number'] as the array-key
+                // here, but it seems that buggy behaviour in 2.0 and early can
+                // mean that that is not unique, so we use id, which is guaranteed
+                // to be unique.
+                $qstates[$state['id']] = (object) $state;
             }
         }
         ksort($qstates);
+        $qstates = array_values($qstates);
 
         return array($qsession, $qstates);
     }

@@ -6191,6 +6191,13 @@ WHERE gradeitemid IS NOT NULL AND grademax IS NOT NULL");
                 )
             ");
 
+            // It seems that it is possible, in old versions of Moodle, for a
+            // quiz_attempt to be deleted while the question_attempt remains.
+            // In that situation we still get NULLs left in the table, which
+            // causes the upgrade to break at the next step. To avoid breakage,
+            // without risking dataloss, we just replace all NULLs with 0 here.
+            $DB->set_field_select('question_usages', 'contextid', 0, 'contextid IS NULL');
+
             // Then make it NOT NULL.
             $field = new xmldb_field('contextid');
             $field->set_attributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED,
@@ -6543,6 +6550,88 @@ WHERE gradeitemid IS NOT NULL AND grademax IS NOT NULL");
 
         // Main savepoint reached
         upgrade_main_savepoint(true, 2011060800.01);
+    }
+
+    if ($oldversion < 2011062000.01) {
+        // Changing sign of field minfraction on table question_attempts to signed
+        $table = new xmldb_table('question_attempts');
+        $field = new xmldb_field('minfraction', XMLDB_TYPE_NUMBER, '12, 7', null,
+                XMLDB_NOTNULL, null, null, 'maxmark');
+
+        // Launch change of sign for field minfraction
+        $dbman->change_field_unsigned($table, $field);
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011062000.01);
+    }
+
+    // Signed fixes - MDL-28032
+    if ($oldversion < 2011062400.02) {
+
+        // Changing sign of field defaultmark on table question to unsigned
+        $table = new xmldb_table('question');
+        $field = new xmldb_field('defaultmark', XMLDB_TYPE_NUMBER, '12, 7', null, XMLDB_NOTNULL, null, '1', 'generalfeedbackformat');
+
+        // Launch change of sign for field defaultmark
+        $dbman->change_field_unsigned($table, $field);
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011062400.02);
+    }
+
+    if ($oldversion < 2011062400.03) {
+        // Completion system has issue in which possible duplicate rows are
+        // added to the course_modules_completion table. This change deletes
+        // the older version of duplicate rows and replaces an index with a
+        // unique one so it won't happen again.
+
+        // This would have been a single query but because MySQL is a PoS
+        // and can't do subqueries in DELETE, I have made it into two. The
+        // system is unlikely to run out of memory as only IDs are stored in
+        // the array.
+
+        // Find all rows cmc1 where there is another row cmc2 with the
+        // same user id and the same coursemoduleid, but a higher id (=> newer,
+        // meaning that cmc1 is an older row).
+        $rs = $DB->get_recordset_sql("
+SELECT DISTINCT
+    cmc1.id
+FROM
+    {course_modules_completion} cmc1
+    JOIN {course_modules_completion} cmc2
+        ON cmc2.userid = cmc1.userid
+        AND cmc2.coursemoduleid = cmc1.coursemoduleid
+        AND cmc2.id > cmc1.id");
+        $deleteids = array();
+        foreach ($rs as $row) {
+            $deleteids[] = $row->id;
+        }
+        $rs->close();
+        // Note: SELECT part performance tested on table with ~7m
+        // rows of which ~15k match, only took 30 seconds so probably okay.
+
+        // Delete all those rows
+        $DB->delete_records_list('course_modules_completion', 'id', $deleteids);
+
+        // Define index userid (not unique) to be dropped form course_modules_completion
+        $table = new xmldb_table('course_modules_completion');
+        $index = new xmldb_index('userid', XMLDB_INDEX_NOTUNIQUE, array('userid'));
+
+        // Conditionally launch drop index userid
+        if ($dbman->index_exists($table, $index)) {
+            $dbman->drop_index($table, $index);
+        }
+
+        // Define index userid-coursemoduleid (unique) to be added to course_modules_completion
+        $index = new xmldb_index('userid-coursemoduleid', XMLDB_INDEX_UNIQUE,
+                array('userid', 'coursemoduleid'));
+
+        // Conditionally launch add index userid-coursemoduleid
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        upgrade_main_savepoint(true, 2011062400.03);
     }
 
     return true;

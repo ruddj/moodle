@@ -130,30 +130,6 @@ function quiz_get_user_attempt_unfinished($quizid, $userid) {
 }
 
 /**
- * Returns the most recent attempt by a given user on a given quiz.
- * May be finished, or may not.
- *
- * @param int $quizid the id of the quiz.
- * @param int $userid the id of the user.
- *
- * @return mixed the attempt if there is one, false if not.
- */
-function quiz_get_latest_attempt_by_user($quizid, $userid) {
-    global $CFG, $DB;
-    $attempt = $DB->get_records_sql('
-            SELECT qa.*
-            FROM {quiz_attempts} qa
-            WHERE qa.quiz = ? AND qa.userid = ?
-            ORDER BY qa.timestart DESC, qa.id DESC',
-            array($quizid, $userid), 0, 1);
-    if ($attempt) {
-        return array_shift($attempt);
-    } else {
-        return false;
-    }
-}
-
-/**
  * Delete a quiz attempt.
  * @param mixed $attempt an integer attempt id or an attempt object
  *      (row of the quiz_attempts table).
@@ -634,7 +610,7 @@ function quiz_update_all_final_grades($quiz) {
                 MIN(attempt) AS firstattempt,
                 MAX(attempt) AS lastattempt
 
-            FROM {quiz_attempts iquiza}
+            FROM {quiz_attempts} iquiza
 
             WHERE
                 iquiza.timefinish <> 0 AND
@@ -904,7 +880,7 @@ function quiz_question_preview_url($quiz, $question) {
  * @return the HTML for a preview question icon.
  */
 function quiz_question_preview_button($quiz, $question, $label = false) {
-    global $CFG, $COURSE, $OUTPUT;
+    global $CFG, $OUTPUT;
     if (!question_has_capability_on($question, 'use', $question->category)) {
         return '';
     }

@@ -679,6 +679,24 @@ class block_manager {
             $pagetypepattern = 'course-view-*';
         }
 
+        // We should end using this for ALL the blocks, making always the 1st option
+        // the default one to be used. Until then, this is one hack to avoid the
+        // 'pagetypewarning' message on blocks initial edition (MDL-27829) caused by
+        // non-existing $pagetypepattern set. This way at least we guarantee one "valid"
+        // (the FIRST $pagetypepattern will be set)
+
+        // We are applying it to all blocks created in mod pages for now and only if the
+        // default pagetype is not one of the available options
+        if (preg_match('/^mod-.*-/', $pagetypepattern)) {
+            $pagetypelist = generate_page_type_patterns($this->page->pagetype, null, $this->page->context);
+            // Only go for the first if the pagetype is not a valid option
+            if (is_array($pagetypelist) && !array_key_exists($pagetypepattern, $pagetypelist)) {
+                $pagetypepattern = key($pagetypelist);
+            }
+        }
+        // Surely other pages like course-report will need this too, they just are not important
+        // enough now. This will be decided in the coming days. (MDL-27829, MDL-28150)
+
         $this->add_block($blockname, $defaulregion, $weight, false, $pagetypepattern, $subpage);
     }
 
@@ -1217,13 +1235,14 @@ class block_manager {
                 // If the block wants to be system-wide, then explicitly set that
                 if ($data->bui_contexts == BUI_CONTEXTS_ENTIRE_SITE) {   // Only possible on a frontpage or system page
                     $bi->parentcontextid = $systemcontext->id;
-                    $bi->showinsubcontexts = 1;
+                    $bi->showinsubcontexts = BUI_CONTEXTS_CURRENT_SUBS; //show in current and sub contexts
+                    $bi->pagetypepattern = '*';
 
                 } else { // The block doesn't want to be system-wide, so let's ensure that
                     if ($parentcontext->id == $systemcontext->id) {  // We need to move it to the front page
                         $frontpagecontext = get_context_instance(CONTEXT_COURSE, SITEID);
                         $bi->parentcontextid = $frontpagecontext->id;
-                        $bi->pagetypepattern = '*';  // Just in case
+                        $bi->pagetypepattern = 'site-index';
                     }
                 }
             }
@@ -1563,34 +1582,72 @@ function generate_page_type_patterns($pagetype, $parentcontext = null, $currentc
 
     $bits = explode('-', $pagetype);
 
-    $component = clean_param(reset($bits), PARAM_ALPHANUMEXT);
-    $function = 'default_pagetypelist';
-
     $core = get_core_subsystems();
     $plugins = get_plugin_types();
 
-    // First check to see if the initial component is a core component
-    // if its not check to see if it is a plugin component.
-    if (array_key_exists($component, $core) && !empty($core[$component])) {
-        $libfile = $CFG->dirroot.'/'.$core[$component].'/lib.php';
-        if (file_exists($libfile)) {
-            require_once($libfile);
-            if (function_exists($component.'_pagetypelist')) {
-                $function = $component.'_pagetypelist';
+    //progressively strip pieces off the page type looking for a match
+    $componentarray = null;
+    for ($i = count($bits); $i > 0; $i--) {
+        $possiblecomponentarray = array_slice($bits, 0, $i);
+        $possiblecomponent = implode('', $possiblecomponentarray);
+
+        // Check to see if the component is a core component
+        if (array_key_exists($possiblecomponent, $core) && !empty($core[$possiblecomponent])) {
+            $libfile = $CFG->dirroot.'/'.$core[$possiblecomponent].'/lib.php';
+            if (file_exists($libfile)) {
+                require_once($libfile);
+                $function = $possiblecomponent.'_page_type_list';
+                if (function_exists($function)) {
+                    if ($patterns = $function($pagetype, $parentcontext, $currentcontext)) {
+                        break;
+                    }
+                }
             }
         }
-    } else if (array_key_exists($component, $plugins) && !empty($plugins[$component])) {
-        $function = 'plugin_pagetypelist';
-        if (function_exists($component.'_pagetypelist')) {
-            $function = $component.'_pagetypelist';
+
+        //check the plugin directory and look for a callback
+        if (array_key_exists($possiblecomponent, $plugins) && !empty($plugins[$possiblecomponent])) {
+
+            //We've found a plugin type. Look for a plugin name by getting the next section of page type
+            if (count($bits) > $i) {
+                $pluginname = $bits[$i];
+                $directory = get_plugin_directory($possiblecomponent, $pluginname);
+                if (!empty($directory)){
+                    $libfile = $directory.'/lib.php';
+                    if (file_exists($libfile)) {
+                        require_once($libfile);
+                        $function = $pluginname.'_page_type_list';
+                        if (function_exists($function)) {
+                            if ($patterns = $function($pagetype, $parentcontext, $currentcontext)) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            //we'll only get to here if we still don't have any patterns
+            //the plugin type may have a callback
+            $directory = get_plugin_directory($possiblecomponent, null);
+            if (!empty($directory)){
+                $libfile = $directory.'/lib.php';
+                if (file_exists($libfile)) {
+                    require_once($libfile);
+                    $function = $possiblecomponent.'_page_type_list';
+                    if (function_exists($function)) {
+                        if ($patterns = $function($pagetype, $parentcontext, $currentcontext)) {
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
-    // Call the most appropriate function we could determine
-    $patterns = $function($pagetype, $parentcontext, $currentcontext);
+
     if (empty($patterns)) {
-        // If there are no patterns default to just the current pattern.
-        $patterns = array($pagetype => $pagetype);
+        $patterns = default_page_type_list($pagetype, $parentcontext, $currentcontext);
     }
+
     return $patterns;
 }
 
@@ -1602,7 +1659,7 @@ function generate_page_type_patterns($pagetype, $parentcontext = null, $currentc
  * @param stdClass $currentcontext
  * @return array
  */
-function default_pagetypelist($pagetype, $parentcontext = null, $currentcontext = null) {
+function default_page_type_list($pagetype, $parentcontext = null, $currentcontext = null) {
     // Generate page type patterns based on current page type if
     // callbacks haven't been defined
     $patterns = array($pagetype => $pagetype);
@@ -1623,40 +1680,6 @@ function default_pagetypelist($pagetype, $parentcontext = null, $currentcontext 
 }
 
 /**
- * Generates a page type list for plugins
- *
- * @param string $pagetype
- * @param stdClass $parentcontext
- * @param stdClass $currentcontext
- * @return array
- */
-function plugin_pagetypelist($pagetype, $parentcontext = null, $currentcontext = null) {
-    global $CFG;
-
-    // for modules
-    $bits = explode('-', $pagetype);
-    $plugintype = $bits[0];
-    $pluginname = $bits[1];
-    $directory = get_plugin_directory($plugintype, $pluginname);
-    if (empty($directory)) {
-        return array();
-    }
-    $libfile = $directory.'/lib.php';
-    require_once($libfile);
-    $function = $pluginname.'_pagetypelist';
-    if (!function_exists($function)) {
-        return array();
-    }
-    $patterns = $function($pagetype, $parentcontext, $currentcontext);
-    if ($parentcontext->contextlevel == CONTEXT_COURSE) {
-        // including course page type
-        require_once("$CFG->dirroot/course/lib.php");
-        $patterns = array_merge(course_pagetypelist($pagetype, $parentcontext, $currentcontext), $patterns);
-    }
-    return $patterns;
-}
-
-/**
  * Generates the page type list for the my moodle page
  *
  * @param string $pagetype
@@ -1664,7 +1687,7 @@ function plugin_pagetypelist($pagetype, $parentcontext = null, $currentcontext =
  * @param stdClass $currentcontext
  * @return array
  */
-function my_pagetypelist($pagetype, $parentcontext = null, $currentcontext = null) {
+function my_page_type_list($pagetype, $parentcontext = null, $currentcontext = null) {
     return array('my-index' => 'my-index');
 }
 
@@ -1677,8 +1700,8 @@ function my_pagetypelist($pagetype, $parentcontext = null, $currentcontext = nul
  * @param stdClass $currentcontext
  * @return array
  */
-function mod_pagetypelist($pagetype, $parentcontext = null, $currentcontext = null) {
-    $patterns = plugin_pagetypelist($pagetype, $parentcontext, $currentcontext);
+function mod_page_type_list($pagetype, $parentcontext = null, $currentcontext = null) {
+    $patterns = plugin_page_type_list($pagetype, $parentcontext, $currentcontext);
     if (empty($patterns)) {
         // if modules don't have callbacks
         // generate two default page type patterns for modules only

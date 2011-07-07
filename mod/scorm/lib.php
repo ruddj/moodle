@@ -1036,7 +1036,7 @@ function scorm_print_overview($courses, &$htmlarray) {
         if ($scorm->timeopen) {
             $isopen = ($scorm->timeopen <= $time && $time <= $scorm->timeclose);
         }
-        if (empty($isopen) || empty($scorm->timeclose)) {
+        if (empty($scorm->displayattemptstatus) && (empty($isopen) || empty($scorm->timeclose))) {
             unset($scorms[$key]);
         }else{
             $scormids[] = $scorm->id;
@@ -1059,7 +1059,10 @@ function scorm_print_overview($courses, &$htmlarray) {
         if ($scorm->timeclose) {
             $str .= '<div class="info">'.$strduedate.': '.userdate($scorm->timeclose).'</div>';
         }
-
+        if ($scorm->displayattemptstatus == 1) {
+            require_once($CFG->dirroot.'/mod/scorm/locallib.php');
+            $str .= '<div class="details">'.scorm_get_attempt_status($USER, $scorm).'</div>';
+        }
         $str .= '</div>';
         if (empty($htmlarray[$scorm->course]['scorm'])) {
             $htmlarray[$scorm->course]['scorm'] = $str;
@@ -1075,7 +1078,7 @@ function scorm_print_overview($courses, &$htmlarray) {
  * @param stdClass $parentcontext Block's parent context
  * @param stdClass $currentcontext Current context of block
  */
-function scorm_pagetypelist($pagetype, $parentcontext, $currentcontext) {
+function scorm_page_type_list($pagetype, $parentcontext, $currentcontext) {
     $module_pagetype = array('mod-scorm-*'=>get_string('page-mod-scorm-x', 'scorm'));
     return $module_pagetype;
 }

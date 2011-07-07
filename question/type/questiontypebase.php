@@ -493,7 +493,8 @@ class question_type {
         global $DB;
         $context = $formdata->context;
 
-        $oldhints = $DB->get_records('question_hints', array('questionid' => $formdata->id));
+        $oldhints = $DB->get_records('question_hints',
+                array('questionid' => $formdata->id), 'id ASC');
 
         if (!empty($formdata->hint)) {
             $numhints = max(array_keys($formdata->hint)) + 1;
@@ -628,8 +629,8 @@ class question_type {
             $answer_extension_table = array_shift($extraanswerfields);
             $question->options->answers = $DB->get_records_sql("
                     SELECT qa.*, qax." . implode(', qax.', $extraanswerfields) . "
-                    FROM {question_answers} qa, {$answer_extension_table} qax
-                    WHERE qa.questionid = ? AND qax.answerid = qa.id", array($question->id));
+                    FROM {question_answers} qa, {{$answer_extension_table}} qax
+                    WHERE qa.question = ? AND qax.answerid = qa.id", array($question->id));
             if (!$question->options->answers) {
                 echo $OUTPUT->notification('Failed to load question answers from the table ' .
                         $answer_extension_table . 'for questionid ' . $question->id);
@@ -751,8 +752,14 @@ class question_type {
      * Initialise question_definition::answers field.
      * @param question_definition $question the question_definition we are creating.
      * @param object $questiondata the question data loaded from the database.
+     * @param bool $forceplaintextanswers most qtypes assume that answers are
+     *      FORMAT_PLAIN, and dont use the answerformat DB column (it contains
+     *      the default 0 = FORMAT_MOODLE). Therefore, by default this method
+     *      ingores answerformat. Pass false here to use answerformat. For example
+     *      multichoice does this.
      */
-    protected function initialise_question_answers(question_definition $question, $questiondata) {
+    protected function initialise_question_answers(question_definition $question,
+            $questiondata, $forceplaintextanswers = true) {
         $question->answers = array();
         if (empty($questiondata->options->answers)) {
             return;
@@ -760,6 +767,9 @@ class question_type {
         foreach ($questiondata->options->answers as $a) {
             $question->answers[$a->id] = new question_answer($a->id, $a->answer,
                     $a->fraction, $a->feedback, $a->feedbackformat);
+            if (!$forceplaintextanswers) {
+                $question->answers[$a->id]->answerformat = $a->answerformat;
+            }
         }
     }
 

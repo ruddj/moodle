@@ -61,12 +61,13 @@ class question_engine_attempt_upgrader {
     protected function print_progress($done, $outof, $quizid) {
         if (is_null($this->progressbar)) {
             $this->progressbar = new progress_bar('qe2upgrade');
+            $this->progressbar->create();
         }
 
         gc_collect_cycles(); // This was really helpful in PHP 5.2. Perhaps remove.
         $a = new stdClass();
         $a->done = $done;
-        $a->todo = $outof;
+        $a->outof = $outof;
         $a->info = $quizid;
         $this->progressbar->update($done, $outof, get_string('upgradingquizattempts', 'quiz', $a));
     }
@@ -208,6 +209,7 @@ class question_engine_attempt_upgrader {
                         question {$questionid} in attempt {$attempt->id} at quiz
                         {$attempt->quiz}, since the session was missing.", $attempt->id);
                 try {
+                    $question = $this->load_question($questionid, $quiz->id);
                     $qas[$questionid] = $this->supply_missing_question_attempt(
                             $quiz, $attempt, $question);
                 } catch (Exception $e) {
@@ -332,7 +334,7 @@ class question_engine_attempt_upgrader {
             }
 
             // Add the new state to the array, and advance.
-            $qstates[$state->seq_number] = $state;
+            $qstates[] = $state;
             $questionsstatesrs->next();
         }
 

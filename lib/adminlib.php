@@ -2935,7 +2935,6 @@ class admin_setting_special_adminseesall extends admin_setting_configcheckbox {
      */
     public function write_setting($data) {
         global $SESSION;
-        unset($SESSION->cal_courses_shown);
         return parent::write_setting($data);
     }
 }
@@ -5016,6 +5015,57 @@ class admin_page_defaultmessageoutputs extends admin_page_managemessageoutputs {
         admin_externalpage::__construct('defaultmessageoutputs', get_string('defaultmessageoutputs', 'message'), new moodle_url('/message/defaultoutputs.php'));
     }
 }
+
+
+/**
+ * Manage question behaviours page
+ *
+ * @copyright  2011 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class admin_page_manageqbehaviours extends admin_externalpage {
+    /**
+     * Constructor
+     */
+    public function __construct() {
+        global $CFG;
+        parent::__construct('manageqbehaviours', get_string('manageqbehaviours', 'admin'),
+                new moodle_url('/admin/qbehaviours.php'));
+    }
+
+    /**
+     * Search question behaviours for the specified string
+     *
+     * @param string $query The string to search for in question behaviours
+     * @return array
+     */
+    public function search($query) {
+        global $CFG;
+        if ($result = parent::search($query)) {
+            return $result;
+        }
+
+        $found = false;
+        $textlib = textlib_get_instance();
+        require_once($CFG->dirroot . '/question/engine/lib.php');
+        foreach (get_plugin_list('qbehaviour') as $behaviour => $notused) {
+            if (strpos($textlib->strtolower(question_engine::get_behaviour_name($behaviour)),
+                    $query) !== false) {
+                $found = true;
+                break;
+            }
+        }
+        if ($found) {
+            $result = new stdClass();
+            $result->page     = $this;
+            $result->settings = array();
+            return array($this->name => $result);
+        } else {
+            return array();
+        }
+    }
+}
+
 
 /**
  * Question type manage page

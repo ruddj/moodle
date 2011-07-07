@@ -112,7 +112,7 @@ abstract class question_behaviour_attempt_updater {
         $step->state = 'todo';
         $step->data = array();
         $step->fraction = null;
-        $step->timecreated = $this->attempt->timestart;
+        $step->timecreated = $this->attempt->timestart ? $this->attempt->timestart : time();
         $step->userid = $this->attempt->userid;
         $this->qtypeupdater->supply_missing_first_step_data($step->data);
         return $step;
@@ -263,6 +263,12 @@ abstract class question_behaviour_attempt_updater {
      */
     protected function make_qtype_updater() {
         global $CFG;
+
+        if ($this->question->qtype == 'deleted') {
+            return new question_deleted_question_attempt_updater(
+                    $this, $this->question, $this->logger, $this->qeupdater);
+        }
+
         $path = $CFG->dirroot . '/question/type/' . $this->question->qtype . '/db/upgradelib.php';
         if (!is_readable($path)) {
             throw new coding_exception("Question type {$this->question->qtype}
@@ -314,7 +320,7 @@ abstract class question_behaviour_attempt_updater {
         }
 
         $step->fraction = null;
-        $step->timecreated = $state->timestamp;
+        $step->timecreated = $state->timestamp ? $state->timestamp : time();
         $step->userid = $this->attempt->userid;
 
         $summary = $this->qtypeupdater->response_summary($state);
@@ -435,6 +441,7 @@ class qbehaviour_informationitem_converter extends question_behaviour_attempt_up
 
 class qbehaviour_adaptive_converter extends question_behaviour_attempt_updater {
     protected $try;
+    protected $laststepwasatry = false;
     protected $finished = false;
     protected $bestrawgrade = 0;
 
@@ -455,7 +462,7 @@ class qbehaviour_adaptive_converter extends question_behaviour_attempt_updater {
 
     protected function process0($step, $state) {
         $this->try = 1;
-        $step->data['-_try'] = $this->try;
+        $this->laststepwasatry = false;
         parent::process0($step, $state);
     }
 
@@ -471,6 +478,7 @@ class qbehaviour_adaptive_converter extends question_behaviour_attempt_updater {
             $step->fraction = $state->grade / $this->question->maxmark;
         }
 
+        $this->laststepwasatry = false;
         parent::process2($step, $state);
     }
 
@@ -488,8 +496,9 @@ class qbehaviour_adaptive_converter extends question_behaviour_attempt_updater {
 
         $this->bestrawgrade = max($state->raw_grade, $this->bestrawgrade);
 
-        $this->try += 1;
         $step->data['-_try'] = $this->try;
+        $this->try += 1;
+        $this->laststepwasatry = true;
         if ($this->question->maxmark > 0) {
             $step->data['-_rawfraction'] = $state->raw_grade / $this->question->maxmark;
         } else {
@@ -524,6 +533,9 @@ class qbehaviour_adaptive_converter extends question_behaviour_attempt_updater {
         }
 
         $step->data['-finish'] = 1;
+        if ($this->laststepwasatry) {
+            $this->try -= 1;
+        }
         $step->data['-_try'] = $this->try;
         if ($this->question->maxmark > 0) {
             $step->data['-_rawfraction'] = $state->raw_grade / $this->question->maxmark;

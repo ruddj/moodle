@@ -876,14 +876,7 @@ function lesson_get_import_export_formats($type) {
             $provided = $format_class->provide_export();
         }
         if ($provided) {
-            //TODO: do NOT rely on [[]] any more!!
-            $formatname = get_string($fileformat, 'quiz');
-            if ($formatname == "[[$fileformat]]") {
-                $formatname = get_string($fileformat, 'qformat_'.$fileformat);
-                if ($formatname == "[[$fileformat]]") {
-                    $formatname = $fileformat;  // Just use the raw folder name
-                }
-            }
+            $formatname = get_string($fileformat, 'qformat_'.$fileformat);
             $fileformatnames[$fileformat] = $formatname;
         }
     }
@@ -996,7 +989,10 @@ function lesson_get_file_info($browser, $areas, $course, $cm, $context, $fileare
  * @param stdClass $parentcontext Block's parent context
  * @param stdClass $currentcontext Current context of block
  */
-function lesson_pagetypelist($pagetype, $parentcontext, $currentcontext) {
-    $module_pagetype = array('mod-lesson-*'=>get_string('page-mod-lesson-x', 'lesson'));
+function lesson_page_type_list($pagetype, $parentcontext, $currentcontext) {
+    $module_pagetype = array(
+        'mod-lesson-*'=>get_string('page-mod-lesson-x', 'lesson'),
+        'mod-lesson-view'=>get_string('page-mod-lesson-view', 'lesson'),
+        'mod-lesson-edit'=>get_string('page-mod-lesson-edit', 'lesson'));
     return $module_pagetype;
 }

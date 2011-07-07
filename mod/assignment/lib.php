@@ -1021,6 +1021,7 @@ class assignment_base {
         $mformdata->submissioncommentformat= FORMAT_HTML;
         $mformdata->submission_content= $this->print_user_files($user->id,true);
         $mformdata->filter = $filter;
+        $mformdata->mailinfo = get_user_preferences('assignment_mailinfo', 0);
          if ($assignment->assignmenttype == 'upload') {
             $mformdata->fileui_options = array('subdirs'=>1, 'maxbytes'=>$assignment->maxbytes, 'maxfiles'=>$assignment->var1, 'accepted_types'=>'*', 'return_types'=>FILE_INTERNAL);
         } elseif ($assignment->assignmenttype == 'uploadsingle') {
@@ -1470,9 +1471,9 @@ class assignment_base {
             if (get_user_preferences('assignment_mailinfo', 1)) {
                 $mailinfopref = true;
             }
-            $emailnotification =  html_writer::checkbox('mailinfo', 1, $mailinfopref, get_string('enableemailnotification','assignment'));
+            $emailnotification =  html_writer::checkbox('mailinfo', 1, $mailinfopref, get_string('enablenotification','assignment'));
 
-            $emailnotification .= $OUTPUT->help_icon('enableemailnotification', 'assignment');
+            $emailnotification .= $OUTPUT->help_icon('enablenotification', 'assignment');
             echo html_writer::tag('div', $emailnotification, array('class'=>'emailnotification'));
 
             $savefeedback = html_writer::empty_tag('input', array('type'=>'submit', 'name'=>'fastg', 'value'=>get_string('saveallfeedback', 'assignment')));
@@ -1746,7 +1747,7 @@ class assignment_base {
                 $eventdata->fullmessage      = $posttext;
                 $eventdata->fullmessageformat = FORMAT_PLAIN;
                 $eventdata->fullmessagehtml  = $posthtml;
-                $eventdata->smallmessage     = '';
+                $eventdata->smallmessage     = $postsubject;
 
                 $eventdata->name            = 'assignment_updates';
                 $eventdata->component       = 'mod_assignment';
@@ -1866,23 +1867,25 @@ class assignment_base {
 
         $output = '';
 
-        $fs = get_file_storage();
-
-        $found = false;
-
         $submission = $this->get_submission($userid);
+        if (!$submission) {
+            return $output;
+        }
 
-        if (($submission) && $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "timemodified", false)) {
-            require_once($CFG->libdir.'/portfoliolib.php');
+        $fs = get_file_storage();
+        $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "timemodified", false);
+        if (!empty($files)) {
             require_once($CFG->dirroot . '/mod/assignment/locallib.php');
-            $button = new portfolio_add_button();
+            if ($CFG->enableportfolios) {
+                require_once($CFG->libdir.'/portfoliolib.php');
+                $button = new portfolio_add_button();
+            }
             foreach ($files as $file) {
                 $filename = $file->get_filename();
-                $found = true;
                 $mimetype = $file->get_mimetype();
                 $path = file_encode_url($CFG->wwwroot.'/pluginfile.php', '/'.$this->context->id.'/mod_assignment/submission/'.$submission->id.'/'.$filename);
                 $output .= '<a href="'.$path.'" ><img src="'.$OUTPUT->pix_url(file_mimetype_icon($mimetype)).'" class="icon" alt="'.$mimetype.'" />'.s($filename).'</a>';
-                if ($this->portfolio_exportable() && has_capability('mod/assignment:exportownsubmission', $this->context)) {
+                if ($CFG->enableportfolios && $this->portfolio_exportable() && has_capability('mod/assignment:exportownsubmission', $this->context)) {
                     $button->set_callback_options('assignment_portfolio_caller', array('id' => $this->cm->id, 'fileid' => $file->get_id()), '/mod/assignment/locallib.php');
                     $button->set_format_by_file($file);
                     $output .= $button->to_html(PORTFOLIO_ADD_ICON_LINK);
@@ -1890,7 +1893,7 @@ class assignment_base {
                 $output .= plagiarism_get_links(array('userid'=>$userid, 'file'=>$file, 'cmid'=>$this->cm->id, 'course'=>$this->course, 'assignment'=>$this->assignment));
                 $output .= '<br />';
             }
-            if (count($files) > 1  && $this->portfolio_exportable() && has_capability('mod/assignment:exportownsubmission', $this->context)) {
+            if ($CFG->enableportfolios && count($files) > 1  && $this->portfolio_exportable() && has_capability('mod/assignment:exportownsubmission', $this->context)) {
                 $button->set_callback_options('assignment_portfolio_caller', array('id' => $this->cm->id), '/mod/assignment/locallib.php');
                 $output .= '<br />'  . $button->to_html();
             }
@@ -2301,12 +2304,10 @@ class mod_assignment_grading_form extends moodleform {
                 default :
                     break;
             }
-            $lastmailinfo = get_user_preferences('assignment_mailinfo', 1) ? array('checked'=>'checked') : array();
             $mform->addElement('hidden', 'mailinfo_h', "0");
             $mform->setType('mailinfo_h', PARAM_INT);
-            $mform->addElement('checkbox', 'mailinfo',get_string('enableemailnotification','assignment').
-            $OUTPUT->help_icon('enableemailnotification', 'assignment') .':' );
-            $mform->updateElementAttr('mailinfo', $lastmailinfo);
+            $mform->addElement('checkbox', 'mailinfo',get_string('enablenotification','assignment').
+            $OUTPUT->help_icon('enablenotification', 'assignment') .':' );
             $mform->setType('mailinfo', PARAM_INT);
         }
     }
@@ -2614,11 +2615,13 @@ function assignment_cron () {
             $eventdata->fullmessage      = $posttext;
             $eventdata->fullmessageformat = FORMAT_PLAIN;
             $eventdata->fullmessagehtml  = $posthtml;
-            $eventdata->smallmessage     = '';
+            $eventdata->smallmessage     = get_string('assignmentmailsmall', 'assignment', $assignmentinfo);
 
             $eventdata->name            = 'assignment_updates';
             $eventdata->component       = 'mod_assignment';
             $eventdata->notification    = 1;
+            $eventdata->contexturl      = $assignmentinfo->url;
+            $eventdata->contexturlname  = $assignmentinfo->assignment;
 
             message_send($eventdata);
         }
@@ -3720,7 +3723,7 @@ function assignment_get_file_areas($course, $cm, $context) {
  * @param stdClass $parentcontext Block's parent context
  * @param stdClass $currentcontext Current context of block
  */
-function assignment_pagetypelist($pagetype, $parentcontext, $currentcontext) {
+function assignment_page_type_list($pagetype, $parentcontext, $currentcontext) {
     $module_pagetype = array(
         'mod-assignment-*'=>get_string('page-mod-assignment-x', 'assignment'),
         'mod-assignment-view'=>get_string('page-mod-assignment-view', 'assignment'),

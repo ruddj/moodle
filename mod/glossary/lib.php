@@ -1098,7 +1098,9 @@ function glossary_print_entry_icons($course, $cm, $glossary, $entry, $mode='',$h
         $return .= get_string('entryishidden','glossary');
     }
 
-    if (has_capability('mod/glossary:manageentries', $context) or (isloggedin() and has_capability('mod/glossary:write', $context) and $entry->userid == $USER->id)) {
+    $iscurrentuser = ($entry->userid == $USER->id);
+
+    if (has_capability('mod/glossary:manageentries', $context) or (isloggedin() and has_capability('mod/glossary:write', $context) and $iscurrentuser)) {
         // only teachers can export entries so check it out
         if (has_capability('mod/glossary:export', $context) and !$ismainglossary and !$importedentry) {
             $mainglossary = $DB->get_record('glossary', array('mainglossary'=>1,'course'=>$course->id));
@@ -1129,9 +1131,7 @@ function glossary_print_entry_icons($course, $cm, $glossary, $entry, $mode='',$h
             $return .= " <font size=\"-1\">" . get_string("exportedentry","glossary") . "</font>";
         }
     }
-    if (has_capability('mod/glossary:exportentry', $context)
-        || ($entry->userid == $USER->id
-            && has_capability('mod/glossary:exportownentry', $context))) {
+    if (!empty($CFG->enableportfolios) && (has_capability('mod/glossary:exportentry', $context) || ($iscurrentuser && has_capability('mod/glossary:exportownentry', $context)))) {
         require_once($CFG->libdir . '/portfoliolib.php');
         $button = new portfolio_add_button();
         $button->set_callback_options('glossary_entry_portfolio_caller',  array('id' => $cm->id, 'entryid' => $entry->id), '/mod/glossary/locallib.php');
@@ -1155,21 +1155,19 @@ function glossary_print_entry_icons($course, $cm, $glossary, $entry, $mode='',$h
 
     $return .= '</span>';
 
-    if (has_capability('mod/glossary:comment', $context) and $glossary->allowcomments) {
+    if (!empty($CFG->usecomments) && has_capability('mod/glossary:comment', $context) and $glossary->allowcomments) {
+        require_once($CFG->dirroot . '/comment/lib.php');
+        $cmt = new stdClass();
+        $cmt->component = 'mod_glossary';
+        $cmt->context  = $context;
+        $cmt->course   = $course;
+        $cmt->cm       = $cm;
+        $cmt->area     = 'glossary_entry';
+        $cmt->itemid   = $entry->id;
+        $cmt->showcount = true;
+        $comment = new comment($cmt);
+        $return .= '<div>'.$comment->output(true).'</div>';
         $output = true;
-        if (!empty($CFG->usecomments)) {
-            require_once($CFG->dirroot . '/comment/lib.php');
-            $cmt = new stdClass();
-            $cmt->component = 'mod_glossary';
-            $cmt->context  = $context;
-            $cmt->course   = $course;
-            $cmt->cm       = $cm;
-            $cmt->area     = 'glossary_entry';
-            $cmt->itemid   = $entry->id;
-            $cmt->showcount = true;
-            $comment = new comment($cmt);
-            $return .= '<div>'.$comment->output(true).'</div>';
-        }
     }
 
     //If we haven't calculated any REAL thing, delete result ($return)
@@ -2863,7 +2861,10 @@ function glossary_comment_validate($comment_param) {
  * @param stdClass $parentcontext Block's parent context
  * @param stdClass $currentcontext Current context of block
  */
-function glossary_pagetypelist($pagetype, $parentcontext, $currentcontext) {
-    $module_pagetype = array('mod-glossary-*'=>get_string('page-mod-glossary-x', 'glossary'));
+function glossary_page_type_list($pagetype, $parentcontext, $currentcontext) {
+    $module_pagetype = array(
+        'mod-glossary-*'=>get_string('page-mod-glossary-x', 'glossary'),
+        'mod-glossary-view'=>get_string('page-mod-glossary-view', 'glossary'),
+        'mod-glossary-edit'=>get_string('page-mod-glossary-edit', 'glossary'));
     return $module_pagetype;
 }

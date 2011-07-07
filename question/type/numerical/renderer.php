@@ -36,7 +36,7 @@ class qtype_numerical_renderer extends qtype_renderer {
 
         $question = $qa->get_question();
         $currentanswer = $qa->get_last_qt_var('answer');
-        if ($question->unitdisplay == qtype_numerical::UNITSELECT) {
+        if ($question->has_separate_unit_field()) {
             $selectedunit = $qa->get_last_qt_var('unit');
         } else {
             $selectedunit = null;
@@ -57,10 +57,11 @@ class qtype_numerical_renderer extends qtype_renderer {
 
         $feedbackimg = '';
         if ($options->correctness) {
-            list($value, $unit) = $question->ap->apply_units($currentanswer, $selectedunit);
-            $answer = $question->get_matching_answer($value);
+            list($value, $unit, $multiplier) = $question->ap->apply_units(
+                    $currentanswer, $selectedunit);
+            $answer = $question->get_matching_answer($value, $multiplier);
             if ($answer) {
-                $fraction = $question->apply_unit_penalty($answer->fraction, $unit);
+                $fraction = $question->apply_unit_penalty($answer->fraction, $answer->unitisright);
             } else {
                 $fraction = 0;
             }
@@ -77,14 +78,35 @@ class qtype_numerical_renderer extends qtype_renderer {
 
         $input = html_writer::empty_tag('input', $inputattributes) . $feedbackimg;
 
-        if ($question->unitdisplay == qtype_numerical::UNITSELECT) {
-            $unitselect = html_writer::select($question->ap->get_unit_options(),
-                    $qa->get_qt_field_name('unit'), $selectedunit, array(''=>'choosedots'),
-                    array('disabled' => $options->readonly));
+        if ($question->has_separate_unit_field()) {
+            if ($question->unitdisplay == qtype_numerical::UNITRADIO) {
+                $choices = array();
+                $i = 1;
+                foreach ($question->ap->get_unit_options() as $unit) {
+                    $id = $qa->get_qt_field_name('unit') . '_' . $i++;
+                    $radioattrs = array('type' => 'radio', 'id' => $id, 'value' => $unit,
+                            'name' => $qa->get_qt_field_name('unit'));
+                    if ($unit == $selectedunit) {
+                        $radioattrs['checked'] = 'checked';
+                    }
+                    $choices[] = html_writer::tag('label',
+                            html_writer::empty_tag('input', $radioattrs) . $unit,
+                            array('for' => $id, 'class' => 'unitchoice'));
+                }
+
+                $unitchoice = html_writer::tag('span', implode(' ', $choices),
+                        array('class' => 'unitchoices'));
+
+            } else if ($question->unitdisplay == qtype_numerical::UNITSELECT) {
+                $unitchoice = html_writer::select($question->ap->get_unit_options(),
+                        $qa->get_qt_field_name('unit'), $selectedunit, array(''=>'choosedots'),
+                        array('disabled' => $options->readonly));
+            }
+
             if ($question->ap->are_units_before()) {
-                $input = $unitselect . ' ' . $input;
+                $input = $unitchoice . ' ' . $input;
             } else {
-                $input = $input . ' ' . $unitselect;
+                $input = $input . ' ' . $unitchoice;
             }
         }
 
@@ -114,14 +136,14 @@ class qtype_numerical_renderer extends qtype_renderer {
     public function specific_feedback(question_attempt $qa) {
         $question = $qa->get_question();
 
-        if ($question->unitdisplay == qtype_numerical::UNITSELECT) {
+        if ($question->has_separate_unit_field()) {
             $selectedunit = $qa->get_last_qt_var('unit');
         } else {
             $selectedunit = null;
         }
-        list($value, $unit) = $question->ap->apply_units(
+        list($value, $unit, $multiplier) = $question->ap->apply_units(
                 $qa->get_last_qt_var('answer'), $selectedunit);
-        $answer = $question->get_matching_answer($value);
+        $answer = $question->get_matching_answer($value, $multiplier);
 
         if ($answer && $answer->feedback) {
             $feedback = $question->format_text($answer->feedback, $answer->feedbackformat,
@@ -144,11 +166,11 @@ class qtype_numerical_renderer extends qtype_renderer {
             return '';
         }
 
-        $response = $answer->answer;
+        $response = str_replace('.', $question->ap->get_point(), $answer->answer);
         if ($question->unitdisplay != qtype_numerical::UNITNONE) {
             $response = $question->ap->add_unit($response);
         }
 
-        return get_string('correctansweris', 'qtype_shortanswer', s($response));
+        return get_string('correctansweris', 'qtype_shortanswer', $response);
     }
 }

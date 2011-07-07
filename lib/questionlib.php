@@ -640,12 +640,24 @@ function question_move_category_to_context($categoryid, $oldcontextid, $newconte
  * @param question_display_options $displayoptions the display options to use.
  * @param int $variant the variant of the question to preview. If null, one will
  *      be picked randomly.
+ * @param object $context context to run the preview in (affects things like
+ *      filter settings, theme, lang, etc.) Defaults to $PAGE->context.
  * @return string the URL.
  */
 function question_preview_url($questionid, $preferredbehaviour = null,
-        $maxmark = null, $displayoptions = null, $variant = null) {
+        $maxmark = null, $displayoptions = null, $variant = null, $context = null) {
 
     $params = array('id' => $questionid);
+
+    if (is_null($context)) {
+        global $PAGE;
+        $context = $PAGE->context;
+    }
+    if ($context->contextlevel == CONTEXT_MODULE) {
+        $params['cmid'] = $context->instanceid;
+    } else if ($context->contextlevel == CONTEXT_COURSE) {
+        $params['courseid'] = $context->instanceid;
+    }
 
     if (!is_null($preferredbehaviour)) {
         $params['behaviour'] = $preferredbehaviour;
@@ -1434,6 +1446,10 @@ function question_extend_settings_navigation(navigation_node $navigationnode, $c
         return;
     }
 
+    if (($cat = $PAGE->url->param('cat')) && preg_match('~\d+,\d+~', $cat)) {
+        $params['cat'] = $cat;
+    }
+
     $questionnode = $navigationnode->add(get_string('questionbank', 'question'),
             new moodle_url('/question/edit.php', $params), navigation_node::TYPE_CONTAINER);
 
@@ -1822,7 +1838,7 @@ function question_make_export_url($contextid, $categoryid, $format, $withcategor
  * @param stdClass $parentcontext Block's parent context
  * @param stdClass $currentcontext Current context of block
  */
-function question_pagetypelist($pagetype, $parentcontext, $currentcontext) {
+function question_page_type_list($pagetype, $parentcontext, $currentcontext) {
     global $CFG;
     $types = array(
         'question-*'=>get_string('page-question-x', 'question'),
@@ -1833,7 +1849,7 @@ function question_pagetypelist($pagetype, $parentcontext, $currentcontext) {
     );
     if ($currentcontext->contextlevel == CONTEXT_COURSE) {
         require_once($CFG->dirroot . '/course/lib.php');
-        return array_merge(course_pagetypelist($pagetype, $parentcontext, $currentcontext), $types);
+        return array_merge(course_page_type_list($pagetype, $parentcontext, $currentcontext), $types);
     } else {
         return $types;
     }

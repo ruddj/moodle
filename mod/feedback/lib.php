@@ -494,6 +494,20 @@ function feedback_scale_used_anywhere($scaleid) {
 }
 
 /**
+ * @return array
+ */
+function feedback_get_view_actions() {
+    return array('view','view all');
+}
+
+/**
+ * @return array
+ */
+function feedback_get_post_actions() {
+    return array('submit');
+}
+
+/**
  * This function is used by the reset_course_userdata function in moodlelib.
  * This function will remove all responses from the specified feedback
  * and clean up any related data.
@@ -2788,7 +2802,7 @@ function feedback_init_feedback_session() {
  * @param stdClass $parentcontext Block's parent context
  * @param stdClass $currentcontext Current context of block
  */
-function feedback_pagetypelist($pagetype, $parentcontext, $currentcontext) {
+function feedback_page_type_list($pagetype, $parentcontext, $currentcontext) {
     $module_pagetype = array('mod-feedback-*'=>get_string('page-mod-feedback-x', 'feedback'));
     return $module_pagetype;
 }

@@ -129,6 +129,24 @@ $functions = array(
         'capabilities'=> 'moodle/user:viewdetails, moodle/user:viewhiddendetails, moodle/course:useremail, moodle/user:update',
     ),
 
+    'moodle_user_get_users_by_courseid' => array(
+        'classname'   => 'moodle_user_external',
+        'methodname'  => 'get_users_by_courseid',
+        'classpath'   => 'user/externallib.php',
+        'description' => 'Get enrolled users by course id.',
+        'type'        => 'read',
+        'capabilities'=> 'moodle/user:viewdetails, moodle/user:viewhiddendetails, moodle/course:useremail, moodle/user:update, moodle/site:accessallgroups',
+    ),
+
+    'moodle_user_get_course_participants_by_id' => array(
+        'classname'   => 'moodle_user_external',
+        'methodname'  => 'get_course_participants_by_id',
+        'classpath'   => 'user/externallib.php',
+        'description' => 'Get course user profiles by id.',
+        'type'        => 'read',
+        'capabilities'=> 'moodle/user:viewdetails, moodle/user:viewhiddendetails, moodle/course:useremail, moodle/user:update, moodle/site:accessallgroups',
+    ),
+
     'moodle_user_delete_users' => array(
         'classname'   => 'moodle_user_external',
         'methodname'  => 'delete_users',
@@ -208,11 +226,11 @@ $functions = array(
 
     // === message related functions ===
 
-    'moodle_message_send_messages' => array(
+    'moodle_message_send_instantmessages' => array(
         'classname'   => 'moodle_message_external',
-        'methodname'  => 'send_messages',
+        'methodname'  => 'send_instantmessages',
         'classpath'   => 'message/externallib.php',
-        'description' => 'Send messages',
+        'description' => 'Send instant messages',
         'type'        => 'write',
         'capabilities'=> 'moodle/site:sendmessage',
     ),
@@ -248,7 +266,9 @@ $services = array(
             'moodle_user_get_users_by_id',
             'moodle_webservice_get_siteinfo',
             'moodle_notes_create_notes',
-            'moodle_message_send_messages'),
+            'moodle_user_get_course_participants_by_id',
+            'moodle_user_get_users_by_courseid',
+            'moodle_message_send_instantmessages'),
         'enabled' => 0,
         'restrictedusers' => 0,
         'shortname' => MOODLE_OFFICIAL_MOBILE_SERVICE

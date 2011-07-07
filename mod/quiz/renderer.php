@@ -60,6 +60,49 @@ class mod_quiz_renderer extends plugin_renderer_base {
     }
 
     /**
+     * Renders the review question pop-up.
+     *
+     * @param quiz_attempt $attemptobj an instance of quiz_attempt.
+     * @param int $slot which question to display.
+     * @param int $seq which step of the question attempt to show. null = latest.
+     * @param mod_quiz_display_options $displayoptions instance of mod_quiz_display_options.
+     * @param array $summarydata contains all table data
+     * @return $output containing html data.
+     */
+    public function review_question_page(quiz_attempt $attemptobj, $slot, $seq,
+            mod_quiz_display_options $displayoptions, $summarydata) {
+
+        $output = '';
+        $output .= $this->header();
+        $output .= $this->review_summary_table($summarydata, 0);
+
+        if (!is_null($seq)) {
+            $output .= $attemptobj->render_question_at_step($slot, $seq, true);
+        } else {
+            $output .= $attemptobj->render_question($slot, true);
+        }
+
+        $output .= $this->close_window_button();
+        $output .= $this->footer();
+        return $output;
+    }
+
+    /**
+     * Renders the review question pop-up.
+     *
+     * @param string $message Why the review is not allowed.
+     * @return string html to output.
+     */
+    public function review_question_not_allowed($message) {
+        $output = '';
+        $output .= $this->header();
+        $output .= $this->notification($message);
+        $output .= $this->close_window_button();
+        $output .= $this->footer();
+        return $output;
+    }
+
+    /**
      * Filters the summarydata array.
      *
      * @param array $summarydata contains row data for table
@@ -88,8 +131,7 @@ class mod_quiz_renderer extends plugin_renderer_base {
      * @param int $page contains the current page number
      */
     public function review_summary_table($summarydata, $page) {
-                                         $summarydata = $this->filter_summary_table($summarydata,
-                                         $page);
+        $summarydata = $this->filter_summary_table($summarydata, $page);
         if (empty($summarydata)) {
             return '';
         }
@@ -247,7 +289,7 @@ class mod_quiz_renderer extends plugin_renderer_base {
         }
         $output .= $panel->render_before_button_bits($this);
 
-        $output = html_writer::start_tag('div', array('class' => 'qn_buttons'));
+        $output .= html_writer::start_tag('div', array('class' => 'qn_buttons'));
         foreach ($panel->get_question_buttons() as $button) {
             $output .= $this->render($button);
         }
@@ -758,7 +800,7 @@ class mod_quiz_renderer extends plugin_renderer_base {
 
             if ($viewobj->feedbackcolumn && $attempt->timefinish > 0) {
                 if ($attemptoptions->overallfeedback) {
-                    $row[] = quiz_feedback_for_grade($attemptgrade, $quiz, $context, $cm);
+                    $row[] = quiz_feedback_for_grade($attemptgrade, $quiz, $context);
                 } else {
                     $row[] = '';
                 }
@@ -838,7 +880,7 @@ class mod_quiz_renderer extends plugin_renderer_base {
         if ($viewobj->feedbackcolumn) {
             $resultinfo .= $this->heading(get_string('overallfeedback', 'quiz'), 3, 'main');
             $resultinfo .= html_writer::tag('p',
-                    quiz_feedback_for_grade($viewobj->mygrade, $quiz, $context, $cm),
+                    quiz_feedback_for_grade($viewobj->mygrade, $quiz, $context),
                     array('class' => 'quizgradefeedback')).'\n';
         }
 
