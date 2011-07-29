@@ -45,11 +45,16 @@ class auth_plugin_sbhs extends auth_plugin_base {
         global $frm;  // can be used to override submitted login form
         //global $user; // can be used to replace authenticate_user_login()
 
-	    require_once($this->config->ssofunc);
-	    if (sso_isLoggedIn()) {
-	      $frm->username = sso_getUser();
-	      $frm->password = sso_getPass();
-	    }  
+        // Return if SBHS enabled and settings not specified yet
+        if (empty($this->config->ssofunc)) {
+            return;
+        }
+	require_once($this->config->ssofunc);
+	if (sso_isLoggedIn()) {
+		$frm->username = sso_getUser();
+		$frm->password = sso_getPass();
+		return;
+	}  
     }
 	
 	/**
@@ -60,12 +65,17 @@ class auth_plugin_sbhs extends auth_plugin_base {
 	*/
     function logoutpage_hook() {
         global $USER;     // use $USER->auth to find the plugin used for login
-		global $redirect; // can be used to override redirect after logout
+	global $redirect; // can be used to override redirect after logout
 		
-		require_once($this->config->ssofunc);
-		if (sso_isLoggedIn()) {
-			$redirect = $this->config->redirect;
-		}
+	// Return if SBHS enabled and settings not specified yet
+	if (empty($this->config->ssofunc)) {
+		return;
+	}
+
+	require_once($this->config->ssofunc);
+	if (sso_isLoggedIn()) {
+		$redirect = $this->config->redirect;
+	}
     }
 	
     /**
@@ -95,16 +105,16 @@ class auth_plugin_sbhs extends auth_plugin_base {
      */
     function process_config($config) {
         // set to defaults if undefined
-		if (!isset ($config->ssofunc)) {
+	if (!isset ($config->ssofunc)) {
             $config->ssofunc = '/srv/www/sites/apps/sso/functions.php';
         }
-		if (!isset ($config->redirect)) {
+	if (!isset ($config->redirect)) {
             $config->redirect = 'http://www.sydneyboyshigh.com/intranet/portal';
         }
 
         // save settings
-        set_config('ssofunc', $config->ssofunc, 'auth/sbhs');
-		set_config('redirect', $config->redirect, 'auth/sbhs');
+	set_config('ssofunc', $config->ssofunc, 'auth/sbhs');
+	set_config('redirect', $config->redirect, 'auth/sbhs');
 
         return true;
     }
