@@ -1,0 +1,941 @@
+/*
+General Styles
+-----------------------*/
+
+@font-face {
+    font-family: 'Droid Sans';
+    src: url('[[font:droidsans.eot]]');
+    src: local('DroidSans'), local('Droid Sans'), local('DroidSansRegular'), local('Droid Sans Regular'),
+         url('[[font:droidsans.woff]]') format('woff'),
+         url('[[font:droidsans.ttf]]') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+
+/*
+@font-face {
+    font-family: 'Droid Sans';
+    src: url('[[font:droidsans-bold.eot]]');
+    src: local('DroidSansBold'), local('Droid Sans Bold'),
+         url('[[font:droidsans-bold.woff]]') format('woff'),
+         url('[[font:droidsans-bold.ttf]]') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+
+}*/
+/*
+@font-face {
+    font-family: 'Ubuntu Mono';
+    src: url('../fonts/ubuntumono-bold.eot');
+    src: local('UbuntuMonoBold'), local('Ubuntu Mono Bold'),
+         url('../fonts/ubuntumono-bold.woff') format('woff'),
+         url('../fonts/ubuntumono-bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'Ubuntu Mono';
+    src: url('../fonts/ubuntumono-regular.eot');
+    src: local('UbuntuMono'), local('Ubuntu Mono'), local('UbuntuMonoRegular'), local('Ubuntu Mono Regular'),
+         url('../fonts/ubuntumono-regular.woff') format('woff'),
+         url('../fonts/ubuntumono-regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+
+}
+*/
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    color: #333;
+    line-height: normal;
+}
+h1,h2,h3,h4,h5,h6,p,ul,ol,dl,input,textarea {
+    font-family: Helvetica, Arial, sans-serif;
+}
+a:link,
+a:visited {
+    color: #095197;
+    text-decoration: none;
+}
+a:hover,
+a:active {
+    background-color: #095197;
+    color: white;
+    text-decoration: none;
+}
+
+hr {
+}
+
+h2.headingblock {
+    font-size: 1.4em;
+    font-weight: bold;
+}
+
+p {
+  line-height: 1.7em;
+  margin: 8px 0;
+}
+
+/*
+Page
+-----------------------*/
+
+#page {
+    font-family: Arial, Helvetica, sans-serif
+}
+#page-content {
+}
+
+/*
+Header and Logo
+---------------------------*/
+
+/*#page-header {
+    height: 105px;
+    width: 100%;
+    background: #fff;
+    border-top: 45px solid #4d4d4d;
+}*/
+
+h1#sitelogo {
+  width: 388px;
+  float: left;
+  height: 90%;
+  margin: 0;
+}
+
+a.logo img {
+  background: url([[pix:theme|images/logo]]) no-repeat 0 0;
+}
+
+h1#sitelogo.moodle a.logo img {
+  background: url([[pix:theme|images/logo-moodle]]) no-repeat 0 0;
+}
+
+.headermenu,
+.langmenu {
+  float: right;
+  clear: right;
+  font-size: 1em;
+  margin: 0;
+  text-align: right;
+  position: relative;
+  top: 10px;
+  background-color: #f1efe7;
+	width: 230px
+	height: 105px
+}
+
+.headermenu {
+    right: 10px;
+}
+
+/*
+Page Footer
+-----------------------*/
+/*
+#page-footer {
+    background-color: #4d4d4d;
+    height: 45px;
+    clear: both;
+    float: left;
+    color: #fff;
+    font-size: 13px;
+}
+#page-footer a:link,
+#page-footer a:visited  {
+    color: #f6ae68;
+    text-decoration: none;
+}
+#page-footer a:hover,
+#page-footer a:active {
+    background-color: #095197;
+    color: white;
+    text-decoration: none;
+}
+#page-footer .footer-left {
+    float: left;
+    text-align: left;
+    color: transparent;
+    font-size: 0;
+}
+#page-footer .footer-left p {
+    margin: 0;
+    padding: 0;
+    font-size: 0;
+    line-height: 0;
+}
+#page-footer .footer-right {
+    float: right;
+    text-align: right;
+}*/
+/*
+Navbar & Breadcrumb
+-----------------------*/
+/*.navbar {
+    background-image: url([[pix:theme|images/baroque]]);
+    background-color: #194F73;
+    color: white;
+    height: 45px;
+}
+.breadcrumb {
+    color: white;
+    padding-top: 11px;
+	padding-left: 6px;
+	height: 21px;
+}*/
+.navbutton {
+    /*text-align: right;
+    float: right;
+    margin-top: 5px;
+    margin-right: 5px;*/
+    font-size: 11px;
+}
+.navbutton .singlebutton input {
+    /*border-width: 1px;
+    border-style: outset;
+    border-color: #787878;
+    font-size: 85%;
+    cursor: pointer;*/
+    font-size: 11px;
+}
+
+/*
+.breadcrumb ul {
+    font-size: 18px;
+	font-family: "Droid Sans", Arial;
+}
+.breadcrumb li,
+.navbutton div,
+.navbutton form {
+    font-size: 18px;
+	font-family: "Droid Sans", Arial;
+}
+.logininfo
+.breadcrumb {
+    color: white;
+    font-size: 18px;
+}
+
+.breadcrumb a,
+.breadcrumb a:link,
+.breadcrumb a:visited {
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+}
+.breadcrumb a:hover,
+.breadcrumb a:active {
+    background-color: #666;
+    font-size: 18px;
+}*/
+
+
+.jsenabled .course_category_tree .controls {
+    visibility:visible;
+    float: right;
+}
+.category_label {
+    padding-left: 20px;
+}
+
+/*
+Collapse All - Expand All
+-------------------------*/
+div.controls .expandall,
+div.controls .collapseall {
+    font-size: .8em;
+    color: #008db0;
+    margin: 2px;
+    padding: 0;
+    float: right;
+    clear: both;
+    text-transform: capitalize;
+    font-variant: small-caps;
+    border-bottom: 1px solid #008db0;
+}
+.redirectmessage,
+.continuebutton {
+    text-align: center;
+    font-size: 14pt;
+    color: #444;
+    padding-bottom: 10px;
+}
+/*
+General Box
+-----------------------*/
+.generalbox {
+    border: 0 none;
+}
+/*
+Font Size
+-----------------------*/
+table {
+    font-size: 85%;
+}
+/*
+Button
+-----------------------*/
+select, input, button {
+    color: black;
+}
+#loginbtn, input, button, select {
+    /*cursor: pointer;*/
+    margin-left: 5px;
+}
+input#username,
+input#password,
+input[type="text"],
+input[type="password"],
+textarea {
+    /*background-color: white;
+    border: 2px inset threedface;*/
+    color: #333;
+    width: auto;
+    cursor: text;
+    padding: 2px;
+}
+
+input[type="submit"], input[type="cancel"], button {
+  padding: 3px 10px;
+}
+
+/*
+Courses and categories lists
+----------------------------*/
+
+.coursebox h3,
+.coursebox .info,
+.coursebox .summary {
+    text-align: left;
+    width: 100%;
+    height: auto;
+}
+.coursebox .info {
+    float: left;
+}
+.coursebox .summary {
+    float: right;
+}
+.coursebox .summary p {
+    margin: 5px 0 0;
+}
+.coursebox .info h3.name {
+    padding: 0;
+    margin: 5px 0 0;
+}
+/*
+Course Section Topic & Weekly
+-----------------------------*/
+.course-content ul.topics li.section,
+.course-content ul.weeks li.section {
+    /*border: 1px solid transparent;*/
+    list-style: none outside none;
+    margin: 5px 0 0;
+    padding: 0;
+}
+.course-content ul.topics li.section {
+  padding-top: 1em;
+}
+.path-course-view .headingblock {
+    display: none; /* hides topic items title or weekly itens title */
+    margin-bottom: 9px;
+}
+
+/* Login (Login page) */
+
+.loginbox .loginform .form-label,
+.dir-rtl .loginbox .loginform .form-label {
+    width:46%;
+}
+.loginbox .loginform .form-input {
+    width:53%;
+}
+
+/*
+Login (Front Page)
+-----------------------*/
+.block_login {
+    margin: 0;
+    padding: 0;
+}
+.block_login .footer {
+    text-align: right;
+    clear: both
+}
+.block_login .loginform .c1 {
+    margin: 0.3em 15px;
+    text-align: left;
+}
+/* Theme Selector
+----------------------------*/
+#page-admin-theme-index .generalbox {
+    border: none;
+}
+.theme_screenshot {
+    float: left;
+    width: 300px;
+}
+.theme_screenshot img {
+    width: 275px;
+}
+.theme_screenshot h2 {
+    font-size: 2em;
+}
+.theme_screenshot h3 {
+    font-size: 0.9em;
+    margin: 1em 0 0;
+}
+.theme_screenshot p {
+    font-size: 0.9em;
+    margin: 0 0 1em;
+}
+.theme_description {
+    margin-left: 300px;
+}
+.theme_description h2 {
+    padding-top: 0.5em;
+}
+/*
+Tabs
+-----------------------*/
+.tabtree ul {
+    text-align:center;
+}
+.tabtree .tabrow0 {
+    width:100%;margin:1em 0px;
+}
+.tabtree .tabrow0 li {
+    margin-right:-4px;
+}
+.tabtree .tabrow0 li.here {
+    font-weight: bold;
+}
+.tabtree .tabrow0 li.here a {
+    position:relative;z-index:102;
+}
+.tabtree .tabrow0 li a {
+    background-image:url([[pix:theme|tab/left]]);
+    padding-left:14px;
+    padding-top:10px;
+    background-repeat:no-repeat;
+    padding-bottom:3px;
+    margin-bottom:-1px;
+}
+.tabtree .tabrow0 li a:hover {
+    background-image:url([[pix:theme|tab/left_hover]]);
+}
+.tabtree .tabrow0 li a span {
+    background-image:url([[pix:theme|tab/right]]);
+    background-repeat:no-repeat;
+    background-position: 100% 0;
+    padding-right: 14px;
+    padding-top: 10px;
+    padding-bottom: 3px;
+}
+.tabtree .tabrow0 li a:hover span {
+    background-image:url([[pix:theme|tab/right_hover]]);
+}
+.tabtree .tabrow0 ul,
+.tabtree .tabrow0 div {
+    font-weight: normal;
+    background-image:url([[pix:theme|tab/tabrow1]]);
+    background-position:0% 50%;
+    border-top: 1px dotted #eee;
+    padding:0.25em 0px;
+    margin:0px;
+}
+.tabtree .tabrow0 li.here .empty {
+    display:block;
+    height:1px;
+    overflow:hidden;
+    padding:0px;
+    position:absolute;
+    width:100%;
+    bottom:-4px;
+}
+.tabtree .tabrow1 li a,
+.tabtree .tabrow1 li a:hover,
+.tabtree .tabrow1 li a span,
+.tabtree .tabrow1 li a:hover span {
+    background-image: none !important;
+}
+.tabtree a.nolink,
+.tabtree .here ul a.nolink,
+.tabtree a.nolink:hover,
+.tabtree .here ul a.nolink:hover {
+    color: #888;
+    text-decoration: none;
+}
+.tabtree .here a.nolink,
+.tabtree .here ul .here a.nolink,
+.tabtree .here a.nolink:hover,
+.tabtree .here ul .here a.nolink:hover {
+    color: black;
+    text-decoration: none;
+}
+/*
+tab styles for ie6 & ie7
+-----------------------*/
+.ie7 .tabtree .tabrow0 li {
+    margin-left: 0;
+}
+.ie7 .tabtree .tabrow0 li.first {
+    margin-right: -4px;
+}
+.ie7 .tabtree .tabrow0 li.onerow {
+    margin-right: 0;
+}
+.ie7 .tabtree .tabrow0 a {
+    display: inline-block;
+    padding: 8px 0 0.35em 13px;
+    line-height: 1.5em;
+}
+.ie7 .tabtree .tabrow0 a span {
+    padding: 10px 1em 10px 0;
+}
+.ie7 .tabtree .tabrow0 div {
+    top: 2.6em;padding: 0.2em 0;
+}
+.ie7 .tabtree .tabrow0 div.empty {
+    margin-right: 0;
+}
+.ie7.mod-quiz div.tabtree a span img.iconsmall {
+    margin: 0;
+    vertical-align: baseline;
+    position: relative;
+    top: 2px;
+}
+.ie6 .tabtree {
+    height: 100%;
+}
+.ie6 .tabtree .tabrow0 {
+    padding-top: 10px;
+}
+.ie6 .tabtree .tabrow0 li {
+    margin-left: 0;
+}
+.ie6 .tabtree .tabrow0 li.first {
+    margin-left: -4px;
+    margin-right: -4px;
+}
+.ie6 .tabtree .tabrow0 li.last a {
+    margin-right: 0;
+}
+.ie6 .tabtree .tabrow0 li.onerow {
+    margin-right: 0;
+}
+.ie6 .tabtree .tabrow0 a {
+    padding: 0 0 0 13px;
+}
+.ie6 .tabtree .tabrow0 a span {
+    padding: 12px 1em 4px 0;
+}
+.ie6 .tabtree .tabrow0 div {
+    top: 3.5em;
+    padding: 0.2em 0;
+}
+/* Filemanager
+-------------------------*/
+.filemanager select,
+.filemanager input,
+.filemanager button,
+.filemanager textarea,
+.file-picker select,
+.file-picker input,
+.file-picker button,
+.file-picker textarea {
+    background-color: #EEE;
+}
+/* Important z-index fixes
+-------------------------*/
+.yui-skin-sam .yui-panel-container {
+    z-index: 999999!important;
+}
+body#page-course-view-topics.path-course div.moodle-dialogue-base div.yui3-widget{
+    z-index: 600!important;
+}
+
+hr {
+  height: 1px;
+  border: 0;
+  border-top: 1px solid #DDD;
+  margin: 20px auto 10px;
+}
+
+.block-region hr {
+  margin: 0;
+  display: none;
+}
+
+.breadcrumb {
+  font-size: 0.85em;
+  color: #555;
+}
+
+.breadcrumb a {
+  text-decoration: underline;
+}
+
+.breadcrumb .arrow.sep {
+  color: #666;
+  font-size: 0.75em;
+  display: inline-block;
+  width: 12px;
+  text-align: center;
+  vertical-align: 3%;
+}
+
+.breadcrumb li:last-child a,
+.breadcrumb li:last-child a:hover,
+.breadcrumb li:last-child a:focus,
+.breadcrumb li:last-child a:active {
+  color: #555;
+  text-decoration: none;
+  background-color: transparent;
+}
+
+.course-content .current {
+  background-color: #F1EFE7;
+  border: 0;
+  border-radius: 3px;
+}
+
+ul.topics div.content {
+  clear: both;
+}
+
+
+.course-content ul.topics li.section,
+.course-content ul.weeks li.section {
+  padding-bottom: 0px;
+  padding-top: 20px;
+  margin-top: 0px;
+  /*margin-top: 1em;*/
+  /*border-bottom: 1px solid #F1EFE7;*/
+}
+
+.course-content ul.topics li.section.current,
+.course-content ul.weeks li.section.current {
+  border-bottom: 0;
+  padding-top: 0;
+}
+
+.course-content ul.topics li.section .content {
+  margin: 0 20px;
+}
+
+.course-content .content div.no-overflow {
+  overflow: inherit;
+}
+
+.course-content ul.section {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.course-content h3.sectionname {
+  border-top: 1px solid #F1EFE7;
+  text-align: center;
+  margin: 0;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.course-content ul.topics li.section .left  {
+  /*line-height: 2px;*/
+}
+
+.block-region .block_news_items .newlink {
+  margin-bottom: 10px
+}
+
+.block-region .block_news_items .date {
+  float: left;
+  font-weight: bold;
+  font-size: 10px;
+}
+
+.block-region .block_news_items .name {
+  float: right;
+  font-size: 10px;
+}
+
+.block-region .block_news_items .info {
+  clear: both;
+  margin-bottom: 10px;
+}
+
+
+
+.block-region .block_calendar_upcoming .content {
+  font-size: 9px;
+}
+
+.block-region .block_calendar_upcoming .content div.event {
+  padding-bottom: 8px;
+}
+
+.block-region .block_calendar_upcoming .content div.event span + a {
+  display: inline-block;
+  height: 13px;
+  max-width: 160px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.block-region .block_calendar_upcoming .content div.event div.date {
+  visibility: hidden;
+  margin-left: 22px;
+}
+
+.block-region .block_calendar_upcoming .content div.event div.date a {
+  visibility: visible;
+}
+
+.block_navigation .block_tree .tree_item {
+  margin: 0;
+}
+
+.block_metalink .fitemtitle {
+  width: auto !important;
+}
+
+/*.mform .fitem .felement,*/
+.block_metalink .felement  {
+  margin: auto !important;
+  text-align: center;
+}
+
+.dndupload-arrow {
+  margin-left: auto;
+}
+
+.dndsupported .dndupload-message {
+  /*font-size: xx-small;*/
+}
+
+
+h2.headingblock + div.notifyproblem {
+  color: #333;
+}
+
+h2.headingblock,
+h2.coursetitle,
+div#intro {
+	color: #095197;
+	font-family: 'Droid Sans', Arial;
+	font-weight: normal;
+}
+
+div#intro {
+  font-size: 1.4em;
+}
+
+h2.coursetitle {
+  margin-top: 0;
+  font-size: 160%;
+  border-bottom: 1px solid #DDD;
+}
+
+.userenrolment .col_lastseen {
+  width: 80px;
+}
+
+.userenrolment .col_role {
+  width: 120px;
+}
+
+.userenrolment .col_enrol {
+  width: 160px;
+}
+
+.userenrolment .col_role .addrole,
+.userenrolment .col_role .roles,
+.userenrolment .col_role .role {
+  float: none;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.userenrolment .col_role .role {
+  text-align: center;
+  float: none;
+  padding: 0;
+  margin: 0 auto;
+}
+
+.userenrolment .col_role .role a img {
+  vertical-align: middle;
+}
+
+.userenrolment .col_enrol .enrolment a {
+  float: none;
+}
+
+table.userenrolment tr.r1 {
+  background-color: #F1EFE7;
+}
+
+#dock .dockedtitle h2.filterrotate {
+  font-size: 10px;
+  background-color: #AAA;
+}
+
+#dock .dockedtitle.activeitem h2.filterrotate {
+  background-color: #ABC;
+}
+
+.mform .fitem .felement {
+  text-align: left;
+}
+
+div.file-picker a:active,
+div.file-picker a:hover {
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+div.forumpost div.header a:active,
+div.forumpost div.header a:hover {
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+#page-calendar-event #region-post {
+  display: none !important;
+}
+
+#page-calendar-event #region-main {
+  /*width: 75%;*/
+  width: 80%;
+}
+
+#page-calendar-event #region-pre {
+  left: 0px;
+}
+
+/*#page-calendar-event .fitemtitle {
+  width: 50px;
+}
+
+#page-calendar-event .felement {
+  margin-left: 50px;
+}*/
+
+/* Moodle forms
+----------------*/
+
+.mform .btn-cancel {
+    color: #007EBA;
+    text-decoration: none;
+}
+.mform .btn-cancel:hover, .mform .btn-cancel:focus {
+    color: #cc3300;
+    text-decoration: underline;
+}
+
+div#tablecontainer {
+  background-color: white;
+}
+
+div#tablecontainer th,
+div#tablecontainer td {
+  border-width: 1px;
+}
+
+div.gradeparent th,
+div.gradeparent td {
+  border-width: 1px;
+}
+
+
+div.tabtree ul li a:hover {
+  background-color: transparent;
+}
+
+div.tabtree ul.tabrow0 li a:hover,
+div.tabtree ul.tabrow1 li a:hover {
+  background-color: transparent;
+  color: #095197;
+  text-decoration: underline;
+}
+
+fieldset > legend > a.fheader:hover,
+div.collapsible-actions > a:hover {
+  background-color: transparent;
+  color: #095197;
+  text-decoration: underline;
+
+}
+
+
+/* ----- 20/11/13 ----- */
+
+div#tablecontainer, table#attempts {
+  background-color: white;
+}
+
+div#tablecontainer th,
+div#tablecontainer td {
+  border-width: 1px;
+}
+
+div.gradeparent th,
+div.gradeparent td {
+  border-width: 1px;
+}
+
+
+div.tabtree ul li a:hover {
+  background-color: transparent;
+}
+
+div.tabtree ul.tabrow0 li a:hover,
+div.tabtree ul.tabrow1 li a:hover {
+  background-color: transparent;
+  color: #095197;
+  text-decoration: underline;
+}
+
+fieldset > legend > a.fheader:hover,
+div.collapsible-actions > a:hover {
+  background-color: transparent;
+  color: #095197;
+  text-decoration: underline;
+
+}
+
+
+ul.ctopics > li#toggle-all a:hover {
+  background-color: transparent;
+  color: #095197;
+  text-decoration: underline;
+}
+
+#page-content .course-content ul.ctopics li.section .content .toggle {
+  background-color: #8F9680;
+  border-radius: 4px;
+}
+
+#page-content .course-content ul.ctopics li.section .content .toggle a {
+  color: white;
+}
+
+
+#page-content ul.ctopics div.left,
+#page-content ul.ctopics div.right {
+  color: white;
+}

@@ -1,0 +1,104 @@
+
+body {
+  background: white;
+}
+
+body, #page, select, input, button, textarea {
+  font-family: Arial, sans-serif
+}
+
+a:link,
+html a:visited {
+  color: #095197;
+}
+
+
+h2.main, fieldset {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+#page-calendar-event div.maincalendar fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+#page-calendar-event .mform .fitem {
+  vertical-align: top;
+  margin: 0;
+  padding: 0;
+}
+
+#page-calendar-event  div.maincalendar fieldset fieldset {
+  padding-left: 10px;
+}
+
+div.maincalendar fieldset div.ftext {
+  padding-top: 0;
+}
+
+#id_repeats {
+  margin-top: 10px;
+}
+
+#content {
+  width: 94%;
+  height: auto;
+}
+
+table.calendarmonth .day {
+  font-weight: normal;
+  font-size: 10px;
+}
+
+/*.filters {
+  visibility: hidden;
+}*/
+
+/*.header div.buttons {
+  display: none;
+}*/
+
+.header {
+  display: none;
+}
+
+.filters {
+  margin-bottom: 15px;
+}
+
+.sidecalendar {
+  display: none;
+}
+
+#hdiv {
+  display: none;
+}
+
+#footer {
+  display: none;
+}
+
+#calendar-export #calendar {
+  padding-bottom: 50px;
+}
+
+#calendar-export fieldset {
+  margin-left: 12px;
+  margin-right: 12px;
+  margin-bottom: 12px;
+  padding-left: 14px;
+}
+
+#calendar-export fieldset form {
+  padding-top: 10px;
+}
+
+#calendar-export .maincalendar #urlbox {
+  padding: 0 8px 8px 8px;
+}
+
+#calendar-export .maincalendar #url {
+  overflow: hidden !important;
+  width: 100% !important;
+}
