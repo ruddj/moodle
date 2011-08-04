@@ -41,9 +41,9 @@ echo $OUTPUT->doctype() ?>
     <div id="page-header">
         <div class="ph-r">
       <div class="ph-l">
-        <?php if ($hasheading) { ?>
          <div id="logo">
          </div>
+        <?php if ($hasheading) { ?>
          <div class="headermenu">
            <?php if ($hascustommenu) { ?>
                 <div id="custommenu" class="javascript-disabled"><?php echo $custommenu; ?></div>
