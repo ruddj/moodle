@@ -31,7 +31,7 @@ $string['choosereadme'] = '
  <div class="theme_screenshot">
 
   <h2>SBHS Internal</h2>
-  <img src="afterburner/pix/screenshot.jpg" />
+  <img src="shsi/pix/screenshot.jpg" />
 
   <h3>Theme Discussion Forum:</h3>
   <p><a href="http://moodle.org/mod/forum/view.php?id=46">http://moodle.org/mod/forum/view.php?id=46</a></p>
@@ -44,7 +44,7 @@ $string['choosereadme'] = '
  </div>
  <div class="theme_description">
   <h2>About</h2>
-  <p>Afterburner is a three-column, fluid-width theme coded for Moodle 2.0. It makes use of custom menus that appear below the site title on every page. An added function, which allows users to login and logout, has now been integrated into the custom menu for this theme.</p>
+  <p>SBHS Internal is based on Afterburner a three-column, fluid-width theme coded for Moodle 2.0. It makes use of custom menus that appear below the site title on every page. An added function, which allows users to login and logout, has now been integrated into the custom menu for this theme.</p>
   <h2>Parents</h2>
   <p>This theme is built on Base, a parent theme included in the Moodle core. If you wish to modify aspects of this theme, beyond the settings offered, we advise creating a new theme using this theme and Base theme as parent themes, so any updates to these parent themes, in the core, will find their way into your new theme.</p>
   <h2>Credits</h2>

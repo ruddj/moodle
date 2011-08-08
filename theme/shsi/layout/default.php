@@ -39,17 +39,16 @@ echo $OUTPUT->doctype() ?>
   <div id="page">
    <?php if ($hasheading || $hasnavbar) { ?>
     <div id="page-header">
-        <div class="ph-r">
-      <div class="ph-l">
-         <div id="logo">
-         </div>
-        <?php if ($hasheading) { ?>
-         <div class="headermenu">
-           <?php if ($hascustommenu) { ?>
-                <div id="custommenu" class="javascript-disabled"><?php echo $custommenu; ?></div>
-           <?php } ?>
+        <div class="ph-l">
+         <div id="logo"></div>
+         <div class="ph-r">
+          <?php if ($hasheading) { ?>
+           <div class="headermenu">
+             <?php if ($hascustommenu) { ?>
+                  <div id="custommenu" class="javascript-disabled"><?php echo $custommenu; ?></div>
+             <?php } ?>
         
-         <?php
+          <?php
             if ($haslogininfo) {
                 echo $OUTPUT->login_info();
             }
@@ -58,7 +57,7 @@ echo $OUTPUT->doctype() ?>
             }
             echo $PAGE->headingmenu
             ?></div>
-        <?php } ?>
+          <?php } ?>
          </div>
       </div>
     </div>

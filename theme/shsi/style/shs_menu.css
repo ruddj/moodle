@@ -123,7 +123,7 @@ ul.dropdown ul li.clickable-with-children > a {
 ul.dropdown ul ul span,
 ul.dropdown ul ul span a,
 ul.dropdown ul ul li.clickable-with-children > a {
-    background-image: #574A35 url([[pix:theme|menu/nav-arrow-right]]);
+    background: #574A35 url([[pix:theme|menu/nav-arrow-right]]);
     background-position:100% 50%;
     background-repeat:no-repeat;
     color: #fff;
