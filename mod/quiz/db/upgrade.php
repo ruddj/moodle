@@ -567,16 +567,16 @@ function xmldb_quiz_upgrade($oldversion) {
                 $pbar = new progress_bar('q15upgrade');
                 $pbar->create();
                 $a = new stdClass();
-                $a->todo = count($oldattempts);
+                $a->outof = count($oldattempts);
                 $a->done = 0;
-                $pbar->update($a->done, $a->todo,
+                $pbar->update($a->done, $a->outof,
                         get_string('upgradingveryoldquizattempts', 'quiz', $a));
 
                 foreach ($oldattempts as $oldattempt) {
                     quiz_upgrade_very_old_question_sessions($oldattempt);
 
                     $a->done += 1;
-                    $pbar->update($a->done, $a->todo,
+                    $pbar->update($a->done, $a->outof,
                             get_string('upgradingveryoldquizattempts', 'quiz', $a));
                 }
             }
@@ -1117,6 +1117,9 @@ function xmldb_quiz_upgrade($oldversion) {
         // quiz savepoint reached
         upgrade_mod_savepoint(true, 2011051229, 'quiz');
     }
+
+    // Moodle v2.1.0 release upgrade line
+    // Put any upgrade step following this
 
     return true;
 }

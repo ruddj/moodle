@@ -178,7 +178,7 @@ define('PARAM_PEM',      'pem');
 define('PARAM_PERMISSION',   'permission');
 
 /**
- * PARAM_RAW specifies a parameter that is not cleaned/processed in any way
+ * PARAM_RAW specifies a parameter that is not cleaned/processed in any way except the discarding of the invalid utf-8 characters
  */
 define('PARAM_RAW', 'raw');
 
@@ -569,9 +569,11 @@ function clean_param($param, $type) {
 
     switch ($type) {
         case PARAM_RAW:          // no cleaning at all
+            $param = fix_utf8($param);
             return $param;
 
         case PARAM_RAW_TRIMMED:         // no cleaning, but strip leading and trailing whitespace.
+            $param = fix_utf8($param);
             return trim($param);
 
         case PARAM_CLEAN:        // General HTML cleaning, try to use more specific type if possible
@@ -579,9 +581,11 @@ function clean_param($param, $type) {
             if (is_numeric($param)) {
                 return $param;
             }
+            $param = fix_utf8($param);
             return clean_text($param);     // Sweep for scripts, etc
 
         case PARAM_CLEANHTML:    // clean html fragment
+            $param = fix_utf8($param);
             $param = clean_text($param, FORMAT_HTML);     // Sweep for scripts, etc
             return trim($param);
 
@@ -619,9 +623,11 @@ function clean_param($param, $type) {
             return $param;
 
         case PARAM_NOTAGS:       // Strip all tags
+            $param = fix_utf8($param);
             return strip_tags($param);
 
         case PARAM_TEXT:    // leave only tags needed for multilang
+            $param = fix_utf8($param);
             // if the multilang syntax is not correct we strip all tags
             // because it would break xhtml strict which is required for accessibility standards
             // please note this cleaning does not strip unbalanced '>' for BC compatibility reasons
@@ -691,6 +697,7 @@ function clean_param($param, $type) {
             return preg_replace('/[^a-zA-Z0-9\/_-]/i', '', $param);
 
         case PARAM_FILE:         // Strip all suspicious characters from filename
+            $param = fix_utf8($param);
             $param = preg_replace('~[[:cntrl:]]|[&<>"`\|\':\\\\/]~u', '', $param);
             $param = preg_replace('~\.\.+~', '', $param);
             if ($param === '.') {
@@ -699,6 +706,7 @@ function clean_param($param, $type) {
             return $param;
 
         case PARAM_PATH:         // Strip all suspicious characters from file path
+            $param = fix_utf8($param);
             $param = str_replace('\\', '/', $param);
             $param = preg_replace('~[[:cntrl:]]|[&<>"`\|\':]~u', '', $param);
             $param = preg_replace('~\.\.+~', '', $param);
@@ -729,6 +737,7 @@ function clean_param($param, $type) {
             return $param;
 
         case PARAM_URL:          // allow safe ftp, http, mailto urls
+            $param = fix_utf8($param);
             include_once($CFG->dirroot . '/lib/validateurlsyntax.php');
             if (!empty($param) && validateUrlSyntax($param, 's?H?S?F?E?u-P-a?I?p?f?q?r?')) {
                 // all is ok, param is respected
@@ -805,6 +814,7 @@ function clean_param($param, $type) {
             }
 
         case PARAM_TAG:
+            $param = fix_utf8($param);
             // Please note it is not safe to use the tag name directly anywhere,
             // it must be processed with s(), urlencode() before embedding anywhere.
             // remove some nasties
@@ -816,6 +826,7 @@ function clean_param($param, $type) {
             return $param;
 
         case PARAM_TAGLIST:
+            $param = fix_utf8($param);
             $tags = explode(',', $param);
             $result = array();
             foreach ($tags as $tag) {
@@ -872,6 +883,7 @@ function clean_param($param, $type) {
             }
 
         case PARAM_USERNAME:
+            $param = fix_utf8($param);
             $param = str_replace(" " , "", $param);
             $param = moodle_strtolower($param);  // Convert uppercase to lowercase MDL-16919
             if (empty($CFG->extendedusernamechars)) {
@@ -882,6 +894,7 @@ function clean_param($param, $type) {
             return $param;
 
         case PARAM_EMAIL:
+            $param = fix_utf8($param);
             if (validate_email($param)) {
                 return $param;
             } else {
@@ -896,6 +909,7 @@ function clean_param($param, $type) {
             }
 
         case PARAM_TIMEZONE:    //can be int, float(with .5 or .0) or string seperated by '/' and can have '-_'
+            $param = fix_utf8($param);
             $timezonepattern = '/^(([+-]?(0?[0-9](\.[5|0])?|1[0-3]|1[0-2]\.5))|(99)|[[:alnum:]]+(\/?[[:alpha:]_-])+)$/';
             if (preg_match($timezonepattern, $param)) {
                 return $param;
@@ -905,6 +919,44 @@ function clean_param($param, $type) {
 
         default:                 // throw error, switched parameters in optional_param or another serious problem
             print_error("unknownparamtype", '', '', $type);
+    }
+}
+
+/**
+ * Makes sure the data is using valid utf8, invalid characters are discarded.
+ *
+ * Note: this function is not intended for full objects with methods and private properties.
+ *
+ * @param mixed $value
+ * @return mixed with proper utf-8 encoding
+ */
+function fix_utf8($value) {
+    if (is_null($value) or $value === '') {
+        return $value;
+
+    } else if (is_string($value)) {
+        if ((string)(int)$value === $value) {
+            // shortcut
+            return $value;
+        }
+        return iconv('UTF-8', 'UTF-8//IGNORE', $value);
+
+    } else if (is_array($value)) {
+        foreach ($value as $k=>$v) {
+            $value[$k] = fix_utf8($v);
+        }
+        return $value;
+
+    } else if (is_object($value)) {
+        $value = clone($value); // do not modify original
+        foreach ($value as $k=>$v) {
+            $value->$k = fix_utf8($v);
+        }
+        return $value;
+
+    } else {
+        // this is some other type, no utf-8 here
+        return $value;
     }
 }
 
@@ -1191,6 +1243,10 @@ function purge_all_caches() {
 
     // make sure cache dir is writable, throws exception if not
     make_upload_directory('cache');
+
+    // hack: this script may get called after the purifier was initialised,
+    // but we do not want to verify repeatedly this exists in each call
+    make_upload_directory('cache/htmlpurifier');
 
     clearstatcache();
 }
@@ -2371,7 +2427,7 @@ function require_login($courseorid = NULL, $autologinguest = true, $cm = NULL, $
                 exit; // never reached
             }
             $lang = isset($SESSION->lang) ? $SESSION->lang : $CFG->lang;
-            complete_user_login($guest, false);
+            complete_user_login($guest);
             $USER->autologinguest = true;
             $SESSION->lang = $lang;
         } else {
@@ -3406,7 +3462,7 @@ function truncate_userinfo($info) {
  *
  * Any plugin that needs to purge user data should register the 'user_deleted' event.
  *
- * @param object $user User object before delete
+ * @param stdClass $user full user object before delete
  * @return boolean always true
  */
 function delete_user($user) {
@@ -3452,6 +3508,9 @@ function delete_user($user) {
 
     // last course access not necessary either
     $DB->delete_records('user_lastaccess', array('userid'=>$user->id));
+
+    // force logout - may fail if file based sessions used, sorry
+    session_kill_user($user->id);
 
     // now do a final accesslib cleanup - removes all role assignments in user context and context itself
     delete_context(CONTEXT_USER, $user->id);
@@ -3619,12 +3678,12 @@ function authenticate_user_login($username, $password) {
  *
  * NOTE:
  * - It will NOT log anything -- up to the caller to decide what to log.
+ * - this function does not set any cookies any more!
  *
  * @param object $user
- * @param bool $setcookie
  * @return object A {@link $USER} object - BC only, do not use
  */
-function complete_user_login($user, $setcookie=true) {
+function complete_user_login($user) {
     global $CFG, $USER;
 
     // regenerate session id and delete old session,
@@ -3647,17 +3706,6 @@ function complete_user_login($user, $setcookie=true) {
     if (isguestuser()) {
         // no need to continue when user is THE guest
         return $USER;
-    }
-
-    if ($setcookie) {
-        if (empty($CFG->nolastloggedin)) {
-            set_moodle_cookie($USER->username);
-        } else {
-            // do not store last logged in user in cookie
-            // auth plugins can temporarily override this from loginpage_hook()
-            // do not save $CFG->nolastloggedin in database!
-            set_moodle_cookie('');
-        }
     }
 
     /// Select password change url
@@ -7031,7 +7079,6 @@ function get_core_subsystems() {
             'filepicker'  => NULL,
             'files'       => 'files',
             'filters'     => NULL,
-            'flashdetect' => NULL,
             'fonts'       => NULL,
             'form'        => 'lib/form',
             'grades'      => 'grade',
@@ -7628,10 +7675,10 @@ function check_php_version($version='5.2.4') {
 }
 
 /**
- * Returns whether a device/browser combination is mobile, tablet, legacy, default or the result of 
+ * Returns whether a device/browser combination is mobile, tablet, legacy, default or the result of
  * an optional admin specified regular expression.  If enabledevicedetection is set to no or not set
  * it returns default
- * 
+ *
  * @return string device type
  */
 function get_device_type() {

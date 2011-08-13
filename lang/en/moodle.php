@@ -304,7 +304,7 @@ $string['coursehelpforce'] = 'Force the course group mode to every activity in t
 $string['coursehelpformat'] = 'The course main page will be displayed in this format.';
 $string['coursehelphiddensections'] = 'How the hidden sections in the course are displayed to students.';
 $string['coursehelpmaximumupload'] = 'Define the largest size of file that can be uploaded in this course, limited by the site-wide setting.';
-$string['coursehelpnewsitemsnumber'] = 'Number of recent items appearing on the course home page, in a news box down the right-hand side <br/>(0 means the news box won\'t appear).';
+$string['coursehelpnewsitemsnumber'] = 'Number of recent items appearing on the course home page, in a news box down the right-hand side (0 means the news box won\'t appear).';
 $string['coursehelpnumberweeks'] = 'Number of weeks/topics displayed on the course main page.';
 $string['coursehelpshowgrades'] = 'Enable the display of the gradebook. It does not prevent grades from being displayed within the individual activities.';
 $string['coursehidden'] = 'This course is currently unavailable to students';
@@ -663,10 +663,6 @@ $string['findmorecourses'] = 'Find more courses...';
 $string['firstaccess'] = 'First access';
 $string['firstname'] = 'First name';
 $string['firsttime'] = 'Is this your first time here?';
-$string['flashlinkmessage'] = 'Please upgrade your Flash player now:';
-$string['flashupgrademessage'] = 'The Flash plugin is required to play this content, but the version you have is too old.
-
-  You may need to log out and log in back after upgrade.';
 $string['folder'] = 'Folder';
 $string['folderclosed'] = 'Closed folder';
 $string['folderopened'] = 'Opened folder';
@@ -739,7 +735,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Moodle License information page for full details:
-http://docs.moodle.org/en/License';
+http://docs.moodle.org/dev/License';
 $string['gpllicense'] = 'GPL license';
 $string['gpl3'] = 'Copyright (C) 1999 onwards Martin Dougiamas (http://moodle.com)
 
@@ -753,7 +749,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Moodle License information page for full details:
-http://docs.moodle.org/en/License';
+http://docs.moodle.org/dev/License';
 $string['grade'] = 'Grade';
 $string['grades'] = 'Grades';
 $string['group'] = 'Group';
@@ -981,6 +977,8 @@ $string['maximumchars'] = 'Maximum of {$a} characters';
 $string['maximumshort'] = 'Max';
 $string['maximumupload'] = 'Maximum upload size';
 $string['maximumupload_help'] = 'This setting determines the largest size of file that can be uploaded to the course, limited by the site-wide setting set by an administrator. Activity modules also include a maximum upload size setting for further restricting the file size.';
+$string['maxnumberweeks'] = 'Maximum for number of weeks/topics';
+$string['maxnumberweeks_desc'] = 'This controls the maximum options that appears in the "Number of weeks/topics" setting for courses.';
 $string['maxsize'] = 'Max size: {$a}';
 $string['maxfilesize'] = 'Maximum size for new files: {$a}';
 $string['maxnumcoursesincombo'] = 'Browse <a href="{$a->link}">{$a->numberofcourses} courses</a>.';

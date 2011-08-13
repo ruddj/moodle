@@ -30,11 +30,23 @@ if (!file_exists('../config.php')) {
 }
 
 // Check that PHP is of a sufficient version as soon as possible
-if (version_compare(phpversion(), '5.2.0') < 0) {
+if (version_compare(phpversion(), '5.3.2') < 0) {
     $phpversion = phpversion();
     // do NOT localise - lang strings would not work here and we CAN NOT move it to later place
-    echo "Sorry, Moodle 2.0 requires PHP 5.2.8 or later (currently using version $phpversion). ";
-    echo "Please upgrade your server software or use latest Moodle 1.9.x instead.";
+    echo "Moodle 2.1 or later requires at least PHP 5.3.2 (currently using version $phpversion).<br />";
+    echo "Please upgrade your server software or install older Moodle version.";
+    die;
+}
+
+// make sure iconv is available and actually works
+if (!function_exists('iconv')) {
+    // this should not happen, this must be very borked install
+    echo 'Moodle requires the iconv PHP extension. Please install or enable the iconv extension.';
+    die();
+}
+if (iconv('UTF-8', 'UTF-8//IGNORE', 'abc') !== 'abc') {
+    // known to be broken in mid-2011 MAMP installations
+    echo 'Broken iconv PHP extension detected, installation/upgrade can not continue.';
     die;
 }
 
@@ -75,9 +87,6 @@ if (is_float_problem()) {
 }
 
 // Set some necessary variables during set-up to avoid PHP warnings later on this page
-if (!isset($CFG->framename)) {
-    $CFG->framename = '_top';
-}
 if (!isset($CFG->release)) {
     $CFG->release = '';
 }
@@ -124,7 +133,7 @@ if (!core_tables_exist()) {
         echo $OUTPUT->box($copyrightnotice, 'copyrightnotice');
         echo '<br />';
         $continue = new single_button(new moodle_url('/admin/index.php', array('lang'=>$CFG->lang, 'agreelicense'=>1)), get_string('continue'), 'get');
-        echo $OUTPUT->confirm(get_string('doyouagree'), $continue, "http://docs.moodle.org/en/License");
+        echo $OUTPUT->confirm(get_string('doyouagree'), $continue, "http://docs.moodle.org/dev/License");
         echo $OUTPUT->footer();
         die;
     }
@@ -148,7 +157,7 @@ if (!core_tables_exist()) {
             }
         }
 
-        $releasenoteslink = get_string('releasenoteslink', 'admin', 'http://docs.moodle.org/en/Release_Notes');
+        $releasenoteslink = get_string('releasenoteslink', 'admin', 'http://docs.moodle.org/dev/Releases');
         $releasenoteslink = str_replace('target="_blank"', 'onclick="this.target=\'_blank\'"', $releasenoteslink); // extremely ugly validation hack
         echo $OUTPUT->box($releasenoteslink, 'generalbox releasenoteslink');
 
@@ -231,7 +240,7 @@ if ($version > $CFG->version) {  // upgrade
         $PAGE->set_cacheable(false);
         echo $OUTPUT->header();
         echo $OUTPUT->heading("Moodle $release");
-        $releasenoteslink = get_string('releasenoteslink', 'admin', 'http://docs.moodle.org/en/Release_Notes');
+        $releasenoteslink = get_string('releasenoteslink', 'admin', 'http://docs.moodle.org/dev/Releases');
         $releasenoteslink = str_replace('target="_blank"', 'onclick="this.target=\'_blank\'"', $releasenoteslink); // extremely ugly validation hack
         echo $OUTPUT->box($releasenoteslink);
 
@@ -355,7 +364,7 @@ if (during_initial_install()) {
         }
         // login user and let him set password and admin details
         $adminuser->newadminuser = 1;
-        complete_user_login($adminuser, false);
+        complete_user_login($adminuser);
         redirect("$CFG->wwwroot/user/editadvanced.php?id=$adminuser->id"); // Edit thyself
 
     } else {
@@ -456,10 +465,10 @@ if (!empty($CFG->maintenance_enabled)) {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////  IT IS ILLEGAL AND A VIOLATION OF THE GPL TO HIDE, REMOVE OR MODIFY THIS COPYRIGHT NOTICE ///
 $copyrighttext = '<a href="http://moodle.org/">Moodle</a> '.
-                 '<a href="http://docs.moodle.org/en/Release" title="'.$CFG->version.'">'.$CFG->release.'</a><br />'.
+                 '<a href="http://docs.moodle.org/dev/Releases" title="'.$CFG->version.'">'.$CFG->release.'</a><br />'.
                  'Copyright &copy; 1999 onwards, Martin Dougiamas<br />'.
-                 'and <a href="http://docs.moodle.org/en/Credits">many other contributors</a>.<br />'.
-                 '<a href="http://docs.moodle.org/en/License">GNU Public License</a>';
+                 'and <a href="http://docs.moodle.org/dev/Credits">many other contributors</a>.<br />'.
+                 '<a href="http://docs.moodle.org/dev/License">GNU Public License</a>';
 echo $OUTPUT->box($copyrighttext, 'copyright');
 //////////////////////////////////////////////////////////////////////////////////////////////////
 

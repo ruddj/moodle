@@ -448,11 +448,6 @@ class page_requirements_manager {
                                     'requires' => array('base', 'node', 'event', 'node-event-simulate'),
                                     'fullpath' => '/message/module.js');
                     break;
-                case 'core_flashdetect':
-                    $module = array('name'     => 'core_flashdetect',
-                                    'fullpath' => '/lib/flashdetect/flashdetect.js',
-                                    'requires' => array('io'));
-                    break;
                 case 'core_group':
                     $module = array('name'     => 'core_group',
                                     'fullpath' => '/group/module.js',
@@ -724,7 +719,7 @@ class page_requirements_manager {
             // Set Y's config.gallery to the version
             $jscode = 'Y.config.gallery='.json_encode($galleryversion).';';
         }
-        $jscode .= 'Y.use('.join(',', array_map('json_encode', $modules)).',function() {'.js_writer::function_call($function, $arguments).'})';
+        $jscode .= 'Y.use('.join(',', array_map('json_encode', $modules)).',function() {'.js_writer::function_call($function, $arguments).'});';
         if ($ondomready) {
             $jscode = "Y.on('domready', function() { $jscode });";
         }

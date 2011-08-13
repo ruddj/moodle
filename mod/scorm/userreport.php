@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -9,20 +8,20 @@
 //
 // Moodle is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle. If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This page displays the user data from a single attempt
- *
- * @package    mod
- * @subpackage scorm
- * @copyright  1999 onwards Martin Dougiamas  {@link http://moodle.com}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+* This page displays the user data from a single attempt
+*
+* @package mod
+* @subpackage scorm
+* @copyright 1999 onwards Martin Dougiamas {@link http://moodle.com}
+* @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+*/
 
 require_once("../../config.php");
 require_once($CFG->dirroot.'/mod/scorm/locallib.php');
@@ -246,7 +245,7 @@ if (!empty($b)) {
                 'cmi.interactions.'.$i.'.learner_response');
         $row = array();
         foreach ($elements as $element) {
-           if (isset($trackdata->$element)) {
+            if (isset($trackdata->$element)) {
                 $row[] = s($trackdata->$element);
                 $printedelements[]=$element;
             } else {
@@ -315,7 +314,7 @@ if (!empty($b)) {
 
     $existelements = false;
 
-    foreach ( $trackdata as $element => $value) {
+    foreach ($trackdata as $element => $value) {
         if (substr($element, 0, 3) == 'cmi') {
             if (!(in_array ($element, $printedelements))) {
                 $existelements = true;

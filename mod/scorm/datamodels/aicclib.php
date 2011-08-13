@@ -1,10 +1,24 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 function scorm_add_time($a, $b) {
-    $aes = explode(':',$a);
-    $bes = explode(':',$b);
-    $aseconds = explode('.',$aes[2]);
-    $bseconds = explode('.',$bes[2]);
+    $aes = explode(':', $a);
+    $bes = explode(':', $b);
+    $aseconds = explode('.', $aes[2]);
+    $bseconds = explode('.', $bes[2]);
     $change = 0;
 
     $acents = 0;  //Cents
@@ -49,16 +63,16 @@ function scorm_add_time($a, $b) {
 }
 
 /**
-* Take the header row of an AICC definition file
-* and returns sequence of columns and a pointer to
-* the sco identifier column.
-*
-* @param string $row AICC header row
-* @param string $mastername AICC sco identifier column
-* @return mixed
-*/
-function scorm_get_aicc_columns($row,$mastername='system_id') {
-    $tok = strtok(strtolower($row),"\",\n\r");
+ * Take the header row of an AICC definition file
+ * and returns sequence of columns and a pointer to
+ * the sco identifier column.
+ *
+ * @param string $row AICC header row
+ * @param string $mastername AICC sco identifier column
+ * @return mixed
+ */
+function scorm_get_aicc_columns($row, $mastername='system_id') {
+    $tok = strtok(strtolower($row), "\",\n\r");
     $result = new stdClass();
     $result->columns = array();
     $i=0;
@@ -76,19 +90,19 @@ function scorm_get_aicc_columns($row,$mastername='system_id') {
 }
 
 /**
-* Given a colums array return a string containing the regular
-* expression to match the columns in a text row.
-*
-* @param array $column The header columns
-* @param string $remodule The regular expression module for a single column
-* @return string
-*/
-function scorm_forge_cols_regexp($columns,$remodule='(".*")?,') {
+ * Given a colums array return a string containing the regular
+ * expression to match the columns in a text row.
+ *
+ * @param array $column The header columns
+ * @param string $remodule The regular expression module for a single column
+ * @return string
+ */
+function scorm_forge_cols_regexp($columns, $remodule='(".*")?,') {
     $regexp = '/^';
     foreach ($columns as $column) {
         $regexp .= $remodule;
     }
-    $regexp = substr($regexp,0,-1) . '/';
+    $regexp = substr($regexp, 0, -1) . '/';
     return $regexp;
 }
 
@@ -106,18 +120,17 @@ function scorm_parse_aicc($scorm) {
 
     $files = $fs->get_area_files($context->id, 'mod_scorm', 'content', 0, '', false);
 
-
     $version = 'AICC';
     $ids = array();
     $courses = array();
-    $extaiccfiles = array('crs','des','au','cst','ort','pre','cmp');
+    $extaiccfiles = array('crs', 'des', 'au', 'cst', 'ort', 'pre', 'cmp');
 
     foreach ($files as $file) {
         $filename = $file->get_filename();
-        $ext = substr($filename,strrpos($filename,'.'));
-        $extension = strtolower(substr($ext,1));
-        if (in_array($extension,$extaiccfiles)) {
-            $id = strtolower(basename($filename,$ext));
+        $ext = substr($filename, strrpos($filename, '.'));
+        $extension = strtolower(substr($ext, 1));
+        if (in_array($extension, $extaiccfiles)) {
+            $id = strtolower(basename($filename, $ext));
             $ids[$id]->$extension = $file;
         }
     }
@@ -128,7 +141,7 @@ function scorm_parse_aicc($scorm) {
             $rows = explode("\r\n", $contents);
             if (is_array($rows)) {
                 foreach ($rows as $row) {
-                    if (preg_match("/^(.+)=(.+)$/",$row,$matches)) {
+                    if (preg_match("/^(.+)=(.+)$/", $row, $matches)) {
                         switch (strtolower(trim($matches[1]))) {
                             case 'course_id':
                                 $courses[$courseid]->id = trim($matches[2]);
@@ -149,11 +162,11 @@ function scorm_parse_aicc($scorm) {
             $rows = explode("\r\n", $contents);
             $columns = scorm_get_aicc_columns($rows[0]);
             $regexp = scorm_forge_cols_regexp($columns->columns);
-            for ($i=1;$i<count($rows);$i++) {
-                if (preg_match($regexp,$rows[$i],$matches)) {
-                    for ($j=0;$j<count($columns->columns);$j++) {
+            for ($i=1; $i<count($rows); $i++) {
+                if (preg_match($regexp, $rows[$i], $matches)) {
+                    for ($j=0; $j<count($columns->columns); $j++) {
                         $column = $columns->columns[$j];
-                        $courses[$courseid]->elements[substr(trim($matches[$columns->mastercol+1]),1,-1)]->$column = substr(trim($matches[$j+1]),1,-1);
+                        $courses[$courseid]->elements[substr(trim($matches[$columns->mastercol+1]), 1 , -1)]->$column = substr(trim($matches[$j+1]), 1, -1);
                     }
                 }
             }
@@ -163,11 +176,11 @@ function scorm_parse_aicc($scorm) {
             $rows = explode("\r\n", $contents);
             $columns = scorm_get_aicc_columns($rows[0]);
             $regexp = scorm_forge_cols_regexp($columns->columns);
-            for ($i=1;$i<count($rows);$i++) {
-                if (preg_match($regexp,$rows[$i],$matches)) {
-                    for ($j=0;$j<count($columns->columns);$j++) {
+            for ($i=1; $i<count($rows); $i++) {
+                if (preg_match($regexp, $rows[$i], $matches)) {
+                    for ($j=0; $j<count($columns->columns); $j++) {
                         $column = $columns->columns[$j];
-                        $courses[$courseid]->elements[substr(trim($matches[$columns->mastercol+1]),1,-1)]->$column = substr(trim($matches[$j+1]),1,-1);
+                        $courses[$courseid]->elements[substr(trim($matches[$columns->mastercol+1]), 1, -1)]->$column = substr(trim($matches[$j+1]), 1, -1);
                     }
                 }
             }
@@ -175,13 +188,13 @@ function scorm_parse_aicc($scorm) {
         if (isset($id->cst)) {
             $contents = $id->cst->get_content();
             $rows = explode("\r\n", $contents);
-            $columns = scorm_get_aicc_columns($rows[0],'block');
-            $regexp = scorm_forge_cols_regexp($columns->columns,'(.+)?,');
-            for ($i=1;$i<count($rows);$i++) {
-                if (preg_match($regexp,$rows[$i],$matches)) {
-                    for ($j=0;$j<count($columns->columns);$j++) {
+            $columns = scorm_get_aicc_columns($rows[0], 'block');
+            $regexp = scorm_forge_cols_regexp($columns->columns, '(.+)?,');
+            for ($i=1; $i<count($rows); $i++) {
+                if (preg_match($regexp, $rows[$i], $matches)) {
+                    for ($j=0; $j<count($columns->columns); $j++) {
                         if ($j != $columns->mastercol) {
-                            $courses[$courseid]->elements[substr(trim($matches[$j+1]),1,-1)]->parent = substr(trim($matches[$columns->mastercol+1]),1,-1);
+                            $courses[$courseid]->elements[substr(trim($matches[$j+1]), 1 , -1)]->parent = substr(trim($matches[$columns->mastercol+1]), 1, -1);
                         }
                     }
                 }
@@ -190,13 +203,13 @@ function scorm_parse_aicc($scorm) {
         if (isset($id->ort)) {
             $contents = $id->ort->get_content();
             $rows = explode("\r\n", $contents);
-            $columns = scorm_get_aicc_columns($rows[0],'course_element');
-            $regexp = scorm_forge_cols_regexp($columns->columns,'(.+)?,');
-            for ($i=1;$i<count($rows);$i++) {
-                if (preg_match($regexp,$rows[$i],$matches)) {
-                    for ($j=0;$j<count($matches)-1;$j++) {
+            $columns = scorm_get_aicc_columns($rows[0], 'course_element');
+            $regexp = scorm_forge_cols_regexp($columns->columns, '(.+)?,');
+            for ($i=1; $i<count($rows); $i++) {
+                if (preg_match($regexp, $rows[$i], $matches)) {
+                    for ($j=0; $j<count($matches)-1; $j++) {
                         if ($j != $columns->mastercol) {
-                            $courses[$courseid]->elements[substr(trim($matches[$j+1]),1,-1)]->parent = substr(trim($matches[$columns->mastercol+1]),1,-1);
+                            $courses[$courseid]->elements[substr(trim($matches[$j+1]), 1, -1)]->parent = substr(trim($matches[$columns->mastercol+1]), 1, -1);
                         }
                     }
                 }
@@ -205,11 +218,11 @@ function scorm_parse_aicc($scorm) {
         if (isset($id->pre)) {
             $contents = $id->pre->get_content();
             $rows = explode("\r\n", $contents);
-            $columns = scorm_get_aicc_columns($rows[0],'structure_element');
-            $regexp = scorm_forge_cols_regexp($columns->columns,'(.+),');
-            for ($i=1;$i<count($rows);$i++) {
-                if (preg_match($regexp,$rows[$i],$matches)) {
-                    $courses[$courseid]->elements[$columns->mastercol+1]->prerequisites = substr(trim($matches[1-$columns->mastercol+1]),1,-1);
+            $columns = scorm_get_aicc_columns($rows[0], 'structure_element');
+            $regexp = scorm_forge_cols_regexp($columns->columns, '(.+),');
+            for ($i=1; $i<count($rows); $i++) {
+                if (preg_match($regexp, $rows[$i], $matches)) {
+                    $courses[$courseid]->elements[$columns->mastercol+1]->prerequisites = substr(trim($matches[1-$columns->mastercol+1]), 1, -1);
                 }
             }
         }
@@ -218,7 +231,6 @@ function scorm_parse_aicc($scorm) {
             $rows = explode("\r\n", $contents);
         }
     }
-    //print_r($courses);
 
     $oldscoes = $DB->get_records('scorm_scoes', array('scorm'=>$scorm->id));
 
@@ -234,20 +246,20 @@ function scorm_parse_aicc($scorm) {
             $sco->launch = '';
             $sco->scormtype = '';
 
-            //print_r($sco);
-            if ($ss = $DB->get_record('scorm_scoes', array('scorm'=>$scorm->id,'identifier'=>$sco->identifier))) {
+            if ($ss = $DB->get_record('scorm_scoes', array('scorm'=>$scorm->id,
+                                                           'identifier'=>$sco->identifier))) {
                 $id = $ss->id;
-                $DB->update_record('scorm_scoes',$sco);
+                $DB->update_record('scorm_scoes', $sco);
                 unset($oldscoes[$id]);
             } else {
-                $id = $DB->insert_record('scorm_scoes',$sco);
+                $id = $DB->insert_record('scorm_scoes', $sco);
             }
 
             if ($launch == 0) {
                 $launch = $id;
             }
             if (isset($course->elements)) {
-                foreach($course->elements as $element) {
+                foreach ($course->elements as $element) {
                     unset($sco);
                     $sco->identifier = $element->system_id;
                     $sco->scorm = $scorm->id;
@@ -265,14 +277,14 @@ function scorm_parse_aicc($scorm) {
                         $sco->previous = 0;
                         $sco->next = 0;
                         $id = null;
-                        if ($oldscoid = scorm_array_search('identifier',$sco->identifier,$oldscoes)) {
+                        if ($oldscoid = scorm_array_search('identifier', $sco->identifier, $oldscoes)) {
                             $sco->id = $oldscoid;
-                            $DB->update_record('scorm_scoes',$sco);
+                            $DB->update_record('scorm_scoes', $sco);
                             $id = $oldscoid;
                             $DB->delete_records('scorm_scoes_data', array('scoid'=>$oldscoid));
                             unset($oldscoes[$oldscoid]);
                         } else {
-                            $id = $DB->insert_record('scorm_scoes',$sco);
+                            $id = $DB->insert_record('scorm_scoes', $sco);
                         }
                         if (!empty($id)) {
                             $scodata = new stdClass();
@@ -280,32 +292,32 @@ function scorm_parse_aicc($scorm) {
                             if (isset($element->web_launch)) {
                                 $scodata->name = 'parameters';
                                 $scodata->value = $element->web_launch;
-                                $dataid = $DB->insert_record('scorm_scoes_data',$scodata);
+                                $dataid = $DB->insert_record('scorm_scoes_data', $scodata);
                             }
                             if (isset($element->prerequisites)) {
                                 $scodata->name = 'prerequisites';
                                 $scodata->value = $element->prerequisites;
-                                $dataid = $DB->insert_record('scorm_scoes_data',$scodata);
+                                $dataid = $DB->insert_record('scorm_scoes_data', $scodata);
                             }
                             if (isset($element->max_time_allowed)) {
                                 $scodata->name = 'max_time_allowed';
                                 $scodata->value = $element->max_time_allowed;
-                                $dataid = $DB->insert_record('scorm_scoes_data',$scodata);
+                                $dataid = $DB->insert_record('scorm_scoes_data', $scodata);
                             }
                             if (isset($element->time_limit_action)) {
                                 $scodata->name = 'time_limit_action';
                                 $scodata->value = $element->time_limit_action;
-                                $dataid = $DB->insert_record('scorm_scoes_data',$scodata);
+                                $dataid = $DB->insert_record('scorm_scoes_data', $scodata);
                             }
                             if (isset($element->mastery_score)) {
                                 $scodata->name = 'mastery_score';
                                 $scodata->value = $element->mastery_score;
-                                $dataid = $DB->insert_record('scorm_scoes_data',$scodata);
+                                $dataid = $DB->insert_record('scorm_scoes_data', $scodata);
                             }
                             if (isset($element->core_vendor)) {
                                 $scodata->name = 'datafromlms';
                                 $scodata->value = preg_replace('/<cr>/i', "\r\n", $element->core_vendor);
-                                $dataid = $DB->insert_record('scorm_scoes_data',$scodata);
+                                $dataid = $DB->insert_record('scorm_scoes_data', $scodata);
                             }
                         }
                         if ($launch==0) {
@@ -317,7 +329,7 @@ function scorm_parse_aicc($scorm) {
         }
     }
     if (!empty($oldscoes)) {
-        foreach($oldscoes as $oldsco) {
+        foreach ($oldscoes as $oldsco) {
             $DB->delete_records('scorm_scoes', array('id'=>$oldsco->id));
             $DB->delete_records('scorm_scoes_track', array('scoid'=>$oldsco->id));
         }
@@ -328,245 +340,4 @@ function scorm_parse_aicc($scorm) {
     $scorm->launch = $launch;
 
     return true;
-}
-
-function scorm_get_toc($user,$scorm,$cmid,$toclink=TOCJSLINK,$currentorg='',$scoid='',$mode='normal',$attempt='',$play=false, $tocheader=false) {
-    global $CFG, $DB, $PAGE, $OUTPUT;
-
-    $modestr = '';
-    if ($mode == 'browse') {
-        $modestr = '&amp;mode='.$mode;
-    }
-
-    $result = new stdClass();
-    if ($tocheader) {
-        $result->toc = '<div id="scorm_layout">';
-        $result->toc .= '<div id="scorm_toc">';
-        $result->toc .= '<div id="scorm_tree">';
-    }
-    $result->toc .= '<ul>';
-    $tocmenus = array();
-    $result->prerequisites = true;
-    $incomplete = false;
-
-    //
-    // Get the current organization infos
-    //
-    if (!empty($currentorg)) {
-        if (($organizationtitle = $DB->get_field('scorm_scoes','title', array('scorm'=>$scorm->id,'identifier'=>$currentorg))) != '') {
-            if ($play) {
-                $result->toctitle = "$organizationtitle";
-            }
-            else {
-                $result->toc .= "\t<li>$organizationtitle</li>\n";
-            }
-            $tocmenus[] = $organizationtitle;
-        }
-    }
-    //
-    // If not specified retrieve the last attempt number
-    //
-    if (empty($attempt)) {
-        $attempt = scorm_get_last_attempt($scorm->id, $user->id);
-    }
-    $result->attemptleft = $scorm->maxattempt - $attempt;
-    if ($scoes = scorm_get_scoes($scorm->id, $currentorg)){
-        //
-        // Retrieve user tracking data for each learning object
-        //
-        $usertracks = array();
-        foreach ($scoes as $sco) {
-            if (!empty($sco->launch)) {
-                if (empty($scoid)) {
-                    $scoid = $sco->id;
-                }
-                if ($usertrack = scorm_get_tracks($sco->id,$user->id,$attempt)) {
-                    if ($usertrack->status == '') {
-                        $usertrack->status = 'notattempted';
-                    }
-                    $usertracks[$sco->identifier] = $usertrack;
-                }
-            }
-        }
-
-        $level=0;
-        $sublist=1;
-        $previd = 0;
-        $nextid = 0;
-        $findnext = false;
-        $parents[$level]='/';
-
-        foreach ($scoes as $pos => $sco) {
-            $isvisible = false;
-            $sco->title = $sco->title;
-            if (!isset($sco->isvisible) || (isset($sco->isvisible) && ($sco->isvisible == 'true'))) {
-                $isvisible = true;
-            }
-            if ($parents[$level]!=$sco->parent) {
-                if ($newlevel = array_search($sco->parent,$parents)) {
-                    for ($i=0; $i<($level-$newlevel); $i++) {
-                        $result->toc .= "\t\t</li></ul></li>\n";
-                    }
-                    $level = $newlevel;
-                } else {
-                    $i = $level;
-                    $closelist = '';
-                    while (($i > 0) && ($parents[$level] != $sco->parent)) {
-                        $closelist .= "\t\t</li></ul></li>\n";
-                        $i--;
-                    }
-                    if (($i == 0) && ($sco->parent != $currentorg)) {
-                        $result->toc .= "\t\t<ul>\n";
-                        $level++;
-                    } else {
-                        $result->toc .= $closelist;
-                        $level = $i;
-                    }
-                    $parents[$level]=$sco->parent;
-                }
-            }
-            if ($isvisible) {
-                $result->toc .= "\t\t<li>";
-            }
-            if (isset($scoes[$pos+1])) {
-                $nextsco = $scoes[$pos+1];
-            } else {
-                $nextsco = false;
-            }
-            $nextisvisible = false;
-            if (!isset($nextsco->isvisible) || (isset($nextsco->isvisible) && ($nextsco->isvisible == 'true'))) {
-                $nextisvisible = true;
-            }
-            if ($nextisvisible && ($nextsco !== false) && ($sco->parent != $nextsco->parent) && (($level==0) || (($level>0) && ($nextsco->parent == $sco->identifier)))) {
-                $sublist++;
-            }
-            if (empty($sco->title)) {
-                $sco->title = $sco->identifier;
-            }
-            if (!empty($sco->launch)) {
-                if ($isvisible) {
-                    $score = '';
-                    if (empty($scoid) && ($mode != 'normal')) {
-                        $scoid = $sco->id;
-                    }
-                    if (isset($usertracks[$sco->identifier])) {
-                        $usertrack = $usertracks[$sco->identifier];
-                        $strstatus = get_string($usertrack->status,'scorm');
-                        if ($sco->scormtype == 'sco') {
-                            $statusicon = '<img src="'.$OUTPUT->pix_url($usertrack->status, 'scorm').'" alt="'.$strstatus.'" title="'.$strstatus.'" />';
-                        } else {
-                            $statusicon = '<img src="'.$OUTPUT->pix_url('assetc', 'scorm').'" alt="'.get_string('assetlaunched','scorm').'" title="'.get_string('assetlaunched','scorm').'" />';
-                        }
-
-                        if (($usertrack->status == 'notattempted') || ($usertrack->status == 'incomplete') || ($usertrack->status == 'browsed')) {
-                            $incomplete = true;
-                            if ($play && empty($scoid)) {
-                                $scoid = $sco->id;
-                            }
-                        }
-                        if ($usertrack->score_raw != '' && has_capability('mod/scorm:viewscores', get_context_instance(CONTEXT_MODULE,$cmid))) {
-                            $score = '('.get_string('score','scorm').':&nbsp;'.$usertrack->score_raw.')';
-                        }
-                        $strsuspended = get_string('suspended','scorm');
-                        if ($incomplete && isset($usertrack->{'cmi.core.exit'}) && ($usertrack->{'cmi.core.exit'} == 'suspend')) {
-                            $statusicon = '<img src="'.$OUTPUT->pix_url('suspend', 'scorm').'" alt="'.$strstatus.' - '.$strsuspended.'" title="'.$strstatus.' - '.$strsuspended.'" />';
-                        }
-                    } else {
-                        if ($play && empty($scoid)) {
-                            $scoid = $sco->id;
-                        }
-                        $incomplete = true;
-                        if ($sco->scormtype == 'sco') {
-                            $statusicon = '<img src="'.$OUTPUT->pix_url('notattempted', 'scorm').'" alt="'.get_string('notattempted','scorm').'" title="'.get_string('notattempted','scorm').'" />';
-                        } else {
-                            $statusicon = '<img src="'.$OUTPUT->pix_url('asset', 'scorm').'" alt="'.get_string('asset','scorm').'" title="'.get_string('asset','scorm').'" />';
-                        }
-                    }
-                    if ($sco->id == $scoid) {
-                        $findnext = true;
-                    }
-
-                    if (($nextid == 0) && (scorm_count_launchable($scorm->id,$currentorg) > 1) && ($nextsco!==false) && (!$findnext)) {
-                        if (!empty($sco->launch)) {
-                            $previd = $sco->id;
-                        }
-                    }
-                    if (empty($sco->prerequisites) || scorm_eval_prerequisites($sco->prerequisites,$usertracks)) {
-                        if ($sco->id == $scoid) {
-                            $result->prerequisites = true;
-                        }
-
-                        $thisscoidstr = '&scoid='.$sco->id;
-                        $link = 'a='.$scorm->id.$thisscoidstr.'&currentorg='.$currentorg.$modestr.'&attempt='.$attempt;
-
-                        if ($toclink == TOCFULLURL) { //display toc with urls for structure page
-                            $url = $CFG->wwwroot.'/mod/scorm/player.php?a='.$scorm->id.'&amp;currentorg='.$currentorg.$modestr.'&amp;scoid='.$sco->id;
-                            $result->toc .= $statusicon.'&nbsp;<a href="'.$url.'">'.format_string($sco->title).'</a>'.$score."\n";
-                        } else {
-                            if ($sco->launch) {
-                                $result->toc .= '<a title="'.$link.'">'.$statusicon.'&nbsp;'.format_string($sco->title).'&nbsp;'.$score.'</a>';
-                            } else {
-                                $result->toc .= '<span>'.$statusicon.'&nbsp;'.format_string($sco->title).'</span>';
-                            }
-                        }
-                        $tocmenus[$sco->id] = scorm_repeater('&minus;',$level) . '&gt;' . format_string($sco->title);
-                    } else {
-                        if ($sco->id == $scoid) {
-                            $result->prerequisites = false;
-                        }
-                        if ($play) {
-                            // should be disabled
-                            $result->toc .= '<span>'.$statusicon.'&nbsp;'.format_string($sco->title).'</span>';
-                        } else {
-                            $result->toc .= $statusicon.'&nbsp;'.format_string($sco->title)."\n";
-                        }
-                    }
-                    if (($nextsco === false) || $nextsco->parent == $sco->parent) {
-                        $result->toc .= '</li>';
-                    }
-                }
-            } else {
-                $result->toc .= '&nbsp;'.format_string($sco->title)."</li>\n";
-            }
-            if (($nextsco !== false) && ($nextid == 0) && ($findnext)) {
-                if (!empty($nextsco->launch)) {
-                    $nextid = $nextsco->id;
-                }
-            }
-        }
-        for ($i=0;$i<$level;$i++) {
-            $result->toc .= "\t\t</ul></li>\n";
-        }
-
-        if ($play) {
-            $sco = scorm_get_sco($scoid);
-            $sco->previd = $previd;
-            $sco->nextid = $nextid;
-            $result->sco = $sco;
-            $result->incomplete = $incomplete;
-        } else {
-            $result->incomplete = $incomplete;
-        }
-    }
-    $result->toc .= '</ul>';
-
-    // NEW IMS TOC
-    if ($tocheader) {
-        $result->toc .= '</div></div></div>';
-        $result->toc .= '<div id="scorm_navpanel"></div>';
-    }
-
-
-    if ($scorm->hidetoc == 0) {
-        $result->toc .= html_writer::script(js_writer::set_variable('scormdata', array(
-                'plusicon' => $OUTPUT->pix_url('plus', 'scorm'),
-                'minusicon' => $OUTPUT->pix_url('minus', 'scorm'))));
-        $result->toc .= html_writer::script('', $CFG->wwwroot.'/lib/cookies.js');
-        $result->toc .= html_writer::script('', $CFG->wwwroot.'/mod/scorm/datamodels/scorm_datamodels.js');
-    }
-
-    $url = new moodle_url('/mod/scorm/player.php?a='.$scorm->id.'&currentorg='.$currentorg.$modestr);
-    $result->tocmenu = $OUTPUT->single_select($url, 'scoid', $tocmenus, $sco->id, null, "tocmenu");
-
-    return $result;
 }

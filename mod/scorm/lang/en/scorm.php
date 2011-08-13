@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -16,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'scorm', language 'en', branch 'MOODLE_20_STABLE'
+ * Strings for component 'scorm', language 'en'
  *
  * @package   scorm
  * @copyright 1999 onwards Martin Dougiamas  {@link http://moodle.com}
@@ -28,6 +27,7 @@ $string['navigation'] = 'Navigation';
 $string['activation'] = 'Activation';
 $string['activityloading'] = 'You will be automatically redirected to the activity in';
 $string['activitypleasewait'] = 'Activity loading, please wait ...';
+$string['adminsettings'] = 'Admin settings';
 $string['advanced'] = 'Parameters';
 $string['allowapidebug'] = 'Activate API debug and tracing (set the capture mask with apidebugmask)';
 $string['allowtypeexternal'] = 'Enable external package type';
@@ -61,10 +61,14 @@ $string['coursepacket'] = 'Course package';
 $string['coursestruct'] = 'Course structure';
 $string['currentwindow'] = 'Current window';
 $string['datadir'] = 'Filesystem error: Can\'t create course data directory';
+$string['defaultdisplaysettings'] = 'Default display settings';
+$string['defaultgradesettings'] = 'Default grade settings';
+$string['defaultothersettings'] = 'Other default settings';
 $string['deleteattemptcheck'] = 'Are you absolutely sure you want to completely delete these attempts?';
 $string['deleteallattempts'] = 'Delete all SCORM attempts';
 $string['details'] = 'Track details';
 $string['directories'] = 'Show the directory links';
+$string['disabled'] = 'Disabled';
 $string['display'] = 'Display package';
 $string['displayattemptstatus'] = 'Display attempt status';
 $string['displayattemptstatus_help'] = 'If enabled, scores and grades for attempts are displayed on the SCORM outline page.';
@@ -73,6 +77,7 @@ $string['displaycoursestructure'] = 'Display course structure on entry page';
 $string['displaycoursestructure_help'] = 'If enabled, the table of contents is displayed on the SCORM outline page.';
 $string['displaycoursestructuredesc'] = 'This preference sets the default value for the display course structure on entry page setting';
 $string['displaydesc'] = 'This preference sets the default of whether to display the package or not for an activity';
+$string['displaysettings'] = 'Display Settings';
 $string['domxml'] = 'DOMXML external library';
 $string['duedate'] = 'Due date';
 $string['element'] = 'Element';
@@ -98,6 +103,7 @@ $string['forcenewattempt'] = 'Force new attempt';
 $string['forcenewattempt_help'] = 'If enabled, each time a SCORM package is accessed will be counted as a new attempt.';
 $string['forcenewattemptdesc'] = 'This preference sets the default value for the force new attempt setting';
 $string['forcejavascript'] = 'Force users to enable JavaScript';
+$string['forcejavascript_desc'] = 'If enabled(recommended) this prevents access to SCORM objects when JavaScript is not supported/enabled in a users browser. If disabled the user may view the SCORM but API communication will fail and no grade information will be saved.';
 $string['forcejavascriptmessage'] = 'JavaScript is required to view this object, please enable JavaScript in your browser and try again.';
 $string['found'] = 'Manifest found';
 $string['frameheight'] = 'This preference set the default height for stage frame or window';
@@ -118,6 +124,7 @@ There are 4 grading methods:
 * Sum grade - The sum of all the scores';
 $string['grademethoddesc'] = 'This preference sets the default grade method for an activity';
 $string['gradereported'] = 'Grade reported';
+$string['gradesettings'] = 'Grade settings';
 $string['gradescoes'] = 'Learning objects';
 $string['gradesum'] = 'Sum grade';
 $string['height'] = 'Height';
@@ -139,6 +146,7 @@ $string['incomplete'] = 'Incomplete';
 $string['info'] = 'Info';
 $string['interactions'] = 'Interactions';
 $string['invalidactivity'] = 'Scorm activity is incorrect';
+$string['invalidmanifestresource'] = 'WARNING: The following resources were referenced in your manifest but couldn\'t be found:';
 $string['last'] = 'Last accessed on';
 $string['lastaccess'] = 'Last access';
 $string['lastattempt'] = 'Last attempt';
@@ -182,6 +190,8 @@ $string['optallstudents'] = 'all users';
 $string['optattemptsonly'] = 'users with attempts only';
 $string['optnoattemptsonly'] = 'users with no attempts only';
 $string['options'] = 'Options (Prevented by some browsers)';
+$string['optionsadv'] = 'Options (Advanced)';
+$string['optionsadv_desc'] = 'If checked the window options will be set as advanced options in the form';
 $string['organization'] = 'Organization';
 $string['organizations'] = 'Organizations';
 $string['othersettings'] = 'Additional settings';
@@ -209,6 +219,7 @@ $string['prev'] = 'Previous';
 $string['raw'] = 'Raw score';
 $string['regular'] = 'Regular manifest';
 $string['report'] = 'Report';
+$string['reports'] = 'Reports';
 $string['reportcountallattempts'] = '{$a->nbattempts} attempts for {$a->nbusers} users, out of {$a->nbresults} results';
 $string['reportcountattempts'] = '{$a->nbresults} results ({$a->nbusers} users)';
 $string['resizable'] = 'Allow the window to be resized';
@@ -251,6 +262,8 @@ $string['started'] = 'Started on';
 $string['status'] = 'Status';
 $string['statusbar'] = 'Show the status bar';
 $string['student_response'] = 'Response';
+$string['subplugintype_scormreport'] = 'Report';
+$string['subplugintype_scormreport_plural'] = 'Reports';
 $string['suspended'] = 'Suspended';
 $string['syntax'] = 'Syntax error';
 $string['tag_error'] = 'Unknown tag ({$a->tag}) with this content: {$a->value}';
@@ -270,7 +283,6 @@ $string['typelocalsync'] = 'Downloaded package';
 $string['unziperror'] = 'An error occurs during package unzip';
 $string['updatefreq'] = 'Auto-update frequency';
 $string['updatefreqdesc'] = 'This preference sets the default auto-update frequency of an activity';
-$string['updatetime'] = 'Synchronisation time';
 $string['validateascorm'] = 'Validate a package';
 $string['validation'] = 'Validation result';
 $string['validationtype'] = 'This preference set the DOMXML library used for validating SCORM Manifest. If you don\'t know leave the selected choice.';
@@ -289,4 +301,3 @@ Handling of Multiple Attempts
 $string['whatgradedesc'] = 'This preference sets the default attempts grading';
 $string['width'] = 'Width';
 $string['window'] = 'Window';
-$string['zlibwarning'] = 'Warning: PHP Zlib compression has been enabled on this site, some users may experience issues loading SCORM objects in certain web browsers.';

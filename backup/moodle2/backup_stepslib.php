@@ -319,8 +319,9 @@ class backup_module_structure_step extends backup_structure_step {
         // attach format plugin structure to $module element, only one allowed
         $this->add_plugin_structure('format', $module, false);
 
-        // attach plagiarism plugin structure to $module element, only one allowed
-        $this->add_plugin_structure('plagiarism', $module, false);
+        // attach plagiarism plugin structure to $module element, there can be potentially
+        // many plagiarism plugins storing information about this course
+        $this->add_plugin_structure('plagiarism', $module, true);
 
         // Define the tree
         $module->add_child($availinfo);
@@ -421,8 +422,9 @@ class backup_course_structure_step extends backup_structure_step {
         // course reports can save course data if required
         $this->add_plugin_structure('coursereport', $course, true);
 
-        // attach plagiarism plugin structure to $course element, only one allowed
-        $this->add_plugin_structure('plagiarism', $course, false);
+        // attach plagiarism plugin structure to $course element, there can be potentially
+        // many plagiarism plugins storing information about this course
+        $this->add_plugin_structure('plagiarism', $course, true);
 
         // Build the tree
 
@@ -1557,6 +1559,32 @@ class backup_activity_grade_items_to_ids extends backup_execution_step {
             // Annotate them in backup_ids
             foreach ($items as $item) {
                 backup_structure_dbops::insert_backup_ids_record($this->get_backupid(), 'grade_item', $item->id);
+            }
+        }
+    }
+}
+
+/**
+ * This step will annotate all the groups and groupings belonging to the course
+ */
+class backup_annotate_course_groups_and_groupings extends backup_execution_step {
+
+    protected function define_execution() {
+        global $DB;
+
+        // Get all the course groups
+        if ($groups = $DB->get_records('groups', array(
+                'courseid' => $this->task->get_courseid()))) {
+            foreach ($groups as $group) {
+                backup_structure_dbops::insert_backup_ids_record($this->get_backupid(), 'group', $group->id);
+            }
+        }
+
+        // Get all the course groupings
+        if ($groupings = $DB->get_records('groupings', array(
+                'courseid' => $this->task->get_courseid()))) {
+            foreach ($groupings as $grouping) {
+                backup_structure_dbops::insert_backup_ids_record($this->get_backupid(), 'grouping', $grouping->id);
             }
         }
     }

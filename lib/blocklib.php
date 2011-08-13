@@ -557,6 +557,10 @@ class block_manager {
             'contextid2' => $context->id,
             'pagetype' => $this->page->pagetype,
         );
+        if ($this->page->subpage === '') {
+            $params['subpage1'] = $DB->sql_empty();
+            $params['subpage2'] = $DB->sql_empty();
+        }
         $sql = "SELECT
                     bi.id,
                     bp.id AS blockpositionid,
@@ -993,9 +997,11 @@ class block_manager {
         global $CFG;
 
         if (!isset($CFG->undeletableblocktypes) || (!is_array($CFG->undeletableblocktypes) && !is_string($CFG->undeletableblocktypes))) {
-            $CFG->undeletableblocktypes = array('navigation','settings');
+            $undeletableblocktypes = array('navigation','settings');
         } else if (is_string($CFG->undeletableblocktypes)) {
-            $CFG->undeletableblocktypes = explode(',', $CFG->undeletableblocktypes);
+            $undeletableblocktypes = explode(',', $CFG->undeletableblocktypes);
+        } else {
+            $undeletableblocktypes = $CFG->undeletableblocktypes;
         }
 
         $controls = array();
@@ -1033,7 +1039,9 @@ class block_manager {
         }
 
         if ($this->page->user_can_edit_blocks() && $block->user_can_edit() && $block->user_can_addto($this->page)) {
-            if (!in_array($block->instance->blockname, $CFG->undeletableblocktypes)) {
+            if (!in_array($block->instance->blockname, $undeletableblocktypes)
+                    || !in_array($block->instance->pagetypepattern, array('*', 'site-index'))
+                    || $block->instance->parentcontextid != SITEID) {
                 // Delete icon.
                 $controls[] = array('url' => $actionurl . '&bui_deleteid=' . $block->instance->id,
                         'icon' => 't/delete', 'caption' => get_string('delete'));

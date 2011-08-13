@@ -248,7 +248,7 @@ function qualified_me() {
  *     - output the url without any get params
  *     - and output the params as hidden fields to be output within a form
  *
- * @link http://docs.moodle.org/en/Development:lib/weblib.php_moodle_url See short write up here
+ * @link http://docs.moodle.org/dev/lib/weblib.php_moodle_url See short write up here
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @package moodlecore
  */
@@ -757,7 +757,7 @@ function data_submitted() {
     if (empty($_POST)) {
         return false;
     } else {
-        return (object)$_POST;
+        return (object)fix_utf8($_POST);
     }
 }
 
@@ -1528,7 +1528,7 @@ function purify_html($text, $options = array()) {
         $config->set('Core.ConvertDocumentToFragment', true);
         $config->set('Core.Encoding', 'UTF-8');
         $config->set('HTML.Doctype', 'XHTML 1.0 Transitional');
-        $config->set('URI.AllowedSchemes', array('http'=>true, 'https'=>true, 'ftp'=>true, 'irc'=>true, 'nntp'=>true, 'news'=>true, 'rtsp'=>true, 'teamspeak'=>true, 'gopher'=>true, 'mms'=>true));
+        $config->set('URI.AllowedSchemes', array('http'=>true, 'https'=>true, 'ftp'=>true, 'irc'=>true, 'nntp'=>true, 'news'=>true, 'rtsp'=>true, 'teamspeak'=>true, 'gopher'=>true, 'mms'=>true, 'mailto'=>true));
         $config->set('Attr.AllowedFrameTargets', array('_blank'));
 
         if (!empty($CFG->allowobjectembed)) {
@@ -1860,6 +1860,8 @@ function get_html_lang($dir = false) {
  * @param $cacheable Can this page be cached on back?
  */
 function send_headers($contenttype, $cacheable = true) {
+    global $CFG;
+
     @header('Content-Type: ' . $contenttype);
     @header('Content-Script-Type: text/javascript');
     @header('Content-Style-Type: text/css');
@@ -1878,6 +1880,10 @@ function send_headers($contenttype, $cacheable = true) {
         @header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
     }
     @header('Accept-Ranges: none');
+
+    if (empty($CFG->allowframembedding)) {
+        @header('X-Frame-Options: sameorigin');
+    }
 }
 
 /**
@@ -2393,10 +2399,6 @@ function redirect($url, $message='', $delay=-1) {
 
     if ($url instanceof moodle_url) {
         $url = $url->out(false);
-    }
-
-    if (!empty($CFG->usesid) && !isset($_COOKIE[session_name()])) {
-       $url = $SESSION->sid_process_url($url);
     }
 
     $debugdisableredirect = false;

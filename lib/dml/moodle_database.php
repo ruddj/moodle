@@ -160,9 +160,10 @@ abstract class moodle_database {
      * Loads and returns a database instance with the specified type and library.
      * @param string $type database type of the driver (mysqli, pgsql, mssql, sqldrv, oci, etc.)
      * @param string $library database library of the driver (native, pdo, etc.)
+     * @param boolean $external true if this is an external database
      * @return moodle_database driver object or null if error
      */
-    public static function get_driver_instance($type, $library) {
+    public static function get_driver_instance($type, $library, $external = false) {
         global $CFG;
 
         $classname = $type.'_'.$library.'_moodle_database';
@@ -173,7 +174,7 @@ abstract class moodle_database {
         }
 
         require_once($libfile);
-        return new $classname();
+        return new $classname($external);
     }
 
     /**
@@ -501,19 +502,24 @@ abstract class moodle_database {
         $where = array();
         $params = array();
 
-        $columns = $this->get_columns($table);
+        if (debugging()) {
+            $columns = $this->get_columns($table);
+            foreach ($conditions as $key=>$value) {
+                if (!isset($columns[$key])) {
+                    $a = new stdClass();
+                    $a->fieldname = $key;
+                    $a->tablename = $table;
+                    throw new dml_exception('ddlfieldnotexist', $a);
+                }
+                $column = $columns[$key];
+                if ($column->meta_type == 'X') {
+                    //ok so the column is a text column. sorry no text columns in the where clause conditions
+                    throw new dml_exception('textconditionsnotallowed', $conditions);
+                }
+            }
+        }
+
         foreach ($conditions as $key=>$value) {
-            if (!isset($columns[$key])) {
-                $a = new stdClass();
-                $a->fieldname = $key;
-                $a->tablename = $table;
-                throw new dml_exception('ddlfieldnotexist', $a);
-            }
-            $column = $columns[$key];
-            if ($column->meta_type == 'X') {
-                //ok so the column is a text column. sorry no text columns in the where clause conditions
-                throw new dml_exception('textconditionsnotallowed', $conditions);
-            }
             if (is_int($key)) {
                 throw new dml_exception('invalidnumkey');
             }

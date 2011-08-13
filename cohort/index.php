@@ -47,6 +47,7 @@ if ($context->contextlevel == CONTEXT_COURSECAT) {
 }
 
 $manager = has_capability('moodle/cohort:manage', $context);
+$canassign = has_capability('moodle/cohort:assign', $context);
 if (!$manager) {
     require_capability('moodle/cohort:view', $context);
 }
@@ -59,8 +60,6 @@ if ($category) {
     $PAGE->set_url('/cohort/index.php', array('contextid'=>$context->id));
     $PAGE->set_title($strcohorts);
     $PAGE->set_heading($COURSE->fullname);
-    $PAGE->navbar->add($category->name, new moodle_url('/course/index.php', array('categoryedit'=>'1')));
-    $PAGE->navbar->add($strcohorts);
 } else {
     admin_externalpage_setup('cohorts', '', null, '', array('pagelayout'=>'report'));
 }
@@ -86,18 +85,17 @@ foreach($cohorts as $cohort) {
         $line[] = get_string('pluginname', $cohort->component);
     }
 
-    if ($manager) {
-        if (empty($cohort->component)) {
-            $buttons = html_writer::link(new moodle_url('/cohort/edit.php', array('id'=>$cohort->id)), get_string('edit'));
-            $buttons .= ' '.html_writer::link(new moodle_url('/cohort/edit.php', array('id'=>$cohort->id, 'delete'=>1)), get_string('delete'));
-            $buttons .= ' '.html_writer::link(new moodle_url('/cohort/assign.php', array('id'=>$cohort->id)), get_string('assign', 'cohort'));
-        } else {
-            $buttons = '';
+    $buttons = array();
+    if (empty($cohort->component)) {
+        if ($manager) {
+            $buttons[] = html_writer::link(new moodle_url('/cohort/edit.php', array('id'=>$cohort->id, 'delete'=>1)), html_writer::empty_tag('img', array('src'=>$OUTPUT->pix_url('t/delete'), 'alt'=>get_string('delete'), 'class'=>'iconsmall')));
+            $buttons[] =  html_writer::link(new moodle_url('/cohort/edit.php', array('id'=>$cohort->id)), html_writer::empty_tag('img', array('src'=>$OUTPUT->pix_url('t/edit'), 'alt'=>get_string('edit'), 'class'=>'iconsmall')));
         }
-    } else {
-        $buttons = '';
+        if ($manager or $canassign) {
+            $buttons[] = html_writer::link(new moodle_url('/cohort/assign.php', array('id'=>$cohort->id)), html_writer::empty_tag('img', array('src'=>$OUTPUT->pix_url('i/users'), 'alt'=>get_string('assign', 'core_cohort'), 'class'=>'iconsmall')));
+        }
     }
-    $line[] = $buttons;
+    $line[] = implode(' ', $buttons);
 
     $data[] = $line;
 }
