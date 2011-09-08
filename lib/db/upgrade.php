@@ -1230,8 +1230,14 @@ WHERE gradeitemid IS NOT NULL AND grademax IS NOT NULL");
         $field = new xmldb_field('backuptype', XMLDB_TYPE_CHAR, '50', null, XMLDB_NOTNULL, null, null, 'info');
     /// Conditionally Launch add field backuptype and set all old records as 'scheduledbackup' records.
         if (!$dbman->field_exists($table, $field)) {
+            // Set the default we want applied to any existing records
+            $field->setDefault('scheduledbackup');
+            // Add the field to the database
             $dbman->add_field($table, $field);
-            $DB->execute("UPDATE {backup_log} SET backuptype='scheduledbackup'");
+            // Remove the default
+            $field->setDefault(null);
+            // Update the database to remove the default
+            $dbman->change_field_default($table, $field);
         }
 
     /// Main savepoint reached
@@ -6675,6 +6681,20 @@ FROM
         upgrade_main_savepoint(true, 2011081700.02);
     }
 
+    if ($oldversion < 2011083100.02) {
+        // Define field showdescription to be added to course_modules
+        $table = new xmldb_table('course_modules');
+        $field = new xmldb_field('showdescription', XMLDB_TYPE_INTEGER, '1',
+                XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'showavailability');
+
+        // Conditionally launch add field showdescription
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011083100.02);
+    }
 
     return true;
 }

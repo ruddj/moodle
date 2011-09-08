@@ -383,6 +383,9 @@ define('FEATURE_RATE', 'rate');
 /** True if module supports backup/restore of moodle2 format */
 define('FEATURE_BACKUP_MOODLE2', 'backup_moodle2');
 
+/** True if module can show description on course main page */
+define('FEATURE_SHOW_DESCRIPTION', 'showdescription');
+
 /** Unspecified module archetype */
 define('MOD_ARCHETYPE_OTHER', 0);
 /** Resource-like type module */
@@ -6143,7 +6146,7 @@ class core_string_manager implements string_manager {
         }
 
         $countries = $this->load_component_strings('core_countries', $lang);
-        textlib_get_instance()->asort($countries);
+        collatorlib::asort($countries);
         if (!$returnall and !empty($CFG->allcountrycodes)) {
             $enabled = explode(',', $CFG->allcountrycodes);
             $return = array();
@@ -6315,12 +6318,12 @@ class core_string_manager implements string_manager {
 
             if (!empty($CFG->langcache) and !empty($this->menucache)) {
                 // cache the list so that it can be used next time
-                textlib_get_instance()->asort($languages);
+                collatorlib::asort($languages);
                 file_put_contents($this->menucache, json_encode($languages));
             }
         }
 
-        textlib_get_instance()->asort($languages);
+        collatorlib::asort($languages);
 
         return $languages;
     }
@@ -6739,7 +6742,6 @@ function get_list_of_charsets() {
 /**
  * Returns a list of valid and compatible themes
  *
- * @global object
  * @return array
  */
 function get_list_of_themes() {
@@ -6757,7 +6759,8 @@ function get_list_of_themes() {
         $theme = theme_config::load($themename);
         $themes[$themename] = $theme;
     }
-    asort($themes);
+
+    collatorlib::asort_objects_by_method($themes, 'get_theme_name');
 
     return $themes;
 }
