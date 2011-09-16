@@ -1310,14 +1310,14 @@ abstract class repository {
      */
     public function prepare_file($filename) {
         global $CFG;
-        if (!file_exists($CFG->dataroot.'/temp/download')) {
-            mkdir($CFG->dataroot.'/temp/download/', $CFG->directorypermissions, true);
+        if (!file_exists($CFG->tempdir.'/download')) {
+            mkdir($CFG->tempdir.'/download/', $CFG->directorypermissions, true);
         }
-        if (is_dir($CFG->dataroot.'/temp/download')) {
-            $dir = $CFG->dataroot.'/temp/download/';
+        if (is_dir($CFG->tempdir.'/download')) {
+            $dir = $CFG->tempdir.'/download/';
         }
         if (empty($filename)) {
-            $filename = uniqid('repo').'_'.time().'.tmp';
+            $filename = uniqid('repo', true).'_'.time().'.tmp';
         }
         if (file_exists($dir.$filename)) {
             $filename = uniqid('m').$filename;
@@ -1773,8 +1773,8 @@ abstract class repository {
     }
 
     public function get_short_filename($str, $maxlength) {
-        if (strlen($str) >= $maxlength) {
-            return trim(substr($str, 0, $maxlength)).'...';
+        if (textlib::strlen($str) >= $maxlength) {
+            return trim(textlib::substr($str, 0, $maxlength)).'...';
         } else {
             return $str;
         }

@@ -1370,14 +1370,14 @@ function purge_all_caches() {
     get_string_manager()->reset_caches();
 
     // purge all other caches: rss, simplepie, etc.
-    remove_dir($CFG->dataroot.'/cache', true);
+    remove_dir($CFG->cachedir.'', true);
 
     // make sure cache dir is writable, throws exception if not
-    make_upload_directory('cache');
+    make_cache_directory('');
 
     // hack: this script may get called after the purifier was initialised,
     // but we do not want to verify repeatedly this exists in each call
-    make_upload_directory('cache/htmlpurifier');
+    make_cache_directory('htmlpurifier');
 
     clearstatcache();
 }
@@ -3769,8 +3769,12 @@ function authenticate_user_login($username, $password) {
                 $user = update_user_record($username);
             }
         } else {
-            // if user not found, create him
-            $user = create_user_record($username, $password, $auth);
+            // if user not found and user creation is not disabled, create it
+            if (empty($CFG->authpreventaccountcreation)) {
+                $user = create_user_record($username, $password, $auth);
+            } else {
+                continue;
+            }
         }
 
         $authplugin->sync_roles($user);
@@ -5263,7 +5267,7 @@ function get_file_storage() {
         $trashdirdir = $CFG->dataroot.'/trashdir';
     }
 
-    $fs = new file_storage($filedir, $trashdirdir, "$CFG->dataroot/temp/filestorage", $CFG->directorypermissions, $CFG->filepermissions);
+    $fs = new file_storage($filedir, $trashdirdir, "$CFG->tempdir/filestorage", $CFG->directorypermissions, $CFG->filepermissions);
 
     return $fs;
 }
@@ -5685,7 +5689,7 @@ function get_string_manager($forcereload=false) {
         if (empty($CFG->early_install_lang)) {
 
             if (empty($CFG->langcacheroot)) {
-                $langcacheroot = $CFG->dataroot . '/cache/lang';
+                $langcacheroot = $CFG->cachedir . '/lang';
             } else {
                 $langcacheroot = $CFG->langcacheroot;
             }
@@ -5697,7 +5701,7 @@ function get_string_manager($forcereload=false) {
             }
 
             if (empty($CFG->langmenucachefile)) {
-                $langmenucache = $CFG->dataroot . '/cache/languages';
+                $langmenucache = $CFG->cachedir . '/languages';
             } else {
                 $langmenucache = $CFG->langmenucachefile;
             }

@@ -124,7 +124,7 @@ function xmldb_main_upgrade($oldversion) {
     }
 
     if ($oldversion < 2008030602) {
-        @unlink($CFG->dataroot.'/cache/languages');
+        @unlink($CFG->cachedir.'/languages');
 
         if (file_exists("$CFG->dataroot/lang")) {
             // rename old lang directory so that the new and old langs do not mix
@@ -6051,11 +6051,12 @@ WHERE gradeitemid IS NOT NULL AND grademax IS NOT NULL");
          // Define field secret to be added to registration_hubs
         $table = new xmldb_table('registration_hubs');
         $field = new xmldb_field('secret', XMLDB_TYPE_CHAR, '255', null, null, null,
-                $CFG->siteidentifier, 'confirmed');
+                null, 'confirmed');
 
-        // Conditionally launch add field secret
+        // Conditionally launch add field secret and set its value
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
+            $DB->set_field('registration_hubs', 'secret', $CFG->siteidentifier);
         }
 
         // Main savepoint reached
@@ -6696,8 +6697,55 @@ FROM
         upgrade_main_savepoint(true, 2011083100.02);
     }
 
+    if ($oldversion < 2011090700.01) {
+        // Changing the default of field secret on table registration_hubs to NULL
+        $table = new xmldb_table('registration_hubs');
+        $field = new xmldb_field('secret', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'confirmed');
+
+        // Launch change of default for field secret
+        $dbman->change_field_default($table, $field);
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011090700.01);
+    }
+
+    if ($oldversion < 2011091200.00) {
+        //preference not required since 2.0
+        $DB->delete_records('user_preferences', array('name'=>'message_showmessagewindow'));
+
+        //re-introducing emailstop. check that its turned off so people dont suddenly stop getting notifications
+        $DB->set_field('user', 'emailstop', 0, array('emailstop' => 1));
+
+        upgrade_main_savepoint(true, 2011091200.00);
+    }
+
+    if ($oldversion < 2011091300.00) {
+        // Increase the length of the of the course shortname field as it is now going
+        // to be consistently filtered and 100 characters is practically useless for
+        // things like the multilang filter.
+
+        $table = new xmldb_table('course');
+        $field = new xmldb_field('shortname', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'fullname');
+        $index = new xmldb_index('shortname', XMLDB_INDEX_NOTUNIQUE, array('shortname'));
+
+        // First check the shortname field exists... pretty heavy mod if it doesnt!
+        if ($dbman->field_exists($table, $field)) {
+            // Conditionally launch drop index shortname, this is required to happen
+            // before we can edit the field.
+            if ($dbman->index_exists($table, $index)) {
+                $dbman->drop_index($table, $index);
+            }
+
+            // Launch change of precision for field shortname
+            $dbman->change_field_precision($table, $field);
+            // Add the index back to the table now that we're finished our mods
+            $dbman->add_index($table, $index);
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011091300.00);
+    }
+
     return true;
 }
 
-
-//TODO: AFTER 2.0 remove the column user->emailstop and the user preference "message_showmessagewindow"
