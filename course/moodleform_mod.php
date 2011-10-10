@@ -623,7 +623,7 @@ abstract class moodleform_mod extends moodleform {
         $mform->setType('module', PARAM_INT);
 
         $mform->addElement('hidden', 'modulename', '');
-        $mform->setType('modulename', PARAM_SAFEDIR);
+        $mform->setType('modulename', PARAM_PLUGIN);
 
         $mform->addElement('hidden', 'instance', 0);
         $mform->setType('instance', PARAM_INT);
@@ -655,8 +655,10 @@ abstract class moodleform_mod extends moodleform {
             }
 
             if ($this->_features->gradecat) {
-                $categories = grade_get_categories_menu($COURSE->id, $this->_outcomesused);
-                $mform->addElement('select', 'gradecat', get_string('gradecategory', 'grades'), $categories);
+                $mform->addElement('select', 'gradecat',
+                        get_string('gradecategoryonmodform', 'grades'),
+                        grade_get_categories_menu($COURSE->id, $this->_outcomesused));
+                $mform->addHelpButton('gradecat', 'gradecategoryonmodform', 'grades');
             }
         }
     }

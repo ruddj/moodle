@@ -223,7 +223,7 @@ umask(0000);
 
 // exact version of currently used yui2 and 3 library
 $CFG->yui2version = '2.9.0';
-$CFG->yui3version = '3.4.0';
+$CFG->yui3version = '3.4.1';
 
 
 // special support for highly optimised scripts that do not need libraries and DB connection
@@ -712,7 +712,7 @@ if (!empty($CFG->profilingenabled)) {
 // Process theme change in the URL.
 if (!empty($CFG->allowthemechangeonurl) and !empty($_GET['theme'])) {
     // we have to use _GET directly because we do not want this to interfere with _POST
-    $urlthemename = optional_param('theme', '', PARAM_SAFEDIR);
+    $urlthemename = optional_param('theme', '', PARAM_PLUGIN);
     try {
         $themeconfig = theme_config::load($urlthemename);
         // Makes sure the theme can be loaded without errors.
