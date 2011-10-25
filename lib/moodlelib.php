@@ -2790,7 +2790,7 @@ function require_login($courseorid = NULL, $autologinguest = true, $cm = NULL, $
                 } else {
                     //expired
                     unset($USER->enrol['tempguest'][$course->id]);
-                    $USER->access = remove_temp_roles($coursecontext, $USER->access);
+                    remove_temp_course_roles($coursecontext);
                 }
             }
 
@@ -2817,7 +2817,7 @@ function require_login($courseorid = NULL, $autologinguest = true, $cm = NULL, $
                 $access = true;
 
                 // remove traces of previous temp guest access
-                $USER->access = remove_temp_roles($coursecontext, $USER->access);
+                remove_temp_course_roles($coursecontext);
 
             } else {
                 $instances = $DB->get_records('enrol', array('courseid'=>$course->id, 'status'=>ENROL_INSTANCE_ENABLED), 'sortorder, id ASC');
@@ -2831,7 +2831,7 @@ function require_login($courseorid = NULL, $autologinguest = true, $cm = NULL, $
                     $until = $enrols[$instance->enrol]->try_autoenrol($instance);
                     if ($until !== false) {
                         $USER->enrol['enrolled'][$course->id] = $until;
-                        $USER->access = remove_temp_roles($coursecontext, $USER->access);
+                        remove_temp_course_roles($coursecontext);
                         $access = true;
                         break;
                     }
@@ -3031,6 +3031,7 @@ function require_user_key_login($script, $instance=null) {
     }
 
 /// emulate normal session
+    enrol_check_plugins($user);
     session_set_user($user);
 
 /// note we are not using normal login
@@ -3882,12 +3883,15 @@ function complete_user_login($user) {
     // this helps prevent session fixation attacks from the same domain
     session_regenerate_id(true);
 
+    // let enrol plugins deal with new enrolments if necessary
+    enrol_check_plugins($user);
+
     // check enrolments, load caps and setup $USER object
     session_set_user($user);
 
     // reload preferences from DB
-    unset($user->preference);
-    check_user_preferences_loaded($user);
+    unset($USER->preference);
+    check_user_preferences_loaded($USER);
 
     // update login times
     update_user_login_times();
@@ -6695,6 +6699,7 @@ class install_string_manager implements string_manager {
  * @return string The localized string.
  */
 function get_string($identifier, $component = '', $a = NULL) {
+    global $CFG;
 
     $identifier = clean_param($identifier, PARAM_STRINGID);
     if (empty($identifier)) {
@@ -6730,7 +6735,13 @@ function get_string($identifier, $component = '', $a = NULL) {
         }
     }
 
-    return get_string_manager()->get_string($identifier, $component, $a);
+    $result = get_string_manager()->get_string($identifier, $component, $a);
+
+    // Debugging feature lets you display string identifier and component
+    if (isset($CFG->debugstringids) && $CFG->debugstringids && optional_param('strings', 0, PARAM_INT)) {
+        $result .= ' {' . $identifier . '/' . $component . '}';
+    }
+    return $result;
 }
 
 /**
@@ -7453,45 +7464,96 @@ function get_plugin_list($plugintype) {
 }
 
 /**
- * Gets a list of all plugin API functions for given plugin type, function
- * name, and filename.
- * @param string $plugintype Plugin type, e.g. 'mod' or 'report'
- * @param string $function Name of function after the frankenstyle prefix;
- *   e.g. if the function is called report_courselist_hook then this value
- *   would be 'hook'
- * @param string $file Name of file that includes function within plugin,
- *   default 'lib.php'
- * @return Array of plugin frankenstyle (e.g. 'report_courselist', 'mod_forum')
- *   to valid, existing plugin function name (e.g. 'report_courselist_hook',
- *   'forum_hook')
+ * Get a list of all the plugins of a given type that contain a particular file.
+ * @param string $plugintype the type of plugin, e.g. 'mod' or 'report'.
+ * @param string $file the name of file that must be present in the plugin.
+ *      (e.g. 'view.php', 'db/install.xml').
+ * @param bool $include if true (default false), the file will be include_once-ed if found.
+ * @return array with plugin name as keys (e.g. 'forum', 'courselist') and the path
+ *      to the file relative to dirroot as value (e.g. "$CFG->dirroot/mod/forum/view.php").
  */
-function get_plugin_list_with_function($plugintype, $function, $file='lib.php') {
-    global $CFG; // mandatory in case it is referenced by include()d PHP script
+function get_plugin_list_with_file($plugintype, $file, $include = false) {
+    global $CFG; // Necessary in case it is referenced by include()d PHP scripts.
 
-    $result = array();
-    // Loop through list of plugins with given type
-    $list = get_plugin_list($plugintype);
-    foreach($list as $plugin => $dir) {
+    $plugins = array();
+
+    foreach(get_plugin_list($plugintype) as $plugin => $dir) {
         $path = $dir . '/' . $file;
-        // If file exists, require it and look for function
         if (file_exists($path)) {
-            include_once($path);
-            $fullfunction = $plugintype . '_' . $plugin . '_' . $function;
-            if (function_exists($fullfunction)) {
-                // Function exists with standard name. Store, indexed by
-                // frankenstyle name of plugin
-                $result[$plugintype . '_' . $plugin] = $fullfunction;
-            } else if ($plugintype === 'mod') {
-                // For modules, we also allow plugin without full frankenstyle
-                // but just starting with the module name
-                $shortfunction = $plugin . '_' . $function;
-                if (function_exists($shortfunction)) {
-                    $result[$plugintype . '_' . $plugin] = $shortfunction;
-                }
+            if ($include) {
+                include_once($path);
+            }
+            $plugins[$plugin] = $path;
+        }
+    }
+
+    return $plugins;
+}
+
+/**
+ * Get a list of all the plugins of a given type that define a certain API function
+ * in a certain file. The plugin component names and function names are returned.
+ *
+ * @param string $plugintype the type of plugin, e.g. 'mod' or 'report'.
+ * @param string $function the part of the name of the function after the
+ *      frankenstyle prefix. e.g 'hook' if you are looking for functions with
+ *      names like report_courselist_hook.
+ * @param string $file the name of file within the plugin that defines the
+ *      function. Defaults to lib.php.
+ * @return array with frankenstyle plugin names as keys (e.g. 'report_courselist', 'mod_forum')
+ *      and the function names as values (e.g. 'report_courselist_hook', 'forum_hook').
+ */
+function get_plugin_list_with_function($plugintype, $function, $file = 'lib.php') {
+    $pluginfunctions = array();
+    foreach (get_plugin_list_with_file($plugintype, $file, true) as $plugin => $notused) {
+        $fullfunction = $plugintype . '_' . $plugin . '_' . $function;
+
+        if (function_exists($fullfunction)) {
+            // Function exists with standard name. Store, indexed by
+            // frankenstyle name of plugin
+            $pluginfunctions[$plugintype . '_' . $plugin] = $fullfunction;
+
+        } else if ($plugintype === 'mod') {
+            // For modules, we also allow plugin without full frankenstyle
+            // but just starting with the module name
+            $shortfunction = $plugin . '_' . $function;
+            if (function_exists($shortfunction)) {
+                $pluginfunctions[$plugintype . '_' . $plugin] = $shortfunction;
             }
         }
     }
-    return $result;
+    return $pluginfunctions;
+}
+
+/**
+ * Get a list of all the plugins of a given type that define a certain class
+ * in a certain file. The plugin component names and class names are returned.
+ *
+ * @param string $plugintype the type of plugin, e.g. 'mod' or 'report'.
+ * @param string $class the part of the name of the class after the
+ *      frankenstyle prefix. e.g 'thing' if you are looking for classes with
+ *      names like report_courselist_thing. If you are looking for classes with
+ *      the same name as the plugin name (e.g. qtype_multichoice) then pass ''.
+ * @param string $file the name of file within the plugin that defines the class.
+ * @return array with frankenstyle plugin names as keys (e.g. 'report_courselist', 'mod_forum')
+ *      and the class names as values (e.g. 'report_courselist_thing', 'qtype_multichoice').
+ */
+function get_plugin_list_with_class($plugintype, $class, $file) {
+    if ($class) {
+        $suffix = '_' . $class;
+    } else {
+        $suffix = '';
+    }
+
+    $pluginclasses = array();
+    foreach (get_plugin_list_with_file($plugintype, $file, true) as $plugin => $notused) {
+        $classname = $plugintype . '_' . $plugin . $suffix;
+        if (class_exists($classname)) {
+            $pluginclasses[$plugintype . '_' . $plugin] = $classname;
+        }
+    }
+
+    return $pluginclasses;
 }
 
 /**
