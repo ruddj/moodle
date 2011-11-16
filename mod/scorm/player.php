@@ -170,10 +170,10 @@ if ($mode == 'browse') {
 }
 $orgstr = '&currentorg='.$currentorg;
 
-$SESSION->scorm_scoid = $sco->id;
-$SESSION->scorm_status = 'Not Initialized';
-$SESSION->scorm_mode = $mode;
-$SESSION->scorm_attempt = $attempt;
+$SESSION->scorm->scoid = $sco->id;
+$SESSION->scorm->scormstatus = 'Not Initialized';
+$SESSION->scorm->scormmode = $mode;
+$SESSION->scorm->attempt = $attempt;
 
 // Mark module viewed
 $completion = new completion_info($course);
@@ -205,7 +205,7 @@ $name = false;
 
 ?>
     <div id="scormpage">
-    
+
       <div id="tocbox">
         <div id='scormapi-parent'>
             <script id="external-scormapi" type="text/JavaScript"></script>
@@ -269,7 +269,7 @@ if ($result->prerequisites) {
 }
 ?>
     </div> <!-- SCORM page -->
-<?php 
+<?php
 // NEW IMS TOC
 if (empty($scorm->popup) || $displaymode == 'popup') {
     if (!isset($result->toctitle)) {

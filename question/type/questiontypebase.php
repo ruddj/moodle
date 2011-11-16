@@ -94,20 +94,6 @@ class question_type {
     }
 
     /**
-     * Returns a list of other question types that this one requires in order to
-     * work. For example, the calculated question type is a subclass of the
-     * numerical question type, which is a subclass of the shortanswer question
-     * type; and the randomsamatch question type requires the shortanswer type
-     * to be installed.
-     *
-     * @return array any other question types that this one relies on. An empty
-     * array if none.
-     */
-    public function requires_qtypes() {
-        return array();
-    }
-
-    /**
      * @return bool override this to return false if this is not really a
      *      question type, for example the description question type is not
      *      really a question type.
@@ -263,7 +249,11 @@ class question_type {
         global $OUTPUT;
         $heading = $this->get_heading(empty($question->id));
 
-        echo $OUTPUT->heading_with_help($heading, $this->name(), $this->plugin_name());
+        if (get_string_manager()->string_exists('pluginname_help', $this->plugin_name())) {
+            echo $OUTPUT->heading_with_help($heading, 'pluginname', $this->plugin_name());
+        } else {
+            echo $OUTPUT->heading_with_help($heading, $this->name(), $this->plugin_name());
+        }
 
         $permissionstrs = array();
         if (!empty($question->id)) {
@@ -297,11 +287,17 @@ class question_type {
      */
     public function get_heading($adding = false) {
         if ($adding) {
-            $action = 'adding';
+            $string = 'pluginnameadding';
+            $fallback = 'adding' . $this->name();
         } else {
-            $action = 'editing';
+            $string = 'pluginnameediting';
+            $fallback = 'editing' . $this->name();
         }
-        return get_string($action . $this->name(), $this->plugin_name());
+        if (get_string_manager()->string_exists($string, $this->plugin_name())) {
+            return get_string($string, $this->plugin_name());
+        } else {
+            return get_string($fallback, $this->plugin_name());
+        }
     }
 
     /**
@@ -986,10 +982,11 @@ class question_type {
             array_shift($extraanswersfields);
         }
         foreach ($question->options->answers as $answer) {
+            // TODO this should be re-factored to use $format->write_answer().
             $percent = 100 * $answer->fraction;
-            $expout .= "    <answer fraction=\"$percent\">\n";
+            $expout .= "    <answer fraction=\"$percent\" {$format->format($answer->answerformat)}>\n";
             $expout .= $format->writetext($answer->answer, 3, false);
-            $expout .= "      <feedback>\n";
+            $expout .= "      <feedback {$format->format($question->feedbackformat)}>\n";
             $expout .= $format->writetext($answer->feedback, 4, false);
             $expout .= "      </feedback>\n";
             if (is_array($extraanswersfields)) {

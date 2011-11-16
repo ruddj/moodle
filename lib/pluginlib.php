@@ -230,6 +230,24 @@ class plugin_manager {
     }
 
     /**
+     * Get a list of any other pluings that require this one.
+     * @param string $component frankenstyle component name.
+     * @return array of frankensyle component names that require this one.
+     */
+    public function other_plugins_that_require($component) {
+        $others = array();
+        foreach ($this->get_plugins() as $type => $plugins) {
+            foreach ($plugins as $plugin) {
+                $required = $plugin->get_other_required_plugins();
+                if (isset($required[$component])) {
+                    $others[] = $plugin->component;
+                }
+            }
+        }
+        return $others;
+    }
+
+    /**
      * Check a dependencies list against the list of installed plugins.
      * @param array $dependencies compenent name to required version or ANY_VERSION.
      * @return bool true if all the dependencies are satisfied.
@@ -304,7 +322,7 @@ class plugin_manager {
             ),
 
             'coursereport' => array(
-                'completion', 'log', 'outline', 'participation', 'progress', 'stats'
+                //deprecated!
             ),
 
             'datafield' => array(
@@ -329,7 +347,7 @@ class plugin_manager {
             'filter' => array(
                 'activitynames', 'algebra', 'censor', 'emailprotect',
                 'emoticon', 'mediaplugin', 'multilang', 'tex', 'tidy',
-                'urltolink', 'mod_data', 'mod_glossary'
+                'urltolink', 'data', 'glossary'
             ),
 
             'format' => array(
@@ -348,6 +366,10 @@ class plugin_manager {
                 'grader', 'outcomes', 'overview', 'user'
             ),
 
+            'gradingform' => array(
+                'rubric'
+            ),
+
             'local' => array(
             ),
 
@@ -361,7 +383,7 @@ class plugin_manager {
 
             'mod' => array(
                 'assignment', 'chat', 'choice', 'data', 'feedback', 'folder',
-                'forum', 'glossary', 'imscp', 'label', 'lesson', 'page',
+                'forum', 'glossary', 'imscp', 'label', 'lesson', 'lti', 'page',
                 'quiz', 'resource', 'scorm', 'survey', 'url', 'wiki', 'workshop'
             ),
 
@@ -406,8 +428,8 @@ class plugin_manager {
             ),
 
             'report' => array(
-                'backups', 'configlog', 'courseoverview',
-                'log', 'questioninstances', 'security', 'stats'
+                'backups', 'completion', 'configlog', 'courseoverview',
+                'log', 'loglive', 'outline', 'participation', 'progress', 'questioninstances', 'security', 'stats'
             ),
 
             'repository' => array(
@@ -418,15 +440,16 @@ class plugin_manager {
             ),
 
             'scormreport' => array(
-                'basic'
+                'basic',
+                'interactions'
             ),
 
             'theme' => array(
                 'afterburner', 'anomaly', 'arialist', 'base', 'binarius',
                 'boxxie', 'brick', 'canvas', 'formal_white', 'formfactor',
-                'fusion', 'leatherbound', 'magazine', 'nimble', 'nonzero',
-                'overlay', 'serenity', 'sky_high', 'splash', 'standard',
-                'standardold'
+                'fusion', 'leatherbound', 'magazine', 'mymobile', 'nimble',
+                'nonzero', 'overlay', 'serenity', 'sky_high', 'splash',
+                'standard', 'standardold'
             ),
 
             'tool' => array(
@@ -468,6 +491,8 @@ class plugin_manager {
  * Note that most of the useful information is made available in pubic fields,
  * which cannot be documented in this interface. See the field definitions on
  * {@link plugintype_base} to find out what information is available.
+ *
+ * @property-read string component the component name, type_name
  */
 interface plugin_information {
 
@@ -613,6 +638,8 @@ interface plugin_information {
 /**
  * Defines public properties that all plugintype classes must have
  * and provides default implementation of required methods.
+ *
+ * @property-read string component the component name, type_name
  */
 abstract class plugintype_base {
 
@@ -672,10 +699,25 @@ abstract class plugintype_base {
      * @see plugin_information::init_display_name()
      */
     public function init_display_name() {
-        if (! get_string_manager()->string_exists('pluginname', $this->type . '_' . $this->name)) {
-            $this->displayname = '[pluginname,' . $this->type . '_' . $this->name . ']';
+        if (!get_string_manager()->string_exists('pluginname', $this->component)) {
+            $this->displayname = '[pluginname,' . $this->component . ']';
         } else {
-            $this->displayname = get_string('pluginname', $this->type . '_' . $this->name);
+            $this->displayname = get_string('pluginname', $this->component);
+        }
+    }
+
+    /**
+     * Magic method getter, redirects to read only values.
+     * @param string $name
+     * @return mixed
+     */
+    public function __get($name) {
+        switch ($name) {
+            case 'component': return $this->type . '_' . $this->name;
+
+            default:
+                debugging('Invalid plugin property accessed! '.$name);
+                return null;
         }
     }
 
@@ -751,7 +793,7 @@ abstract class plugintype_base {
      */
     public function load_db_version() {
 
-        if ($ver = self::get_version_from_config_plugins($this->type . '_' . $this->name)) {
+        if ($ver = self::get_version_from_config_plugins($this->component)) {
             $this->versiondb = $ver;
         }
     }
@@ -1243,10 +1285,10 @@ class plugintype_mod extends plugintype_base implements plugin_information {
      * @see plugin_information::init_display_name()
      */
     public function init_display_name() {
-        if (get_string_manager()->string_exists('pluginname', $this->type . '_' . $this->name)) {
-            $this->displayname = get_string('pluginname', $this->type . '_' . $this->name);
+        if (get_string_manager()->string_exists('pluginname', $this->component)) {
+            $this->displayname = get_string('pluginname', $this->component);
         } else {
-            $this->displayname = get_string('modulename', $this->type . '_' . $this->name);
+            $this->displayname = get_string('modulename', $this->component);
         }
     }
 
@@ -1345,23 +1387,12 @@ class plugintype_mod extends plugintype_base implements plugin_information {
  * Class for question behaviours.
  */
 class plugintype_qbehaviour extends plugintype_base implements plugin_information {
-
     /**
-     * @see plugintype_base::load_other_required_plugins().
+     * @see plugin_information::get_uninstall_url()
      */
-    protected function load_other_required_plugins() {
-        parent::load_other_required_plugins();
-        if (!empty($this->dependencies)) {
-            return;
-        }
-
-        // Standard mechanism did not find anything, so try the legacy way.
-        global $CFG;
-        require_once($CFG->libdir . '/questionlib.php');
-        $required = question_engine::get_behaviour_required_behaviours($this->name);
-        foreach ($required as $other) {
-            $this->dependencies['qbehaviour_' . $other] = ANY_VERSION;
-        }
+    public function get_uninstall_url() {
+        return new moodle_url('/admin/qbehaviours.php',
+                array('delete' => $this->name, 'sesskey' => sesskey()));
     }
 }
 
@@ -1370,53 +1401,15 @@ class plugintype_qbehaviour extends plugintype_base implements plugin_informatio
  * Class for question types
  */
 class plugintype_qtype extends plugintype_base implements plugin_information {
-
     /**
-     * @see plugin_information::init_display_name()
-     */
-    public function init_display_name() {
-        if (get_string_manager()->string_exists('pluginname', $this->type . '_' . $this->name)) {
-            $this->displayname = get_string('pluginname', $this->type . '_' . $this->name);
-        } else {
-            $this->displayname = get_string($this->name, 'qtype_' . $this->name);
-        }
-    }
-
-    /**
-     * @see plugintype_base::load_other_required_plugins().
-     */
-    protected function load_other_required_plugins() {
-        parent::load_other_required_plugins();
-        if (!empty($this->dependencies)) {
-            return;
-        }
-
-        // Standard mechanism did not find anything, so try the legacy way.
-        global $CFG;
-        require_once($CFG->libdir . '/questionlib.php');
-        $required = question_bank::get_qtype($this->name)->requires_qtypes();
-        foreach ($required as $other) {
-            $this->dependencies['qtype_' . $other] = ANY_VERSION;
-        }
+    * @see plugin_information::get_uninstall_url()
+    */
+    public function get_uninstall_url() {
+        return new moodle_url('/admin/qtypes.php',
+                array('delete' => $this->name, 'sesskey' => sesskey()));
     }
 }
 
-/**
- * Class for question formats
- */
-class plugintype_qformat extends plugintype_base implements plugin_information {
-
-    /**
-     * @see plugin_information::init_display_name()
-     */
-    public function init_display_name() {
-        if (get_string_manager()->string_exists('pluginname', $this->type . '_' . $this->name)) {
-            $this->displayname = get_string('pluginname', $this->type . '_' . $this->name);
-        } else {
-            $this->displayname = get_string($this->name, 'qformat_' . $this->name);
-        }
-    }
-}
 
 /**
  * Class for authentication plugins
@@ -1652,5 +1645,15 @@ class plugintype_tool extends plugintype_base implements plugin_information {
 
     public function get_uninstall_url() {
         return new moodle_url('/admin/tools.php', array('delete' => $this->name, 'sesskey' => sesskey()));
+    }
+}
+
+/**
+ * Class for admin tool plugins
+ */
+class plugintype_report extends plugintype_base implements plugin_information {
+
+    public function get_uninstall_url() {
+        return new moodle_url('/admin/reports.php', array('delete' => $this->name, 'sesskey' => sesskey()));
     }
 }

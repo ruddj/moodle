@@ -35,7 +35,7 @@ a.dimmed_text:visited,
 .dimmed_text a:link,
 .dimmed_text a:visited,
 .dimmed_category,
-.dimmed_category a {color:#AAAAAA;}
+.dimmed_category a { height: 1%; opacity: 0.5; -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; filter: alpha(opacity=50); }
 
 .unlist,
 .unlist li,
@@ -361,16 +361,10 @@ table.mod_index {width:100%;}
  */
 .completion-expired {background:#FFDDDD;}
 .completion-expected {font-size:0.75em;}
-.completion-sortchoice {font-size:0.75em;vertical-align:bottom;}
+.completion-sortchoice,
+.completion-identifyfield {font-size:0.75em;vertical-align:bottom;}
 .completion-progresscell {text-align:right;}
 .completion-expired .completion-expected {font-weight:bold;}
-#page-course-report-progress-index th,
-#page-course-report-progress-index td {padding:2px 4px;font-weight:normal;border-right: 1px solid #EEE;}
-#page-course-report-progress-index .progress-actions {text-align:center;}
-#page-course-report-progress-index .completion_pagingbar {margin:1em 0;text-align:center;}
-#page-course-report-progress-index .completion_prev {display:inline;margin-right:2em;}
-#page-course-report-progress-index .completion_pagingbar p {display:inline;margin:0;}
-#page-course-report-progress-index .completion_next {display:inline;margin-left:2em;}
 
 /**
  * Tags
