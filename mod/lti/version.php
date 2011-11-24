@@ -43,12 +43,13 @@
  * @author     Marc Alier
  * @author     Jordi Piguillem
  * @author     Nikolas Galanis
+ * @author     Chris Scribner
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;
 
-$module->version   = 2011111400;;
+$module->version   = 2011111601;;
 $module->requires  = 2011110200;  // Requires this Moodle version
 $module->cron      = 0;
 $module->component = 'mod_lti';

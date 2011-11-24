@@ -15,12 +15,13 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * MRTODO: Brief description of this file
+ * LTI web service endpoints
  *
  * @package    mod
  * @subpackage lti
- * @copyright  2011 onwards MRTODO
+ * @copyright  Copyright (c) 2011 Moodlerooms Inc. (http://www.moodlerooms.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     Chris Scribner
  */
 
 require_once(dirname(__FILE__) . "/../../config.php");
@@ -61,7 +62,18 @@ foreach ($body->children() as $child) {
 
 switch ($messagetype) {
     case 'replaceResultRequest':
-        $parsed = lti_parse_grade_replace_message($xml);
+        try {
+            $parsed = lti_parse_grade_replace_message($xml);
+        } catch (Exception $e) {
+            $responsexml = lti_get_response_xml(
+                'failure',
+                $e->getMessage(),
+                uniqid(),
+                'replaceResultResponse');
+
+            echo $responsexml->asXML();
+            break;
+        }
 
         $ltiinstance = $DB->get_record('lti', array('id' => $parsed->instanceid));
 
@@ -70,7 +82,7 @@ switch ($messagetype) {
         $gradestatus = lti_update_grade($ltiinstance, $parsed->userid, $parsed->launchid, $parsed->gradeval);
 
         $responsexml = lti_get_response_xml(
-                $gradestatus ? 'success' : 'error',
+                $gradestatus ? 'success' : 'failure',
                 'Grade replace response',
                 $parsed->messageid,
                 'replaceResultResponse'
@@ -94,14 +106,16 @@ switch ($messagetype) {
         $grade = lti_read_grade($ltiinstance, $parsed->userid);
 
         $responsexml = lti_get_response_xml(
-                isset($grade) ? 'success' : 'error',
+                isset($grade) ? 'success' : 'failure',
                 'Result read',
                 $parsed->messageid,
                 'readResultResponse'
         );
 
         $node = $responsexml->imsx_POXBody->readResultResponse;
-        $node->addChild('result')->addChild('resultScore')->addChild('textString', isset($grade) ? $grade : '');
+        $node = $node->addChild('result')->addChild('resultScore');
+        $node->addChild('language', 'en');
+        $node->addChild('textString', isset($grade) ? $grade : '');
 
         echo $responsexml->asXML();
 
@@ -117,7 +131,7 @@ switch ($messagetype) {
         $gradestatus = lti_delete_grade($ltiinstance, $parsed->userid);
 
         $responsexml = lti_get_response_xml(
-                $gradestatus ? 'success' : 'error',
+                $gradestatus ? 'success' : 'failure',
                 'Grade delete request',
                 $parsed->messageid,
                 'deleteResultResponse'

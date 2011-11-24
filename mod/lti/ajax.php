@@ -15,12 +15,14 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * MRTODO: Brief description of this file
+ * AJAX service used when adding an External Tool to provide immediate feedback
+ * of which tool provider is to be used based on the Launch URL.
  *
  * @package    mod
  * @subpackage xml
- * @copyright  2011 onwards MRTODO
+ * @copyright Copyright (c) 2011 Moodlerooms Inc. (http://www.moodlerooms.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     Chris Scribner
  */
 
 require_once(dirname(__FILE__) . "/../../config.php");
@@ -37,13 +39,37 @@ $response = new stdClass();
 switch ($action) {
     case 'find_tool_config':
         $toolurl = required_param('toolurl', PARAM_RAW);
+        $toolid = optional_param('toolid', 0, PARAM_INT);
 
-        $tool = lti_get_tool_by_url_match($toolurl, $courseid);
+        if(empty($toolid) && !empty($toolurl)){
+            $tool = lti_get_tool_by_url_match($toolurl, $courseid);
 
-        if (!empty($tool)) {
-            $response->toolid = $tool->id;
-            $response->toolname = htmlspecialchars($tool->name);
-            $response->tooldomain = htmlspecialchars($tool->tooldomain);
+            if(!empty($tool)){
+                $toolid = $tool->id;
+
+                $response->toolid = $tool->id;
+                $response->toolname = htmlspecialchars($tool->name);
+                $response->tooldomain = htmlspecialchars($tool->tooldomain);
+            }
+        } else {
+            $response->toolid = $toolid;
+        }
+
+        if (!empty($toolid)) {
+            // Look up privacy settings
+            $query = '
+                SELECT name, value
+                FROM {lti_types_config}
+                WHERE
+                    typeid = :typeid
+                AND name IN (\'sendname\', \'sendemailaddr\', \'acceptgrades\')
+            ';
+
+            $privacyconfigs = $DB->get_records_sql($query, array('typeid' => $toolid));
+            foreach($privacyconfigs as $config){
+                $configname = $config->name;
+                $response->$configname = $config->value;
+            }
         }
         break;
 }

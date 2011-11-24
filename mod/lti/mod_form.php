@@ -43,6 +43,7 @@
  * @author     Marc Alier
  * @author     Jordi Piguillem
  * @author     Nikolas Galanis
+ * @author     Chris Scribner
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -70,13 +71,22 @@ class mod_lti_mod_form extends moodleform_mod {
         $this->add_intro_editor(false, get_string('basicltiintro', 'lti'));
         $mform->setAdvanced('introeditor');
 
-        $mform->addElement('checkbox', 'showtitle', '&nbsp;', ' ' . get_string('display_name', 'lti'));
-        $mform->setAdvanced('showtitle');
-        $mform->addHelpButton('showtitle', 'display_name', 'lti');
+        // Display the label to the right of the checkbox so it looks better & matches rest of the form
+        $coursedesc = $mform->getElement('showdescription');
+        if(!empty($coursedesc)){
+            $coursedesc->setText(' ' . $coursedesc->getLabel());
+            $coursedesc->setLabel('&nbsp');
+        }
 
-        $mform->addElement('checkbox', 'showdescription', '&nbsp;', ' ' . get_string('display_description', 'lti'));
         $mform->setAdvanced('showdescription');
-        $mform->addHelpButton('showdescription', 'display_description', 'lti');
+
+        $mform->addElement('checkbox', 'showtitlelaunch', '&nbsp;', ' ' . get_string('display_name', 'lti'));
+        $mform->setAdvanced('showtitlelaunch');
+        $mform->addHelpButton('showtitlelaunch', 'display_name', 'lti');
+
+        $mform->addElement('checkbox', 'showdescriptionlaunch', '&nbsp;', ' ' . get_string('display_description', 'lti'));
+        $mform->setAdvanced('showdescriptionlaunch');
+        $mform->addHelpButton('showdescriptionlaunch', 'display_description', 'lti');
 
         // Tool settings
         $tooltypes = $mform->addElement('select', 'typeid', get_string('external_tool_type', 'lti'), array());
@@ -154,9 +164,9 @@ class mod_lti_mod_form extends moodleform_mod {
         $mform->setDefault('instructorchoiceacceptgrades', '1');
         $mform->addHelpButton('instructorchoiceacceptgrades', 'accept_grades', 'lti');
 
-        $mform->addElement('checkbox', 'instructorchoiceallowroster', '&nbsp;', ' ' . get_string('share_roster', 'lti'));
-        $mform->setDefault('instructorchoiceallowroster', '1');
-        $mform->addHelpButton('instructorchoiceallowroster', 'share_roster', 'lti');
+        //$mform->addElement('checkbox', 'instructorchoiceallowroster', '&nbsp;', ' ' . get_string('share_roster', 'lti'));
+        //$mform->setDefault('instructorchoiceallowroster', '1');
+        //$mform->addHelpButton('instructorchoiceallowroster', 'share_roster', 'lti');
 
         //-------------------------------------------------------------------------------
 
@@ -214,7 +224,8 @@ class mod_lti_mod_form extends moodleform_mod {
                 array('using_tool_configuration', 'lti'),
                 array('domain_mismatch', 'lti'),
                 array('custom_config', 'lti'),
-                array('tool_config_not_found', 'lti')
+                array('tool_config_not_found', 'lti'),
+                array('forced_help', 'lti')
             ),
         );
 

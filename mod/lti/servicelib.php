@@ -15,12 +15,13 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * MRTODO: Brief description of this file
+ * Utility code for LTI service handling.
  *
  * @package    mod
  * @subpackage lti
- * @copyright  2011 onwards MRTODO
+ * @copyright  Copyright (c) 2011 Moodlerooms Inc. (http://www.moodlerooms.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     Chris Scribner
  */
 
 defined('MOODLE_INTERNAL') || die;
@@ -66,7 +67,15 @@ function lti_parse_grade_replace_message($xml) {
     $resultjson = json_decode((string)$node);
 
     $node = $xml->imsx_POXBody->replaceResultRequest->resultRecord->result->resultScore->textString;
-    $grade = floatval((string)$node);
+
+    $score = (string) $node;
+    if ( ! is_numeric($score) ) {
+        throw new Exception('Score must be numeric');
+    }
+    $grade = floatval($score);
+    if ( $grade < 0.0 || $grade > 1.0 ) {
+        throw new Exception('Score not between 0.0 and 1.0');
+    }
 
     $parsed = new stdClass();
     $parsed->gradeval = $grade * 100;
@@ -163,6 +172,7 @@ function lti_read_grade($ltiinstance, $userid) {
     if (isset($grades) && isset($grades->items[0]) && is_array($grades->items[0]->grades)) {
         foreach ($grades->items[0]->grades as $agrade) {
             $grade = $agrade->grade;
+            $grade = $grade / 100.0;
             break;
         }
     }
