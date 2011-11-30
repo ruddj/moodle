@@ -77,7 +77,7 @@ a.autolink.glossary:hover {cursor: help;}
 img.resize {height: 1em;width: 1em;}
 .block img.resize,
 .breadcrumb img.resize {height: 0.9em;width: 0.8em;}
-img.icon {height:16px;vertical-align:middle;width:16px;}
+img.icon {height:16px;vertical-align:middle;width:16px;padding-right:4px;}
 img.iconsmall {height:11px;margin-right:1px;vertical-align:middle;width:11px;}
 img.iconhelp {height:17px;margin-right:4px;vertical-align:middle;width:17px;}
 img.icontoggle {height:17px;vertical-align:middle;width:50px;}
@@ -743,7 +743,8 @@ body.tag .managelink {padding: 5px;}
 .dir-rtl .mod-indent-15,
 .dir-rtl .mod-indent-huge {margin-right:300px;margin-left:0;}
 
-.dir-rtl .felement.feditor select {margin-right:18.75%;}
+.dir-rtl .felement.feditor select {margin-right:18.75%;margin-left:auto;}
+.dir-rtl .mform .fitem .felement {margin-right: 16%;margin-left:auto;}
 
 /* Resourcelib mp3 player size: only width could be changed here, height hardcoded in JS */
 .resourcecontent .resourcemediaplugin_mp3 object {height:25px; width: 600px}
@@ -821,10 +822,10 @@ sup {vertical-align: super;}
 .path-rating .ratingtable td.time {white-space:nowrap; text-align:center;}
 
 /* Fix for ordered and unordered list in course topic summary & course weekly summary */
-ul li,
+
 .course-content ul.weeks .content .summary ul li,
 .course-content ul.topics .content .summary ul li {list-style: disc outside none;}
-ol li,
+
 .course-content ul.weeks .content .summary ol li,
 .course-content ul.topics .content .summary ol li {list-style: decimal outside none;}
 
