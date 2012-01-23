@@ -330,7 +330,7 @@ For example:  standard,orangewhite.';
 $string['configtimezone'] = 'You can set the default timezone here.  This is the only the DEFAULT timezone for displaying dates - each user can override this by setting their own in their profile. "Server time" here will make Moodle default to the server\'s operating system setting, but "Server time" in the user profile will make the user default to this timezone setting.  Cronjobs that depend on a time of day to run will use this timezone.';
 $string['configunzip'] = 'Indicate the location of your unzip program (Unix only, optional).  If specified, this will be used to unpack zip archives on the server.  If you leave this blank, then Moodle will use internal routines.';
 $string['configuseblogassociations'] = 'Should users be able to organize their blog by associating entries with courses and course modules?';
-$string['configuseexternalyui'] = 'Instead of using local files, use online files available on Yahoo&#145;s servers. WARNING: This requires an internet connection, or no AJAX will work on your site.';
+$string['configuseexternalyui'] = 'Instead of using local files, use online files available on Yahoo&#145;s servers. WARNING: This requires an internet connection, or no AJAX will work on your site. This setting is not compatible with sites using https.';
 $string['configusesitenameforsitepages'] = 'If enabled the site\'s shortname will be used for the site pages node in the navigation rather than the string \'Site pages\'';
 $string['configusetags'] = 'Should tags functionality across the site be enabled?';
 $string['configvariables'] = 'Variables';
@@ -971,6 +971,8 @@ $string['upgradelogs'] = 'For full functionality, your old logs need to be upgra
 $string['upgradelogsinfo'] = 'Some changes have recently been made in the way logs are stored.  To be able to view all of your old logs on a per-activity basis, your old logs need to be upgraded.  Depending on your site this can take a long time (eg several hours) and can be quite taxing on the database for large sites.  Once you start this process you should let it finish (by keeping the browser window open).  Don\'t worry - your site will work fine for other people while the logs are being upgraded.<br /><br />Do you want to upgrade your logs now?';
 $string['upgradesettings'] = 'New settings';
 $string['upgradesettingsintro'] = 'The settings shown below were added during your last Moodle upgrade. Make any changes necessary to the defaults and then click the &quot;Save changes&quot; button at the bottom of this page.';
+$string['upgradestalefiles'] = 'Invalid installation files detected, upgrade cannot continue';
+$string['upgradestalefilesinfo'] = 'Some old PHP scripts have been detected which may indicate that you installed this version over an older one. Please fix the installation directory by removing all old scripts (except config.php) before installing the new version and then try the upgrade again. You can find more information in upgrade documentation at <a href="{$a}">{$a}</a>';
 $string['upgradesure'] = 'Your Moodle files have been changed, and you are about to automatically upgrade your server to this version: <br /><br />
 <strong>{$a}</strong> <br /><br />
 Once you do this you can not go back again. <br /><br />

@@ -871,7 +871,7 @@ class question_bank_view {
         }
 
         // Create the url of the new question page to forward to.
-        $returnurl = str_replace($CFG->wwwroot, '', $pageurl->out(false));
+        $returnurl = $pageurl->out_as_local_url(false);
         $this->editquestionurl = new moodle_url('/question/question.php',
                 array('returnurl' => $returnurl));
         if ($cm !== null){
@@ -1360,10 +1360,10 @@ class question_bank_view {
         echo $OUTPUT->render($pagingbar);
         if ($totalnumber > DEFAULT_QUESTIONS_PER_PAGE) {
             if ($perpage == DEFAULT_QUESTIONS_PER_PAGE) {
-                $url = new moodle_url('edit.php', ($pageurl->params()+array('qperpage'=>1000)));
+                $url = new moodle_url('edit.php', array_merge($pageurl->params(), array('qperpage'=>1000)));
                 $showall = '<a href="'.$url.'">'.get_string('showall', 'moodle', $totalnumber).'</a>';
             } else {
-                $url = new moodle_url('edit.php', ($pageurl->params()+array('qperpage'=>DEFAULT_QUESTIONS_PER_PAGE)));
+                $url = new moodle_url('edit.php', array_merge($pageurl->params(), array('qperpage'=>DEFAULT_QUESTIONS_PER_PAGE)));
                 $showall = '<a href="'.$url.'">'.get_string('showperpage', 'moodle', DEFAULT_QUESTIONS_PER_PAGE).'</a>';
             }
             echo "<div class='paging'>$showall</div>";

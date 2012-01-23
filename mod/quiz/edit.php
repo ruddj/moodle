@@ -275,8 +275,8 @@ if (($deleteemptypage !== false) && confirm_sesskey()) {
 $remove = optional_param('remove', false, PARAM_INT);
 if (($remove = optional_param('remove', false, PARAM_INT)) && confirm_sesskey()) {
     quiz_remove_question($quiz, $remove);
-    quiz_update_sumgrades($quiz);
     quiz_delete_previews($quiz);
+    quiz_update_sumgrades($quiz);
     redirect($afteractionurl);
 }
 
@@ -496,9 +496,7 @@ if ($quiz_reordertool) {
 quiz_print_status_bar($quiz);
 
 $tabindex = 0;
-if (!$quiz_reordertool) {
-    quiz_print_grading_form($quiz, $thispageurl, $tabindex);
-}
+quiz_print_grading_form($quiz, $thispageurl, $tabindex);
 
 $notifystrings = array();
 if ($quizhasattempts) {
@@ -561,7 +559,7 @@ if (!$quiz_reordertool) {
     $randomform = new quiz_add_random_form(new moodle_url('/mod/quiz/addrandom.php'), $contexts);
     $randomform->set_data(array(
         'category' => $pagevars['cat'],
-        'returnurl' => str_replace($CFG->wwwroot, '', $thispageurl->out(false)),
+        'returnurl' => $thispageurl->out_as_local_url(false),
         'cmid' => $cm->id,
     ));
     ?>

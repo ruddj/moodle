@@ -417,6 +417,8 @@ define('MOD_ARCHETYPE_OTHER', 0);
 define('MOD_ARCHETYPE_RESOURCE', 1);
 /** Assignment module archetype */
 define('MOD_ARCHETYPE_ASSIGNMENT', 2);
+/** System (not user-addable) module archetype */
+define('MOD_ARCHETYPE_SYSTEM', 3);
 
 /**
  * Security token used for allowing access
@@ -1867,6 +1869,7 @@ function make_timestamp($year, $month=1, $day=1, $hour=0, $minute=0, $second=0, 
     $totalsecs = abs($totalsecs);
 
     if (!$str) {  // Create the str structure the slow way
+        $str = new stdClass();
         $str->day   = get_string('day');
         $str->days  = get_string('days');
         $str->hour  = get_string('hour');
@@ -3365,7 +3368,7 @@ function get_extra_user_fields($context, $already = array()) {
     }
 
     // Split showuseridentity on comma
-    if ($CFG->showuseridentity === '') {
+    if (empty($CFG->showuseridentity)) {
         // Explode gives wrong result with empty string
         $extra = array();
     } else {
@@ -5238,6 +5241,11 @@ function generate_email_supportuser() {
 function setnew_password_and_mail($user) {
     global $CFG, $DB;
 
+    // we try to send the mail in language the user understands,
+    // unfortunately the filter_string() does not support alternative langs yet
+    // so multilang will not work properly for site->fullname
+    $lang = empty($user->lang) ? $CFG->lang : $user->lang;
+
     $site  = get_site();
 
     $supportuser = generate_email_supportuser();
@@ -5254,9 +5262,9 @@ function setnew_password_and_mail($user) {
     $a->link        = $CFG->wwwroot .'/login/';
     $a->signoff     = generate_email_signoff();
 
-    $message = get_string('newusernewpasswordtext', '', $a);
+    $message = (string)new lang_string('newusernewpasswordtext', '', $a, $lang);
 
-    $subject = format_string($site->fullname) .': '. get_string('newusernewpasswordsubj');
+    $subject = format_string($site->fullname) .': '. (string)new lang_string('newusernewpasswordsubj', '', $a, $lang);
 
     //directly email rather than using the messaging system to ensure its not routed to a popup or jabber
     return email_to_user($user, $supportuser, $subject, $message);
@@ -10053,40 +10061,20 @@ function object_property_exists( $obj, $property ) {
  * Detect a custom script replacement in the data directory that will
  * replace an existing moodle script
  *
- * @param string $urlpath path to the original script
  * @return string|bool full path name if a custom script exists, false if no custom script exists
  */
-function custom_script_path($urlpath='') {
-    global $CFG;
+function custom_script_path() {
+    global $CFG, $SCRIPT;
 
-    // set default $urlpath, if necessary
-    if (empty($urlpath)) {
-        $urlpath = qualified_me(); // e.g. http://www.this-server.com/moodle/this-script.php
-    }
-
-    // $urlpath is invalid if it is empty or does not start with the Moodle wwwroot
-    if (empty($urlpath) or (strpos($urlpath, $CFG->wwwroot) === false )) {
+    if ($SCRIPT === null) {
+        // Probably some weird external script
         return false;
     }
 
-    // replace wwwroot with the path to the customscripts folder and clean path
-    $scriptpath = $CFG->customscripts . clean_param(substr($urlpath, strlen($CFG->wwwroot)), PARAM_PATH);
-
-    // remove the query string, if any
-    if (($strpos = strpos($scriptpath, '?')) !== false) {
-        $scriptpath = substr($scriptpath, 0, $strpos);
-    }
-
-    // remove trailing slashes, if any
-    $scriptpath = rtrim($scriptpath, '/\\');
-
-    // append index.php, if necessary
-    if (is_dir($scriptpath)) {
-        $scriptpath .= '/index.php';
-    }
+    $scriptpath = $CFG->customscripts . $SCRIPT;
 
     // check the custom script exists
-    if (file_exists($scriptpath)) {
+    if (file_exists($scriptpath) and is_file($scriptpath)) {
         return $scriptpath;
     } else {
         return false;
