@@ -1036,8 +1036,7 @@ function data_get_user_grades($data, $userid=0) {
 /**
  * Update activity grades
  *
- * @global object
- * @global object
+ * @category grade
  * @param object $data
  * @param int $userid specific user only, 0 means all
  * @param bool $nullifnone
@@ -1097,9 +1096,9 @@ function data_upgrade_grades() {
 /**
  * Update/create grade item for given data
  *
- * @global object
- * @param object $data object with extra cmidnumber
- * @param mixed optional array/object of grade(s); 'reset' means reset grades in gradebook
+ * @category grade
+ * @param stdClass $data A database instance with extra cmidnumber property
+ * @param mixed $grades Optional array/object of grade(s); 'reset' means reset grades in gradebook
  * @return object grade_item
  */
 function data_grade_item_update($data, $grades=NULL) {
@@ -1132,7 +1131,7 @@ function data_grade_item_update($data, $grades=NULL) {
 /**
  * Delete grade item for given data
  *
- * @global object
+ * @category grade
  * @param object $data object
  * @return object grade_item
  */
@@ -2804,9 +2803,11 @@ function data_export_ods($export, $dataname, $count) {
  * @param int $dataid
  * @param array $fields
  * @param array $selectedfields
+ * @param int $currentgroup group ID of the current group. This is used for
+ * exporting data while maintaining group divisions.
  * @return array
  */
-function data_get_exportdata($dataid, $fields, $selectedfields) {
+function data_get_exportdata($dataid, $fields, $selectedfields, $currentgroup=0) {
     global $DB;
 
     $exportdata = array();
@@ -2826,7 +2827,15 @@ function data_get_exportdata($dataid, $fields, $selectedfields) {
     $line = 1;
     foreach($datarecords as $record) {
         // get content indexed by fieldid
-        if( $content = $DB->get_records('data_content', array('recordid'=>$record->id), 'fieldid', 'fieldid, content, content1, content2, content3, content4') ) {
+        if ($currentgroup) {
+            $select = 'SELECT c.fieldid, c.content, c.content1, c.content2, c.content3, c.content4 FROM {data_content} c, {data_records} r WHERE c.recordid = ? AND r.id = c.recordid AND r.groupid = ?';
+            $where = array($record->id, $currentgroup);
+        } else {
+            $select = 'SELECT fieldid, content, content1, content2, content3, content4 FROM {data_content} WHERE recordid = ?';
+            $where = array($record->id);
+        }
+
+        if( $content = $DB->get_records_sql($select, $where) ) {
             foreach($fields as $field) {
                 $contents = '';
                 if(isset($content[$field->field->id])) {
@@ -3144,7 +3153,7 @@ function data_presets_export($course, $cm, $data, $tostorage=false) {
     $presetname = clean_filename($data->name) . '-preset-' . gmdate("Ymd_Hi");
     $exportsubdir = "mod_data/presetexport/$presetname";
     make_temp_directory($exportsubdir);
-    $exportdir = "$CFG->dataroot/$exportsubdir";
+    $exportdir = "$CFG->tempdir/$exportsubdir";
 
     // Assemble "preset.xml":
     $presetxmldata = data_presets_generate_xml($course, $cm, $data);
@@ -3242,6 +3251,9 @@ function data_presets_export($course, $cm, $data, $tostorage=false) {
  * Capability check has been done in comment->check_permissions(), we
  * don't need to do it again here.
  *
+ * @package  mod_data
+ * @category comment
+ *
  * @param stdClass $comment_param {
  *              context  => context the context object
  *              courseid => int course id
@@ -3268,6 +3280,9 @@ function data_comment_permissions($comment_param) {
 
 /**
  * Validate comment parameter before perform other comments actions
+ *
+ * @package  mod_data
+ * @category comment
  *
  * @param stdClass $comment_param {
  *              context  => context the context object
