@@ -143,9 +143,6 @@ if ($eventid !== 0) {
     }
     $event->timestart = $time;
     $event = new calendar_event($event);
-    if (!calendar_add_event_allowed($event)) {
-        print_error('nopermissions');
-    }
 }
 
 $properties = $event->properties(true);
