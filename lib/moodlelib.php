@@ -4546,7 +4546,7 @@ function remove_course_contents($courseid, $showfeedback = true, array $options 
     // Remove all roles and enrolments by default
     if (empty($options['keep_roles_and_enrolments'])) {
         // this hack is used in restore when deleting contents of existing course
-        role_unassign_all(array('contextid'=>$coursecontext->id), true);
+        role_unassign_all(array('contextid'=>$coursecontext->id, 'component'=>''), true);
         enrol_course_delete($course);
         if ($showfeedback) {
             echo $OUTPUT->notification($strdeleted.get_string('type_enrol_plural', 'plugin'), 'notifysuccess');
@@ -4772,14 +4772,10 @@ function reset_course_userdata($data) {
                 unset($instances[$key]);
                 continue;
             }
-            if (!$plugins[$instance->enrol]->allow_unenrol($instance)) {
-                unset($instances[$key]);
-            }
         }
 
-        $sqlempty = $DB->sql_empty();
         foreach($data->unenrol_users as $withroleid) {
-            $sql = "SELECT DISTINCT ue.userid, ue.enrolid
+            $sql = "SELECT ue.*
                       FROM {user_enrolments} ue
                       JOIN {enrol} e ON (e.id = ue.enrolid AND e.courseid = :courseid)
                       JOIN {context} c ON (c.contextlevel = :courselevel AND c.instanceid = e.courseid)
@@ -4791,9 +4787,16 @@ function reset_course_userdata($data) {
                 if (!isset($instances[$ue->enrolid])) {
                     continue;
                 }
-                $plugins[$instances[$ue->enrolid]->enrol]->unenrol_user($instances[$ue->enrolid], $ue->userid);
+                $instance = $instances[$ue->enrolid];
+                $plugin = $plugins[$instance->enrol];
+                if (!$plugin->allow_unenrol($instance) and !$plugin->allow_unenrol_user($instance, $ue)) {
+                    continue;
+                }
+
+                $plugin->unenrol_user($instance, $ue->userid);
                 $data->unenrolled[$ue->userid] = $ue->userid;
             }
+            $rs->close();
         }
     }
     if (!empty($data->unenrolled)) {
@@ -5441,7 +5444,9 @@ function reset_password_and_mail($user) {
 
     $subject = get_string('emailconfirmationsubject', '', format_string($site->fullname));
 
-    $data->link  = $CFG->wwwroot .'/login/confirm.php?data='. $user->secret .'/'. urlencode($user->username);
+    $username = urlencode($user->username);
+    $username = str_replace('.', '%2E', $username); // prevent problems with trailing dots
+    $data->link  = $CFG->wwwroot .'/login/confirm.php?data='. $user->secret .'/'. $username;
     $message     = get_string('emailconfirmation', '', $data);
     $messagehtml = text_to_html(get_string('emailconfirmation', '', $data), false, false, true);
 
@@ -8848,7 +8853,7 @@ function shorten_text($text, $ideal=30, $exact = false, $ending='...') {
     global $CFG;
 
     // if the plain text is shorter than the maximum length, return the whole text
-    if (strlen(preg_replace('/<.*?>/', '', $text)) <= $ideal) {
+    if (textlib::strlen(preg_replace('/<.*?>/', '', $text)) <= $ideal) {
         return $text;
     }
 
@@ -8856,7 +8861,7 @@ function shorten_text($text, $ideal=30, $exact = false, $ending='...') {
     // and only tag in its 'line'
     preg_match_all('/(<.+?>)?([^<>]*)/s', $text, $lines, PREG_SET_ORDER);
 
-    $total_length = strlen($ending);
+    $total_length = textlib::strlen($ending);
     $truncate = '';
 
     // This array stores information about open and close tags and their position
@@ -8875,19 +8880,19 @@ function shorten_text($text, $ideal=30, $exact = false, $ending='...') {
             } else if (preg_match('/^<\s*\/([^\s]+?)\s*>$/s', $line_matchings[1], $tag_matchings)) {
                 // record closing tag
                 $tagdetails[] = (object)array('open'=>false,
-                    'tag'=>strtolower($tag_matchings[1]), 'pos'=>strlen($truncate));
+                    'tag'=>textlib::strtolower($tag_matchings[1]), 'pos'=>textlib::strlen($truncate));
             // if tag is an opening tag (f.e. <b>)
             } else if (preg_match('/^<\s*([^\s>!]+).*?>$/s', $line_matchings[1], $tag_matchings)) {
                 // record opening tag
                 $tagdetails[] = (object)array('open'=>true,
-                    'tag'=>strtolower($tag_matchings[1]), 'pos'=>strlen($truncate));
+                    'tag'=>textlib::strtolower($tag_matchings[1]), 'pos'=>textlib::strlen($truncate));
             }
             // add html-tag to $truncate'd text
             $truncate .= $line_matchings[1];
         }
 
         // calculate the length of the plain text part of the line; handle entities as one character
-        $content_length = strlen(preg_replace('/&[0-9a-z]{2,8};|&#[0-9]{1,7};|&#x[0-9a-f]{1,6};/i', ' ', $line_matchings[2]));
+        $content_length = textlib::strlen(preg_replace('/&[0-9a-z]{2,8};|&#[0-9]{1,7};|&#x[0-9a-f]{1,6};/i', ' ', $line_matchings[2]));
         if ($total_length+$content_length > $ideal) {
             // the number of characters which are left
             $left = $ideal - $total_length;
@@ -8898,14 +8903,14 @@ function shorten_text($text, $ideal=30, $exact = false, $ending='...') {
                 foreach ($entities[0] as $entity) {
                     if ($entity[1]+1-$entities_length <= $left) {
                         $left--;
-                        $entities_length += strlen($entity[0]);
+                        $entities_length += textlib::strlen($entity[0]);
                     } else {
                         // no more characters left
                         break;
                     }
                 }
             }
-            $truncate .= substr($line_matchings[2], 0, $left+$entities_length);
+            $truncate .= textlib::substr($line_matchings[2], 0, $left+$entities_length);
             // maximum length is reached, so get off the loop
             break;
         } else {
@@ -8922,21 +8927,21 @@ function shorten_text($text, $ideal=30, $exact = false, $ending='...') {
     // if the words shouldn't be cut in the middle...
     if (!$exact) {
         // ...search the last occurence of a space...
-        for ($k=strlen($truncate);$k>0;$k--) {
-            if (!empty($truncate[$k]) && ($char = $truncate[$k])) {
-                if ($char == '.' or $char == ' ') {
+        for ($k=textlib::strlen($truncate);$k>0;$k--) {
+            if ($char = textlib::substr($truncate, $k, 1)) {
+                if ($char === '.' or $char === ' ') {
                     $breakpos = $k+1;
                     break;
-                } else if (ord($char) >= 0xE0) {  // Chinese/Japanese/Korean text
-                    $breakpos = $k;               // can be truncated at any UTF-8
-                    break;                        // character boundary.
+                } else if (strlen($char) > 2) {  // Chinese/Japanese/Korean text
+                    $breakpos = $k+1;            // can be truncated at any UTF-8
+                    break;                       // character boundary.
                 }
             }
         }
 
         if (isset($breakpos)) {
             // ...and cut the text in this position
-            $truncate = substr($truncate, 0, $breakpos);
+            $truncate = textlib::substr($truncate, 0, $breakpos);
         }
     }
 
