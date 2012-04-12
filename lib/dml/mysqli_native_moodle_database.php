@@ -410,7 +410,11 @@ class mysqli_native_moodle_database extends moodle_database {
         $sql = "SHOW INDEXES FROM {$this->prefix}$table";
         $this->query_start($sql, null, SQL_QUERY_AUX);
         $result = $this->mysqli->query($sql);
-        $this->query_end($result);
+        try {
+            $this->query_end($result);
+        } catch (dml_read_exception $e) {
+            return $indexes; // table does not exist - no indexes...
+        }
         if ($result) {
             while ($res = $result->fetch_object()) {
                 if ($res->Key_name === 'PRIMARY') {
@@ -481,7 +485,6 @@ class mysqli_native_moodle_database extends moodle_database {
                 $rawcolumn->is_nullable              = $rawcolumn->null; unset($rawcolumn->null);
                 $rawcolumn->column_default           = $rawcolumn->default; unset($rawcolumn->default);
                 $rawcolumn->column_key               = $rawcolumn->key; unset($rawcolumn->default);
-                $rawcolumn->extra                    = ($rawcolumn->column_name === 'id') ? 'auto_increment' : '';
 
                 if (preg_match('/(enum|varchar)\((\d+)\)/i', $rawcolumn->column_type, $matches)) {
                     $rawcolumn->data_type = $matches[1];
@@ -951,7 +954,7 @@ class mysqli_native_moodle_database extends moodle_database {
         $id = @$this->mysqli->insert_id; // must be called before query_end() which may insert log into db
         $this->query_end($result);
 
-        if (!$id) {
+        if (!$customsequence and !$id) {
             throw new dml_write_exception('unknown error fetching inserted id');
         }
 
