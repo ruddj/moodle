@@ -29,6 +29,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+require_once($CFG->dirroot . '/calendar/lib.php');
+
 ////////////////////////////////////////////////////////////////////////////////
 // Moodle core API                                                            //
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,14 +72,15 @@ function workshop_add_instance(stdclass $workshop) {
     global $CFG, $DB;
     require_once(dirname(__FILE__) . '/locallib.php');
 
-    $workshop->phase                = workshop::PHASE_SETUP;
-    $workshop->timecreated          = time();
-    $workshop->timemodified         = $workshop->timecreated;
-    $workshop->useexamples          = (int)!empty($workshop->useexamples);          // unticked checkbox hack
-    $workshop->usepeerassessment    = (int)!empty($workshop->usepeerassessment);    // unticked checkbox hack
-    $workshop->useselfassessment    = (int)!empty($workshop->useselfassessment);    // unticked checkbox hack
-    $workshop->latesubmissions      = (int)!empty($workshop->latesubmissions);      // unticked checkbox hack
-    $workshop->evaluation           = 'best';
+    $workshop->phase                 = workshop::PHASE_SETUP;
+    $workshop->timecreated           = time();
+    $workshop->timemodified          = $workshop->timecreated;
+    $workshop->useexamples           = (int)!empty($workshop->useexamples);
+    $workshop->usepeerassessment     = (int)!empty($workshop->usepeerassessment);
+    $workshop->useselfassessment     = (int)!empty($workshop->useselfassessment);
+    $workshop->latesubmissions       = (int)!empty($workshop->latesubmissions);
+    $workshop->phaseswitchassessment = (int)!empty($workshop->phaseswitchassessment);
+    $workshop->evaluation            = 'best';
 
     // insert the new record so we get the id
     $workshop->id = $DB->insert_record('workshop', $workshop);
@@ -107,6 +110,9 @@ function workshop_add_instance(stdclass $workshop) {
     workshop_grade_item_update($workshop);
     workshop_grade_item_category_update($workshop);
 
+    // create calendar events
+    workshop_calendar_update($workshop, $workshop->coursemodule);
+
     return $workshop->id;
 }
 
@@ -122,13 +128,14 @@ function workshop_update_instance(stdclass $workshop) {
     global $CFG, $DB;
     require_once(dirname(__FILE__) . '/locallib.php');
 
-    $workshop->timemodified         = time();
-    $workshop->id                   = $workshop->instance;
-    $workshop->useexamples          = (int)!empty($workshop->useexamples);          // unticked checkbox hack
-    $workshop->usepeerassessment    = (int)!empty($workshop->usepeerassessment);    // unticked checkbox hack
-    $workshop->useselfassessment    = (int)!empty($workshop->useselfassessment);    // unticked checkbox hack
-    $workshop->latesubmissions      = (int)!empty($workshop->latesubmissions);      // unticked checkbox hack
-    $workshop->evaluation           = 'best';
+    $workshop->timemodified          = time();
+    $workshop->id                    = $workshop->instance;
+    $workshop->useexamples           = (int)!empty($workshop->useexamples);
+    $workshop->usepeerassessment     = (int)!empty($workshop->usepeerassessment);
+    $workshop->useselfassessment     = (int)!empty($workshop->useselfassessment);
+    $workshop->latesubmissions       = (int)!empty($workshop->latesubmissions);
+    $workshop->phaseswitchassessment = (int)!empty($workshop->phaseswitchassessment);
+    $workshop->evaluation            = 'best';
 
     // todo - if the grading strategy is being changed, we must replace all aggregated peer grades with nulls
     // todo - if maximum grades are being changed, we should probably recalculate or invalidate them
@@ -155,6 +162,9 @@ function workshop_update_instance(stdclass $workshop) {
     // update gradebook items
     workshop_grade_item_update($workshop);
     workshop_grade_item_category_update($workshop);
+
+    // update calendar events
+    workshop_calendar_update($workshop, $workshop->coursemodule);
 
     return true;
 }
@@ -209,6 +219,13 @@ function workshop_delete_instance($id) {
         require_once($path.'/lib.php');
         $classname = 'workshop_'.$evaluator.'_evaluation';
         call_user_func($classname.'::delete_instance', $workshop->id);
+    }
+
+    // delete the calendar events
+    $events = $DB->get_records('event', array('modulename' => 'workshop', 'instance' => $workshop->id));
+    foreach ($events as $event) {
+        $event = calendar_event::load($event);
+        $event->delete();
     }
 
     // finally remove the workshop record itself
@@ -882,14 +899,41 @@ function workshop_print_recent_mod_activity($activity, $courseid, $detail, $modn
 }
 
 /**
- * Function to be run periodically according to the moodle cron
- * This function searches for things that need to be done, such
- * as sending out mail, toggling flags etc ...
+ * Regular jobs to execute via cron
  *
- * @return boolean
- * @todo Finish documenting this function
- **/
-function workshop_cron () {
+ * @return boolean true on success, false otherwise
+ */
+function workshop_cron() {
+    global $CFG, $DB;
+
+    $now = time();
+
+    mtrace(' processing workshop subplugins ...');
+    cron_execute_plugin_type('workshopallocation', 'workshop allocation methods');
+
+    // now when the scheduled allocator had a chance to do its job, check if there
+    // are some workshops to switch into the assessment phase
+    $workshops = $DB->get_records_select("workshop",
+        "phase = 20 AND phaseswitchassessment = 1 AND submissionend > 0 AND submissionend < ?", array($now));
+
+    if (!empty($workshops)) {
+        mtrace('Processing automatic assessment phase switch in '.count($workshops).' workshop(s) ... ', '');
+        require_once($CFG->dirroot.'/mod/workshop/locallib.php');
+        foreach ($workshops as $workshop) {
+            $cm = get_coursemodule_from_instance('workshop', $workshop->id, $workshop->course, false, MUST_EXIST);
+            $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
+            $workshop = new workshop($workshop, $cm, $course);
+            $workshop->switch_phase(workshop::PHASE_ASSESSMENT);
+            $workshop->log('update switch phase', $workshop->view_url(), $workshop->phase);
+            // disable the automatic switching now so that it is not executed again by accident
+            // if the teacher changes the phase back to the submission one
+            $DB->set_field('workshop', 'phaseswitchassessment', 0, array('id' => $workshop->id));
+
+            // todo inform the teachers
+        }
+        mtrace('done');
+    }
+
     return true;
 }
 
@@ -1396,4 +1440,95 @@ function workshop_extend_settings_navigation(settings_navigation $settingsnav, n
 function workshop_page_type_list($pagetype, $parentcontext, $currentcontext) {
     $module_pagetype = array('mod-workshop-*'=>get_string('page-mod-workshop-x', 'workshop'));
     return $module_pagetype;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Calendar API                                                               //
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Updates the calendar events associated to the given workshop
+ *
+ * @param stdClass $workshop the workshop instance record
+ * @param int $cmid course module id
+ */
+function workshop_calendar_update(stdClass $workshop, $cmid) {
+    global $DB;
+
+    // get the currently registered events so that we can re-use their ids
+    $currentevents = $DB->get_records('event', array('modulename' => 'workshop', 'instance' => $workshop->id));
+
+    // the common properties for all events
+    $base = new stdClass();
+    $base->description  = format_module_intro('workshop', $workshop, $cmid, false);
+    $base->courseid     = $workshop->course;
+    $base->groupid      = 0;
+    $base->userid       = 0;
+    $base->modulename   = 'workshop';
+    $base->eventtype    = 'pluginname';
+    $base->instance     = $workshop->id;
+    $base->visible      = instance_is_visible('workshop', $workshop);
+    $base->timeduration = 0;
+
+    if ($workshop->submissionstart) {
+        $event = clone($base);
+        $event->name = get_string('submissionstartevent', 'mod_workshop', $workshop->name);
+        $event->timestart = $workshop->submissionstart;
+        if ($reusedevent = array_shift($currentevents)) {
+            $event->id = $reusedevent->id;
+        } else {
+            // should not be set but just in case
+            unset($event->id);
+        }
+        // calendar_event::create will reuse a db record if the id field is set
+        calendar_event::create($event);
+    }
+
+    if ($workshop->submissionend) {
+        $event = clone($base);
+        $event->name = get_string('submissionendevent', 'mod_workshop', $workshop->name);
+        $event->timestart = $workshop->submissionend;
+        if ($reusedevent = array_shift($currentevents)) {
+            $event->id = $reusedevent->id;
+        } else {
+            // should not be set but just in case
+            unset($event->id);
+        }
+        // calendar_event::create will reuse a db record if the id field is set
+        calendar_event::create($event);
+    }
+
+    if ($workshop->assessmentstart) {
+        $event = clone($base);
+        $event->name = get_string('assessmentstartevent', 'mod_workshop', $workshop->name);
+        $event->timestart = $workshop->assessmentstart;
+        if ($reusedevent = array_shift($currentevents)) {
+            $event->id = $reusedevent->id;
+        } else {
+            // should not be set but just in case
+            unset($event->id);
+        }
+        // calendar_event::create will reuse a db record if the id field is set
+        calendar_event::create($event);
+    }
+
+    if ($workshop->assessmentend) {
+        $event = clone($base);
+        $event->name = get_string('assessmentendevent', 'mod_workshop', $workshop->name);
+        $event->timestart = $workshop->assessmentend;
+        if ($reusedevent = array_shift($currentevents)) {
+            $event->id = $reusedevent->id;
+        } else {
+            // should not be set but just in case
+            unset($event->id);
+        }
+        // calendar_event::create will reuse a db record if the id field is set
+        calendar_event::create($event);
+    }
+
+    // delete any leftover events
+    foreach ($currentevents as $oldevent) {
+        $oldevent = calendar_event::load($oldevent);
+        $oldevent->delete();
+    }
 }

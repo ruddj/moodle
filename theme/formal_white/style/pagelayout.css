@@ -36,6 +36,10 @@
  *
  ****/
 
+#page {
+    font-size: 100%;
+}
+
 #page-header {
     background-color:[[setting:headerbgc]];
     /* arrotonadamento angoli in alto dell'header */
@@ -88,7 +92,11 @@
 }
 
 #page-content .region-content {
-    padding:0.6em 8px 0.1em 8px; /* definisco lo spazio sopra e sotto ai blocchi */
+    padding:[[setting:blockpadding]] [[setting:blockpadding]] 0 [[setting:blockpadding]];
+}
+
+#maincontent {
+    margin-top:0;
 }
 
 .pagelayout-report #page-content .region-content {
