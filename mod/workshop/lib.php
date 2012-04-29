@@ -1221,15 +1221,16 @@ function workshop_get_file_areas($course, $cm, $context) {
  * @package  mod_workshop
  * @category files
  *
- * @param stdClass $course
- * @param stdClass $cm
- * @param stdClass $context
- * @param string $filearea
- * @param array $args
- * @param bool $forcedownload
- * @return void this should never return to the caller
+ * @param stdClass $course the course object
+ * @param stdClass $cm the course module object
+ * @param stdClass $context the workshop's context
+ * @param string $filearea the name of the file area
+ * @param array $args extra arguments (itemid, path)
+ * @param bool $forcedownload whether or not force download
+ * @param array $options additional options affecting the file serving
+ * @return bool false if the file not found, just send the file otherwise and do not return anything
  */
-function workshop_pluginfile($course, $cm, $context, $filearea, array $args, $forcedownload) {
+function workshop_pluginfile($course, $cm, $context, $filearea, array $args, $forcedownload, array $options=array()) {
     global $DB, $CFG;
 
     if ($context->contextlevel != CONTEXT_MODULE) {
@@ -1246,7 +1247,7 @@ function workshop_pluginfile($course, $cm, $context, $filearea, array $args, $fo
 
         array_shift($args); // we do not use itemids here
         $relativepath = implode('/', $args);
-        $fullpath = "/$context->id/mod_workshop/$filearea/0/$relativepath"; // beware, slashes are not used here!
+        $fullpath = "/$context->id/mod_workshop/$filearea/0/$relativepath";
 
         $fs = get_file_storage();
         if (!$file = $fs->get_file_by_hash(sha1($fullpath)) or $file->is_directory()) {
@@ -1256,7 +1257,7 @@ function workshop_pluginfile($course, $cm, $context, $filearea, array $args, $fo
         $lifetime = isset($CFG->filelifetime) ? $CFG->filelifetime : 86400;
 
         // finally send the file
-        send_stored_file($file, $lifetime, 0);
+        send_stored_file($file, $lifetime, 0, $forcedownload, $options);
     }
 
     if ($filearea === 'instructreviewers') {
@@ -1277,7 +1278,7 @@ function workshop_pluginfile($course, $cm, $context, $filearea, array $args, $fo
         $lifetime = isset($CFG->filelifetime) ? $CFG->filelifetime : 86400;
 
         // finally send the file
-        send_stored_file($file, $lifetime, 0);
+        send_stored_file($file, $lifetime, 0, $forcedownload, $options);
 
     } else if ($filearea === 'submission_content' or $filearea === 'submission_attachment') {
         $itemid = (int)array_shift($args);
@@ -1296,7 +1297,7 @@ function workshop_pluginfile($course, $cm, $context, $filearea, array $args, $fo
         }
         // finally send the file
         // these files are uploaded by students - forcing download for security reasons
-        send_stored_file($file, 0, 0, true);
+        send_stored_file($file, 0, 0, true, $options);
     }
 
     return false;
@@ -1480,8 +1481,9 @@ function workshop_calendar_update(stdClass $workshop, $cmid) {
             // should not be set but just in case
             unset($event->id);
         }
-        // calendar_event::create will reuse a db record if the id field is set
-        calendar_event::create($event);
+        // update() will reuse a db record if the id field is set
+        $eventobj = new calendar_event($event);
+        $eventobj->update($event, false);
     }
 
     if ($workshop->submissionend) {
@@ -1494,8 +1496,9 @@ function workshop_calendar_update(stdClass $workshop, $cmid) {
             // should not be set but just in case
             unset($event->id);
         }
-        // calendar_event::create will reuse a db record if the id field is set
-        calendar_event::create($event);
+        // update() will reuse a db record if the id field is set
+        $eventobj = new calendar_event($event);
+        $eventobj->update($event, false);
     }
 
     if ($workshop->assessmentstart) {
@@ -1508,8 +1511,9 @@ function workshop_calendar_update(stdClass $workshop, $cmid) {
             // should not be set but just in case
             unset($event->id);
         }
-        // calendar_event::create will reuse a db record if the id field is set
-        calendar_event::create($event);
+        // update() will reuse a db record if the id field is set
+        $eventobj = new calendar_event($event);
+        $eventobj->update($event, false);
     }
 
     if ($workshop->assessmentend) {
@@ -1522,8 +1526,9 @@ function workshop_calendar_update(stdClass $workshop, $cmid) {
             // should not be set but just in case
             unset($event->id);
         }
-        // calendar_event::create will reuse a db record if the id field is set
-        calendar_event::create($event);
+        // update() will reuse a db record if the id field is set
+        $eventobj = new calendar_event($event);
+        $eventobj->update($event, false);
     }
 
     // delete any leftover events

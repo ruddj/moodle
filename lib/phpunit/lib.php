@@ -530,6 +530,7 @@ class phpunit_util {
         accesslib_clear_all_caches(true);
         get_string_manager()->reset_caches();
         events_get_handlers('reset');
+        textlib::reset_caches();
         //TODO: add more resets here and probably refactor them to new core function
 
         // purge dataroot directory
@@ -922,12 +923,12 @@ abstract class UnitTestCase extends PHPUnit_Framework_TestCase {
      * @param string $message
      * @return void
      */
-    public static function expectError($expected = false, $message = '') {
-        // not available in PHPUnit
+    public function expectError($expected = false, $message = '') {
+        // alternatively use phpdocs: @expectedException PHPUnit_Framework_Error
         if (!$expected) {
             return;
         }
-        self::skipIf(true);
+        $this->setExpectedException('PHPUnit_Framework_Error', $message);
     }
 
     /**
@@ -962,6 +963,19 @@ abstract class UnitTestCase extends PHPUnit_Framework_TestCase {
      */
     public static function assertEqual($expected, $actual, $message = '') {
         parent::assertEquals($expected, $actual, $message);
+    }
+
+    /**
+     * @deprecated since 2.3
+     * @static
+     * @param mixed $expected
+     * @param mixed $actual
+     * @param float|int $margin
+     * @param string $message
+     * @return void
+     */
+    public static function assertWithinMargin($expected, $actual, $margin, $message = '') {
+        parent::assertEquals($expected, $actual, '', $margin, $message);
     }
 
     /**
@@ -1010,10 +1024,34 @@ abstract class UnitTestCase extends PHPUnit_Framework_TestCase {
      */
     public static function assertIsA($actual, $expected, $message = '') {
         if ($expected === 'array') {
-            parent::assertEquals(gettype($actual), 'array', $message);
+            parent::assertEquals('array', gettype($actual), $message);
         } else {
             parent::assertInstanceOf($expected, $actual, $message);
         }
+    }
+
+    /**
+     * @deprecated since 2.3
+     * @static
+     * @param mixed $pattern
+     * @param mixed $string
+     * @param string $message
+     * @return void
+     */
+    public static function assertPattern($pattern, $string, $message = '') {
+        parent::assertRegExp($pattern, $string, $message);
+    }
+
+    /**
+     * @deprecated since 2.3
+     * @static
+     * @param mixed $pattern
+     * @param mixed $string
+     * @param string $message
+     * @return void
+     */
+    public static function assertNotPattern($pattern, $string, $message = '') {
+        parent::assertNotRegExp($pattern, $string, $message);
     }
 }
 
