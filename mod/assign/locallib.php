@@ -39,12 +39,6 @@ define('ASSIGN_FILTER_SUBMITTED', 'submitted');
 define('ASSIGN_FILTER_SINGLE_USER', 'singleuser');
 define('ASSIGN_FILTER_REQUIRE_GRADING', 'require_grading');
 
-/**
- * File areas for assignment portfolio if enabled
- */
-define('ASSIGN_FILEAREA_PORTFOLIO_FILES', 'portfolio_files');
-
-
 /** Include accesslib.php */
 require_once($CFG->libdir.'/accesslib.php');
 /** Include formslib.php */
@@ -53,8 +47,6 @@ require_once($CFG->libdir.'/formslib.php');
 require_once($CFG->dirroot . '/repository/lib.php');
 /** Include local mod_form.php */
 require_once($CFG->dirroot.'/mod/assign/mod_form.php');
-/** Include portfoliolib.php */
-require_once($CFG->libdir . '/portfoliolib.php');
 /** gradelib.php */
 require_once($CFG->libdir.'/gradelib.php');
 /** grading lib.php */
@@ -903,7 +895,7 @@ class assign {
         if ($this->get_instance()->grade >= 0) {
             // Normal number
             if ($editing) {
-                $o = '<input type="text" name="quickgrade_' . $userid . '" value="' . $grade . '" size="6" maxlength="10" class="quickgrade"/>';
+                $o = '<input type="text" name="quickgrade_' . $userid . '" value="' . format_float($grade) . '" size="6" maxlength="10" class="quickgrade"/>';
                 $o .= '&nbsp;/&nbsp;' . format_float($this->get_instance()->grade,2);
                 $o .= '<input type="hidden" name="grademodified_' . $userid . '" value="' . $modified . '"/>';
                 return $o;
@@ -1126,7 +1118,7 @@ class assign {
         // Simple array we'll use for caching modules.
         $modcache = array();
 
-        // Email students about new feedback
+        // Message students about new feedback
         foreach ($submissions as $submission) {
 
             mtrace("Processing assignment submission $submission->id ...");
@@ -2275,8 +2267,6 @@ class assign {
             $submissionid = $submission->id;
         }
 
-
-
         $fs = get_file_storage();
         $browser = get_file_browser();
         $files = $fs->get_area_files($this->get_context()->id, $component, $area , $submissionid , "timemodified", false);
@@ -2377,7 +2367,7 @@ class assign {
     }
 
     /**
-     * email someone about something (static so it can be called from cron)
+     * Message someone about something (static so it can be called from cron)
      *
      * @param stdClass $userfrom
      * @param stdClass $userto
@@ -2426,7 +2416,7 @@ class assign {
     }
 
     /**
-     * email someone about something
+     * Message someone about something
      *
      * @param stdClass $userfrom
      * @param stdClass $userto
@@ -2440,13 +2430,13 @@ class assign {
     }
 
     /**
-     * Email student upon successful submission
+     * Notify student upon successful submission
      *
      * @global moodle_database $DB
      * @param stdClass $submission
      * @return void
      */
-    private function email_student_submission_receipt(stdClass $submission) {
+    private function notify_student_submission_receipt(stdClass $submission) {
         global $DB;
 
         $adminconfig = $this->get_admin_config();
@@ -2459,13 +2449,13 @@ class assign {
     }
 
     /**
-     * Email graders upon student submissions
+     * Send notifications to graders upon student submissions
      *
      * @global moodle_database $DB
      * @param stdClass $submission
      * @return void
      */
-    private function email_graders(stdClass $submission) {
+    private function notify_graders(stdClass $submission) {
         global $DB;
 
         $late = $this->get_instance()->duedate && ($this->get_instance()->duedate < time());
@@ -2505,8 +2495,8 @@ class assign {
             $submission->status = ASSIGN_SUBMISSION_STATUS_SUBMITTED;
             $this->update_submission($submission);
             $this->add_to_log('submit for grading', $this->format_submission_for_log($submission));
-            $this->email_graders($submission);
-            $this->email_student_submission_receipt($submission);
+            $this->notify_graders($submission);
+            $this->notify_student_submission_receipt($submission);
         }
     }
 
@@ -2531,17 +2521,20 @@ class assign {
 
         $users = array();
         // first check all the last modified values
-        // Using POST is really unfortunate. A better solution needs to be found here. As we are looking for grades students we could
+        $currentgroup = groups_get_activity_group($this->get_course_module(), true);
+        $participants = $this->list_participants($currentgroup, true);
+
         // gets a list of possible users and look for values based upon that.
-        foreach ($_POST as $key => $value) {
-            if (preg_match('#^grademodified_(\d+)$#', $key, $matches)) {
+        foreach ($participants as $userid => $unused) {
+            $modified = optional_param('grademodified_' . $userid, -1, PARAM_INT);
+            if ($modified >= 0) {
                 // gather the userid, updated grade and last modified value
                 $record = new stdClass();
-                $record->userid = (int)$matches[1];
-                $record->grade = required_param('quickgrade_' . $record->userid, PARAM_INT);
-                $record->lastmodified = clean_param($value, PARAM_INT);
-                $record->gradinginfo = grade_get_grades($this->get_course()->id, 'mod', 'assign', $this->get_instance()->id, array($record->userid));
-                $users[$record->userid] = $record;
+                $record->userid = $userid;
+                $record->grade = unformat_float(required_param('quickgrade_' . $record->userid, PARAM_TEXT));
+                $record->lastmodified = $modified;
+                $record->gradinginfo = grade_get_grades($this->get_course()->id, 'mod', 'assign', $this->get_instance()->id, array($userid));
+                $users[$userid] = $record;
             }
         }
         if (empty($users)) {
@@ -2561,16 +2554,31 @@ class assign {
         $modifiedusers = array();
         foreach ($currentgrades as $current) {
             $modified = $users[(int)$current->userid];
+            $grade = $this->get_user_grade($userid, false);
 
             // check to see if the outcomes were modified
             if ($CFG->enableoutcomes) {
                 foreach ($modified->gradinginfo->outcomes as $outcomeid => $outcome) {
                     $oldoutcome = $outcome->grades[$modified->userid]->grade;
-                    $newoutcome = optional_param('outcome_' . $outcomeid . '_' . $modified->userid, -1, PARAM_INT);
+                    $newoutcome = optional_param('outcome_' . $outcomeid . '_' . $modified->userid, -1, PARAM_FLOAT);
                     if ($oldoutcome != $newoutcome) {
                         // can't check modified time for outcomes because it is not reported
                         $modifiedusers[$modified->userid] = $modified;
                         continue;
+                    }
+                }
+            }
+
+            // let plugins participate
+            foreach ($this->feedbackplugins as $plugin) {
+                if ($plugin->is_visible() && $plugin->is_enabled() && $plugin->supports_quickgrading()) {
+                    if ($plugin->is_quickgrading_modified($modified->userid, $grade)) {
+                        if ((int)$current->lastmodified > (int)$modified->lastmodified) {
+                            return get_string('errorrecordmodified', 'assign');
+                        } else {
+                            $modifiedusers[$modified->userid] = $modified;
+                            continue;
+                        }
                     }
                 }
             }
@@ -2597,10 +2605,17 @@ class assign {
         // ok - ready to process the updates
         foreach ($modifiedusers as $userid => $modified) {
             $grade = $this->get_user_grade($userid, true);
-            $grade->grade= grade_floatval($modified->grade);
+            $grade->grade= grade_floatval(unformat_float($modified->grade));
             $grade->grader= $USER->id;
 
             $this->update_grade($grade);
+
+            // save plugins data
+            foreach ($this->feedbackplugins as $plugin) {
+                if ($plugin->is_visible() && $plugin->is_enabled() && $plugin->supports_quickgrading()) {
+                    $plugin->save_quickgrading_changes($userid, $grade);
+                }
+            }
 
             // save outcomes
             if ($CFG->enableoutcomes) {
@@ -2738,8 +2753,8 @@ class assign {
             $this->add_to_log('submit', $this->format_submission_for_log($submission));
 
             if (!$this->get_instance()->submissiondrafts) {
-                $this->email_student_submission_receipt($submission);
-                $this->email_graders($submission);
+                $this->notify_student_submission_receipt($submission);
+                $this->notify_graders($submission);
             }
             return true;
         }
@@ -3165,7 +3180,7 @@ class assign {
             } else {
                 // handle the case when grade is set to No Grade
                 if (isset($formdata->grade)) {
-                    $grade->grade= grade_floatval($formdata->grade);
+                    $grade->grade= grade_floatval(unformat_float($formdata->grade));
                 }
             }
             $grade->grader= $USER->id;
