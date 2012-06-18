@@ -82,7 +82,7 @@ if (!$repository = $DB->get_record_sql($sql, array($repo_id))) {
 // Check permissions
 repository::check_capability($contextid, $repository);
 
-$moodle_maxbytes = get_max_upload_file_size();
+$moodle_maxbytes = get_user_max_upload_file_size($context);
 // to prevent maxbytes greater than moodle maxbytes setting
 if ($maxbytes == 0 || $maxbytes>=$moodle_maxbytes) {
     $maxbytes = $moodle_maxbytes;
@@ -231,6 +231,16 @@ switch ($action) {
             $record->timemodified = $now;
             $record->userid = $USER->id;
 
+            // If file is already a reference, set $source = file source, $repo = file repository
+            if ($repo->has_moodle_files()) {
+                $file = repository::get_moodle_file($source);
+                if ($file && $file->is_external_file()) {
+                    $source = $file->get_reference();
+                    $repo_id = $file->get_repository_id();
+                    $repo = repository::get_repository_by_id($repo_id, $contextid, $repooptions);
+                }
+            }
+
             if ($usefilereference) {
                 $reference = $repo->get_file_reference($source);
                 // get reference life time from repo
@@ -255,6 +265,11 @@ switch ($action) {
                     $event['existingfile']->filename = $saveas_filename;
                     $event['existingfile']->url      = moodle_url::make_draftfile_url($itemid, $saveas_path, $saveas_filename)->out();;
                 } else {
+
+                    // {@link repository::build_source_field()}
+                    $sourcefield = $repo->get_file_source_info($source);
+                    $record->source = $repo::build_source_field($sourcefield);
+
                     $storedfile = $fs->create_file_from_reference($record, $repo_id, $reference);
                     $event = array(
                         'url'=>moodle_url::make_draftfile_url($storedfile->get_itemid(), $storedfile->get_filepath(), $storedfile->get_filename())->out(),
@@ -292,14 +307,9 @@ switch ($action) {
                     throw new file_exception('maxbytes');
                 }
 
-                // {@link file_restore_source_field_from_draft_file()}
-                $sourcefield = '';
-                if (!empty($downloadedfile['url'])) {
-                    $source = new stdClass;
-                    $source->source = $downloadedfile['url'];
-                    $sourcefield = serialize($source);
-                }
-                $record->source = $sourcefield;
+                // {@link repository::build_source_field()}
+                $sourcefield = $repo->get_file_source_info($source);
+                $record->source = $repo::build_source_field($sourcefield);
 
                 $info = repository::move_to_filepool($downloadedfile['path'], $record);
                 if (empty($info)) {

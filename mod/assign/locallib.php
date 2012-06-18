@@ -894,8 +894,13 @@ class assign {
 
         if ($this->get_instance()->grade >= 0) {
             // Normal number
-            if ($editing) {
-                $o = '<input type="text" name="quickgrade_' . $userid . '" value="' . format_float($grade) . '" size="6" maxlength="10" class="quickgrade"/>';
+            if ($editing && $this->get_instance()->grade > 0) {
+                if ($grade < 0) {
+                    $displaygrade = '';
+                } else {
+                    $displaygrade = format_float($grade);
+                }
+                $o = '<input type="text" name="quickgrade_' . $userid . '" value="' . $displaygrade . '" size="6" maxlength="10" class="quickgrade"/>';
                 $o .= '&nbsp;/&nbsp;' . format_float($this->get_instance()->grade,2);
                 $o .= '<input type="hidden" name="grademodified_' . $userid . '" value="' . $modified . '"/>';
                 return $o;
@@ -1636,7 +1641,7 @@ class assign {
         }
         if ($grade) {
             $data = new stdClass();
-            if ($grade->grade >= 0) {
+            if ($grade->grade !== NULL && $grade->grade >= 0) {
                 $data->grade = format_float($grade->grade,2);
             }
         } else {
@@ -1897,7 +1902,7 @@ class assign {
     private function is_graded($userid) {
         $grade = $this->get_user_grade($userid, false);
         if ($grade) {
-            return ($grade->grade != '');
+            return ($grade->grade !== NULL && $grade->grade >= 0);
         }
         return false;
     }
@@ -2169,14 +2174,13 @@ class assign {
     private function gradebook_item_update($submission=NULL, $grade=NULL) {
 
         if($submission != NULL){
-
             $gradebookgrade = $this->convert_submission_for_gradebook($submission);
-
-
         }else{
-
-
             $gradebookgrade = $this->convert_grade_for_gradebook($grade);
+        }
+        // Grading is disabled, return.
+        if ($this->grading_disabled($gradebookgrade['userid'])) {
+            return false;
         }
         $assign = clone $this->get_instance();
         $assign->cmidnumber = $this->get_course_module()->id;
@@ -2591,6 +2595,9 @@ class assign {
             }
             if ($current->grade != $modified->grade) {
                 // grade changed
+                if ($this->grading_disabled($modified->userid)) {
+                    continue;
+                }
                 if ((int)$current->lastmodified > (int)$modified->lastmodified) {
                     // error - record has been modified since viewing the page
                     return get_string('errorrecordmodified', 'assign');
@@ -2768,7 +2775,7 @@ class assign {
      * @param int $userid - The student userid
      * @return bool $gradingdisabled
      */
-    private function grading_disabled($userid) {
+    public function grading_disabled($userid) {
         global $CFG;
 
         $gradinginfo = grade_get_grades($this->get_course()->id, 'mod', 'assign', $this->get_instance()->id, array($userid));
@@ -2856,14 +2863,20 @@ class assign {
         } else {
             // use simple direct grading
             if ($this->get_instance()->grade > 0) {
-                $mform->addElement('text', 'grade', get_string('gradeoutof', 'assign',$this->get_instance()->grade));
+                $gradingelement = $mform->addElement('text', 'grade', get_string('gradeoutof', 'assign',$this->get_instance()->grade));
                 $mform->addHelpButton('grade', 'gradeoutofhelp', 'assign');
                 $mform->setType('grade', PARAM_TEXT);
+                if ($gradingdisabled) {
+                    $gradingelement->freeze();
+                }
             } else {
                 $grademenu = make_grades_menu($this->get_instance()->grade);
                 if (count($grademenu) > 0) {
-                    $mform->addElement('select', 'grade', get_string('grade').':', $grademenu);
+                    $gradingelement = $mform->addElement('select', 'grade', get_string('grade').':', $grademenu);
                     $mform->setType('grade', PARAM_INT);
+                    if ($gradingdisabled) {
+                        $gradingelement->freeze();
+                    }
                 }
             }
         }
@@ -3115,6 +3128,9 @@ class assign {
         if (empty($CFG->enableoutcomes)) {
             return;
         }
+        if ($this->grading_disabled($userid)) {
+            return;
+        }
 
         require_once($CFG->libdir.'/gradelib.php');
 
@@ -3175,12 +3191,14 @@ class assign {
             $grade = $this->get_user_grade($userid, true);
             $gradingdisabled = $this->grading_disabled($userid);
             $gradinginstance = $this->get_grading_instance($userid, $gradingdisabled);
-            if ($gradinginstance) {
-                $grade->grade = $gradinginstance->submit_and_get_grade($formdata->advancedgrading, $grade->id);
-            } else {
-                // handle the case when grade is set to No Grade
-                if (isset($formdata->grade)) {
-                    $grade->grade= grade_floatval(unformat_float($formdata->grade));
+            if (!$gradingdisabled) {
+                if ($gradinginstance) {
+                    $grade->grade = $gradinginstance->submit_and_get_grade($formdata->advancedgrading, $grade->id);
+                } else {
+                    // handle the case when grade is set to No Grade
+                    if (isset($formdata->grade)) {
+                        $grade->grade = grade_floatval(unformat_float($formdata->grade));
+                    }
                 }
             }
             $grade->grader= $USER->id;

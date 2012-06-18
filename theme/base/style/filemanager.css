@@ -243,6 +243,9 @@ a.ygtvspacer:hover {color: transparent;text-decoration: none;}
 .filemanager .fp-iconview .fp-file.fp-hasreferences .fp-reficons1 {background: url('[[pix:theme|fp/link]]') no-repeat;background-position:bottom right;}
 .filemanager .fp-iconview .fp-file.fp-isreference .fp-reficons2 {background: url('[[pix:theme|fp/alias]]') no-repeat;background-position:bottom left;}
 
+.filemanager .fp-iconview .fp-file.fp-originalmissing .fp-thumbnail img {display:none;}
+.filemanager .fp-iconview .fp-file.fp-originalmissing .fp-thumbnail {background: url([[pix:s/dead]]) no-repeat;background-position:center center;}
+
 /*
  * Table view (File Manager only)
  */
@@ -274,8 +277,7 @@ a.ygtvspacer:hover {color: transparent;text-decoration: none;}
 .dndsupported .dndupload-ready .dndupload-target {display:block;}
 .dndupload-uploadinprogress {display:none;text-align:center;}
 .dndupload-uploading .dndupload-uploadinprogress {display:block;}
-.dndupload-arrow {background:url('[[pix:theme|fp/dnd_arrow]]') center no-repeat;width:56px;height:47px;position:absolute;margin-left: -28px;/*right:46%;left:46%;*/animation:mymove 5s infinite;-moz-animation:mymove 5s infinite;-webkit-animation:mymove 5s infinite;}
-@keyframes mymove {0%{top:10px;} 12%{top:40px;} 30%{top:20px} 65%{top:35px;} 100%{top:9px;}}@-moz-keyframes mymove{0%{top:10px;} 12%{top:40px;} 30%{top:20px} 65%{top:35px;} 100%{top:9px;}}@-webkit-keyframes mymove {0%{top:10px;} 12%{top:40px;} 30%{top:20px} 65%{top:35px;} 100%{top:9px;}}
+.dndupload-arrow {background:url([[pix:theme|fp/dnd_arrow]]) center no-repeat;width:60px;height:80px;position:absolute;margin-left: -28px;top: 5px;}
 
 /*
  * Select Dialogue (File Manager only)

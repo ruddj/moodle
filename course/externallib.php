@@ -66,7 +66,7 @@ class core_course_external extends external_api {
      * @return array
      * @since Moodle 2.2
      */
-    public static function get_course_contents($courseid, $options) {
+    public static function get_course_contents($courseid, $options = array()) {
         global $CFG, $DB;
         require_once($CFG->dirroot . "/course/lib.php");
 
@@ -276,7 +276,7 @@ class core_course_external extends external_api {
      * @return array
      * @since Moodle 2.2
      */
-    public static function get_courses($options) {
+    public static function get_courses($options = array()) {
         global $CFG, $DB;
         require_once($CFG->dirroot . "/course/lib.php");
 
@@ -701,7 +701,7 @@ class core_course_external extends external_api {
      * @return array New course info
      * @since Moodle 2.3
      */
-    public static function duplicate_course($courseid, $fullname, $shortname, $categoryid, $visible, $options) {
+    public static function duplicate_course($courseid, $fullname, $shortname, $categoryid, $visible = 1, $options = array()) {
         global $CFG, $USER, $DB;
         require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
         require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
@@ -910,7 +910,7 @@ class core_course_external extends external_api {
                                          ' - user must have \'moodle/category:manage\' to search on theme'),
                             'value' => new external_value(PARAM_RAW, 'the value to match')
                         )
-                    ), VALUE_DEFAULT, array()
+                    ), 'criteria', VALUE_DEFAULT, array()
                 ),
                 'addsubcategories' => new external_value(PARAM_BOOL, 'return the sub categories infos
                                           (1 - default) otherwise only the category info (0)', VALUE_DEFAULT, 1)
@@ -1376,6 +1376,9 @@ class core_course_external extends external_api {
                 // Finally move the category.
                 move_category($category, $parent_cat);
                 $category->parent = $cat['parent'];
+                // Get updated path by move_category().
+                $category->path = $DB->get_field('course_categories', 'path',
+                        array('id' => $category->id));
             }
             $DB->update_record('course_categories', $category);
         }
