@@ -1233,6 +1233,9 @@ abstract class repository {
      * @return string|null
      */
     public function get_file_source_info($url) {
+        if ($this->has_moodle_files()) {
+            return $this->get_reference_details($url, 0);
+        }
         return $url;
     }
 
@@ -1446,7 +1449,7 @@ abstract class repository {
             }
 
             $type = repository::get_type_by_id($i->options['typeid']);
-            $table->data[] = array($i->name, $type->get_readablename(), $settings, $delete);
+            $table->data[] = array(format_string($i->name), $type->get_readablename(), $settings, $delete);
 
             //display a grey row if the type is defined as not visible
             if (isset($type) && !$type->get_visible()) {
@@ -1676,7 +1679,7 @@ abstract class repository {
         global $CFG, $OUTPUT;
         $meta = new stdClass();
         $meta->id   = $this->id;
-        $meta->name = $this->get_name();
+        $meta->name = format_string($this->get_name());
         $meta->type = $this->options['type'];
         $meta->icon = $OUTPUT->pix_url('icon', 'repository_'.$meta->type)->out(false);
         $meta->supported_types = file_get_typegroup('extension', $this->supported_filetypes());
@@ -2096,6 +2099,7 @@ abstract class repository {
             // it can be empty, then moodle will look for instance name from language string
             $mform->addElement('text', 'pluginname', get_string('pluginname', 'repository'), array('size' => '40'));
             $mform->addElement('static', 'pluginnamehelp', '', get_string('pluginnamehelp', 'repository'));
+            $mform->setType('pluginname', PARAM_TEXT);
         }
     }
 
@@ -2386,6 +2390,7 @@ final class repository_instance_form extends moodleform {
 
         $mform->addElement('text', 'name', get_string('name'), 'maxlength="100" size="30"');
         $mform->addRule('name', $strrequired, 'required', null, 'client');
+        $mform->setType('name', PARAM_TEXT);
     }
 
     /**
