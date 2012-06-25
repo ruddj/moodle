@@ -279,6 +279,8 @@ class core_files_renderer extends plugin_renderer_base {
 <span class="fp-filename-icon">
     <a href="#">
     <span class="{!}fp-icon"></span>
+    <span class="fp-reficons1"></span>
+    <span class="fp-reficons2"></span>
     <span class="{!}fp-filename"></span>
     </a>
     <a class="{!}fp-contextmenu" href="#" onclick="return false;">'.$this->pix_icon('i/menu', '▶').'</a>
@@ -424,7 +426,7 @@ class core_files_renderer extends plugin_renderer_base {
         $rv = '
 <div class="filemanager fp-dlg">
     <div class="{!}fp-dlg-text"></div>
-    <button class="{!}fp-dlg-butconfirm">'.get_string('delete').'</button>
+    <button class="{!}fp-dlg-butconfirm">'.get_string('ok').'</button>
     <button class="{!}fp-dlg-butcancel">'.get_string('cancel').'</button>
 </div>';
         return preg_replace('/\{\!\}/', '', $rv);
