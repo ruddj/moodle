@@ -1,9 +1,10 @@
-<?php header('X-Frame-Options: ', true); ?>
-<?php echo $OUTPUT->doctype() ?>
+<!DOCTYPE html>
+<?php $OUTPUT->doctype(); ?>
 <html <?php echo $OUTPUT->htmlattributes() ?>>
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title><?php echo $PAGE->title ?></title>
+    <meta name="robots" content="noindex, nofollow" />
     <link rel="shortcut icon" href="<?php echo $OUTPUT->pix_url('favicon', 'theme')?>" />
     <?php echo $OUTPUT->standard_head_html() ?>
 </head>
@@ -20,8 +21,6 @@
 
 <!-- START OF FOOTER -->
 </div>
-<? /* some strange, difficult to trace bug in the Moodle calendar... */ ?>
-<div id="calendar_tooltip_1" style="display: none"></div>
 <?php echo $OUTPUT->standard_end_of_body_html() ?>
 </body>
 </html>

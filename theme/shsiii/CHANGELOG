@@ -1,0 +1,5 @@
+0.1     First version ready for initial testing
+0.2     Small changes to borders and calendar, solved resize problem, slight improvements to header, added spacing to blocks for a cleaner view (not implemented yet due to the following bug)
+	BUG: the area after a block's content does not get the border
+
+	TODO: make the header and footer expand to the width of the screen, fix the above bug
