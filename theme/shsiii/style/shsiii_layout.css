@@ -1,0 +1,660 @@
+/*
+Page Layout and Docking Module for Afterburner Moodle 2.0 Theme Set
+-----------------------------------------------------------------*/
+html {
+    margin: 0;
+    padding: 0;
+    background-color: #eee;
+}
+body {
+    margin: 0;
+    padding: 0;
+    background: #eee url([[pix:theme|core/bground]]) repeat-x;
+}
+#page-wrapper {
+    width: 100%;
+    max-width: 1050px;
+    margin: 0 auto;
+    background: transparent;
+}
+#page {
+    width: 100%;
+    max-width: 1010px;
+    margin: 0 auto;
+    padding: 0 20px;
+    background: white;
+}
+/*
+3 Column Page Layout
+-----------------------*/
+#page-content {
+    position: relative;    /* fixes IE7 overflow hidden bug stoping layout jumping out of place */
+    clear: both;
+    float: left;
+    width: 100%;            /* width of whole page */
+    overflow: hidden;        /* This chops off any overhanging divs */
+    /* background: #dddfd9;        *//* Left column background colour */ 
+}
+#region-main-box {
+    float: left;
+    width: 200%;
+    position: relative;
+    left: 200px;
+    background: white;        /* Centre column background colour */
+}
+#region-post-box {
+    float: left;
+    width: 100%;
+    position: relative;
+    left: 50%;
+    margin-left: -400px;
+    /* background: #dddfd9;        *//* Right column background colour */
+}
+#region-main-wrap {
+    float:right;
+    width:50%;
+    position:relative;
+    right:100%;
+}
+#region-main-pad {
+    margin:0 20px 0 420px;
+    overflow:hidden;
+}
+#region-main {
+    width:100%;
+    overflow:hidden;
+}
+
+#region-pre {
+    float:left;
+    width:200px;
+    position:relative;
+    margin-left:-50%;
+    left:200px;
+    overflow:hidden;
+}
+
+
+#region-post {
+    float:left;
+    width:200px;
+    position:relative;
+    left:0px;
+    overflow:hidden;
+}
+
+
+#page-content #region-main-box .region-content {
+    margin: 0;
+    padding:0;
+}
+#page-site-index .headingblock {
+    margin-bottom:9px;
+    /*margin-left: 3px;*/
+}
+#page-footer {
+    clear:both;
+    float:left;
+    width: 100%;
+    height: 70px;
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+}
+/*
+Block Region Layout
+-----------------------*/
+#region-pre .block-region {
+    float: left;
+    width: 220px;
+    margin: 0;
+    padding: 0;
+}
+#region-post .block-region {
+    float: right;
+    width: 220px;
+    margin: 0;
+    padding: 0;
+}
+/*
+PLEASE DO NOT ALTER THESE SETTINGS UNLESS YOU KNOW WHAT YOU ARE DOING AS IT WILL BREAK PAGE LAYOUT
+------------------------------------------------------------------------------------------------*/
+/*
+SIDE-PRE-ONLY (Left Column + Middle Column)
+----------------------------------------*/
+.side-pre-only #region-main-box {width: 200%; left: 220px;}
+.side-pre-only #region-post-box {width: 100%; left: 50%; margin-left: -220px; background-color: #fff;}
+.side-pre-only #region-main-wrap {width: 50%; right: 100%;}
+.side-pre-only #region-main-pad {margin: 0px 10px 0px 230px;}
+.side-pre-only #region-main {width: 100%;}
+.side-pre-only #region-pre {width: 220px; left: 0px; margin-left:-50%;}
+.side-pre-only #region-post {width: 0px; left: 0px;}
+/*
+SIDE-POST-ONLY (Middle Column + Right Column)
+------------------------------------------*/
+.side-post-only #page-content { background-color: #fff;}
+.side-post-only #region-main-box {width: 200%; left: 220px;}
+.side-post-only #region-post-box {width: 100%; left: 50%; margin-left: -440px;}
+.side-post-only #region-main-wrap {width: 50%; right: 100%;}
+.side-post-only #region-main-pad {margin: 0px 10px 0px 230px;}
+.side-post-only #region-main {width: 100%;}
+.side-post-only #region-pre {width: 0px;left: 0px;}
+.side-post-only #region-post {width: 220px; left: 0px;}
+/*
+SIDE-POST-ONLY WHEN MOVING BLOCKS (Left Column + Middle Column + Right Column)
+---------------------------------------------------------------------------*/
+.blocks-moving.side-post-only #region-main-box {left: 220px;}
+.blocks-moving.side-post-only #region-post-box {margin-left: -440px;}
+.blocks-moving.side-post-only #region-main-pad {margin: 0 10px 0 450px;}
+.blocks-moving.side-post-only #region-pre {width: 220px;left: 220px;}
+.blocks-moving.side-post-only #region-post {width: 220px;left: 0px;}
+/*
+CONTENT-ONLY - NO SIDE BLOCKS WHATSOEVER (Middle Column Only)
+----------------------------------------------------------*/
+.content-only #page-content { background-color: #fff;}
+.content-only #region-main-box {width: 200%; left: 0px;}
+.content-only #region-post-box {width: 100%; left: 50%; margin-left: 0px; background-color: #fff;}
+.content-only #region-main-wrap {width: 50%; right: 100%;}
+.content-only #region-main-pad {margin: 0px 10px 0px 10px;}
+.content-only #region-main {width: 100%}
+.content-only #region-pre { width:0;left:0;}
+.content-only #region-post { width: 0;left:0;}
+/*
+PAGELAYOUT-REPORT
+-------------------------*/
+.pagelayout-report #page-content #region-main-box #region-post-box #region-main-wrap #region-main-pad #region-main .region-content .no-overflow {overflow: auto;}
+
+
+
+
+
+
+
+
+
+
+
+.clr {
+  clear: both;
+}
+
+#wide-header div.search {
+  float: right;
+  background-color: white;
+  width: 230px;
+  height: 25px;
+}
+
+#wide-header div.search input.inputbox {
+  border-radius: 0;  
+  border: 0;
+  height: 100%;
+  width: 195px;
+  padding: 0 5px;
+}
+
+#wide-header div.search input[type=submit] {
+  float: right;
+  height: 100%;
+  width: 17px;
+  height: 17px;
+  margin: 4px;
+  cursor: pointer;
+  text-indent: -10000px;
+  background-image: url([[pix:theme|images/search]]);
+  border: 0;
+}
+
+div.container {
+  margin: auto auto;
+  padding: 0;
+  text-align: left;
+  max-width: 1050px;
+  height: 100%;
+}
+
+header#wide-header {
+  width: 100%;
+}
+
+div#topbar {
+  height: 25px;
+  background-color: #4D4D4D;
+  padding: 11px 0 9px;
+}
+
+div#topnav {
+  background-color: white;
+  height: 105px;
+  overflow: hidden;
+}
+
+/*div#topnav h1#sitelogo {
+  float: left;
+  height: 90%;
+  width: 353px; 
+  
+  margin: 0;
+  
+}*/
+
+h1#sitelogo img {
+  background-repeat: no-repeat;
+  width: 100%;
+  height: 100%;
+}
+
+h1#sitelogo a:hover,
+h1#sitelogo a:active,
+h1#sitelogo a:focus {
+  background-color: transparent;
+}
+
+div#topnav div.mainlinks ul {
+  float: right;
+  list-style-type: none;
+  margin: 0 0 0 /*20px*/ 0;
+  padding: 0px;
+  width: 386px;
+}
+
+div#topnav div.mainlinks ul li {
+  border-bottom: 2px dotted #CCC;
+  display: inline-block;
+  float: left;
+  font-weight: bold;
+  margin-right: 13px;
+  padding: 6px 0 4px;
+  width: 180px;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+div#topnav div.mainlinks ul li a {
+  color:#444;
+  background: none;
+  padding: 3px 6px 3px;
+  display: block;
+}
+
+div#topnav div.mainlinks ul li a:hover,
+div#topnav div.mainlinks ul li a:active,
+div#topnav div.mainlinks ul li a:focus {
+  color: #095197;
+  background: #F0F0F0;
+}
+
+div#topnav div.userblock {
+  float: right;
+  height: 100%;
+  width: 210px;
+  padding: 0 10px;
+  /*margin-bottom: 10px;*/
+  
+  background-color: #F1EFE7;
+}
+
+div#topnav div.userblock {
+  font-size: 10.5pt;
+}
+
+div#topnav div.userblock p {
+  margin-bottom: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+div#topnav span.userblock-name {
+  font-weight: bold;
+}
+
+div#topnav div.userblock {
+  font-size: 10.5pt;
+}
+
+div#topnav div.userblock ul.menu {
+  font-size: 9pt;
+  list-style-type: disc !important;
+  background: transparent;
+
+  padding: inherit;
+  margin: inherit;
+  padding-left: 0;
+  margin-left: 20px;
+  
+}
+
+div#topnav div.userblock ul.menu li {
+  margin: inherit;
+  margin-left: 0;
+  border: 0;
+  padding: 2px 1px;
+}
+
+div#topnav div.userblock ul.menu li a {
+  text-decoration: none;
+  color: #333;
+  background: transparent;
+  padding: inherit;
+}
+
+div#topnav div.userblock ul.menu li a:hover {
+  background: none;
+  text-decoration: underline;
+}
+
+
+section#fullnavblock {
+  clear: both;
+  background-image: url([[pix:theme|images/baroque]]);
+  background-color: #194f73;
+}
+
+section#fullnavblock div.module-header {
+  height: 35px;
+}
+
+section#fullnavblock .module-header {
+  color: white;
+  font-size: large;
+  padding-top: 10px;
+}
+
+div#slide-block {
+  overflow: hidden;
+  clear: both;
+}
+
+div#slide-block.expanded {
+  max-height: 400px;
+  min-height: 45px;  
+}
+
+
+a#slide-block-header {
+  font-family: 'Droid Sans', Arial;
+  padding-left: 2px;
+}
+
+a#slide-block-header:link,
+a#slide-block-header:visited {
+  color: white;
+  text-decoration: none;
+  display: inline-block;
+  padding-bottom: 2px;
+  padding-right: 24px;
+  background-image: url([[pix:theme|images/arrowdown]]);
+  background-position: right center;
+  background-repeat: no-repeat;
+}
+
+a#slide-block-header.expanded:link,
+a#slide-block-header.expanded:visited {
+  background-image: url([[pix:theme|images/arrowup]]);
+}
+
+a#slide-block-header:active {
+  /*background-color: orange;
+  border: 1px solid orange;*/
+}
+
+a#slide-block-header:focus {
+  background-color: transparent;
+  outline: 0;
+}
+
+
+div#slide-block .moduletable {     
+  overflow: hidden;
+  float: left;
+}
+
+div#slide-block ul.menu,
+div#slide-block ul.menu-simple {
+  list-style-type: none;
+  margin: 5px 0 10px 20px;
+  padding: 0px;
+
+  background: transparent;
+  overflow: hidden;
+  
+  float: left;
+}
+
+div#slide-block ul.menu li,
+div#slide-block ul.menu-simple li {
+  border-bottom: 2px dotted #F0F0F0;
+  display: /*inline-*/block;
+  /*float: left;*/
+  font-weight: bold;
+  margin-right: 13px;
+  padding: 6px 0 4px;
+  width: 180px;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+div#slide-block ul.menu-simple li {
+  width: 146px;
+}
+
+div#slide-block .moduletable:last-child ul.menu-simple li {
+  margin-right: 0;
+}
+
+div#slide-block ul.menu li a,
+div#slide-block ul.menu-simple li a {
+  background: transparent;
+  padding-top: 4px;
+  padding-bottom: 3px;
+  padding-left: 6px;
+  color: white;
+  display: block;
+  
+  
+  height: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+div#slide-block ul.menu-simple li a {
+  display: block;
+  text-decoration: none;
+  padding-left: 4px;
+}
+
+/*div#slide-block ul.menu li a:first-letter {
+  border: 1px solid white;
+  margin-right: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-family: Consolas, 'Ubuntu Mono', monospace; 
+  line-height: 80%;
+}*/
+
+div#slide-block ul.menu li a:hover,
+div#slide-block ul.menu-simple li a:hover {
+  background: #666;
+}
+
+/* the parent stylesheet does strange :focus selector highlight - may be to improve caret browsing. Needs adjustment here */
+/*a#slide-block-header:focus:hover {
+  background-color: #095197;
+}*/
+
+div.helpresponse-block {
+  float: right;
+  /*width: 230px;*/
+  margin-right: 15px;
+}
+
+div.helpresponse-block div.navbutton {
+  margin-top: 8px;
+  float: none;
+  text-align: left;
+}
+
+div.helpresponse-block div.navbutton > *:first-child {
+  padding-left: 0;
+}
+
+div.helpresponse-block div.navbutton > * {
+  padding-left: 10px;
+  margin: 0;
+}
+
+div.helpresponse-block div.navbutton div.singlebutton input {
+  padding: 3px 10px 4px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.breadcrumb {
+  margin: -1px 0 15px;
+}
+
+#page {
+  padding-top: 15px;
+  padding-bottom: 40px;
+}
+
+footer#footer {
+  color: white;
+  padding: 0;
+  background-color: #4D4D4D;
+  /*margin-top: -10px;*/
+  padding-top: 10px;
+  margin-bottom: 30px;
+  min-height: 35px;
+  
+  max-width: none;
+  background-image: none;
+}
+
+footer#footer > div.container {
+  float: none;
+  /*text-align: right;*/
+  font-size: 1em;
+
+}
+ 
+footer#footer > div.container p {
+  float: right;
+  margin: 1px 0 0 0; 
+  padding: 0;
+}
+
+footer#footer > div.container a {
+  color: white;
+  text-decoration: none;
+}
+
+footer#footer > div.container a:hover,
+footer#footer > div.container a:active,
+footer#footer > div.container a:focus {
+  background: transparent;
+  text-decoration: underline;
+}
+
+footer#footer > div.container div.logininfo {
+  margin-top: 5px;
+  float: left;
+}
+
+
+div.categorypicker {
+  margin: 0 auto;
+  text-align: center;
+}
+
+table.category_subcategories {
+  min-width: 50%;
+  font-size: 1em;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+table.category_subcategories thead tr,
+#movecourses table.generalbox tr th {
+  background-color: #8F9680;
+}
+
+table.category_subcategories thead tr th,
+#movecourses table.generalbox tr th {
+  font-size: 16px;
+  color: white;
+  text-align: left;
+}
+
+
+table.category_subcategories thead tr th {
+  border-radius: 3px 3px 0 0;  
+}
+
+#movecourses table.generalbox tr th:first-child {
+  border-top-left-radius: 3px;
+}
+
+#movecourses table.generalbox tr th:last-child {
+  border-top-right-radius: 3px;
+}
+
+table.category_subcategories td:last-child {
+  border-radius: 0 0 3px 3px;
+}
+
+#movecourses table.generalbox tr:last-child td:first-child {
+  border-bottom-left-radius: 3px;
+}
+
+#movecourses table.generalbox tr:last-child td:last-child {
+  border-bottom-right-radius: 3px;
+}
+
+table.category_subcategories tr.r0,
+#movecourses table.generalbox tr:nth-child(odd) td {
+  background-color: #EEEFEC;
+} 
+
+table.category_subcategories tr.r1,
+#movecourses table.generalbox tr:nth-child(even) td {
+  background-color: #DDDFD9;
+}
+
+#movecourses table.generalbox {
+  margin-top: 20px;
+  font-size: 1em;
+  min-width: 50%;
+}
+
+#page-course-category div.paging {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.helpresponse-block #coursesearchnavbar label {
+  color: white;
+  font-size: 11px;
+  padding-left: 4px;
+}
+
+.helpresponse-block #coursesearchnavbar input[type=submit] {
+  padding: 0 2px;
+}
+
+.helpresponse-block #coursesearchnavbar {
+  position: relative;
+  top: -6px;
+}
+
+#topnav div.mainlinks ul.dropdown li:first-child {
+  display: none;
+}
+
+.forgetpass,
+.forgetpass a {
+  display: none;
+}
+
