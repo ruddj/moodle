@@ -1,3 +1,4 @@
+<?php header('X-Frame-Options: ', true); ?>
 <?php echo $OUTPUT->doctype() ?>
 <html <?php echo $OUTPUT->htmlattributes() ?>>
 <head>
