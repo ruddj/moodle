@@ -11,7 +11,7 @@
 }
 
 
-
+/*
 @font-face {
     font-family: 'Droid Sans';
     src: url('[[font:droidsans-bold.eot]]');
@@ -21,7 +21,7 @@
     font-weight: bold;
     font-style: normal;
 
-}
+}*/
 /*
 @font-face {
     font-family: 'Ubuntu Mono';
@@ -95,12 +95,12 @@ p {
 
 /* Header and Logo */
 
-#page-header {
+/*#page-header {
     height: 105px;
     width: 100%;
     background: #fff;
     border-top: 45px solid #4d4d4d;
-}
+}*/
 
 h1#sitelogo {
   width: 388px;
@@ -136,7 +136,7 @@ h1#sitelogo.moodle a.logo img {
 }
 
 /* Page Footer */
-
+/*
 #page-footer {
     background-color: #4d4d4d;
     height: 45px;
@@ -171,7 +171,7 @@ h1#sitelogo.moodle a.logo img {
 #page-footer .footer-right {
     float: right;
     text-align: right;
-}
+}*/
 /* Navbar & Breadcrumb */
 /*.navbar {
     background-image: url([[pix:theme|images/baroque]]);
@@ -724,4 +724,11 @@ table.userenrolment tr.r1 {
   background-color: #F1EFE7;
 }
 
+#dock .dockedtitle h2.filterrotate {
+  font-size: 10px;
+  background-color: #AAA;
+}
 
+#dock .dockedtitle.activeitem h2.filterrotate {
+  background-color: #ABC;
+}

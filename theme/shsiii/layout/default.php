@@ -159,7 +159,7 @@ if ($hascustommenu) {
   </div>
  
   <section id="fullnavblock">
-    <div class="container">
+    <div class="container" id="page-header"><? /* page-header is a critical Moodle element */ ?>
       <div class="helpresponse-block">
         <?php if (!empty($PAGE->layout_options['langmenu'])): ?>
           <?php echo $OUTPUT->lang_menu(); ?>
@@ -264,7 +264,7 @@ if ($hascustommenu) {
 
 
 <footer id="footer">
-  <div class="container">
+  <div class="container" id="page-footer"><? /* page-footer is a critical Moodle element */ ?>
     <?php if ($haslogininfo): ?>
       <?php echo $OUTPUT->login_info(); ?>
     <?php endif; ?>
