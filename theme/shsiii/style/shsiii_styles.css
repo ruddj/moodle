@@ -648,7 +648,7 @@ hr {
   width: auto !important;
 }
 
-.mform .fitem .felement,
+/*.mform .fitem .felement,*/
 .block_metalink .felement  {
   margin: auto !important;
   text-align: center;
@@ -731,4 +731,8 @@ table.userenrolment tr.r1 {
 
 #dock .dockedtitle.activeitem h2.filterrotate {
   background-color: #ABC;
+}
+
+.mform .fitem .felement {
+  text-align: left;
 }

@@ -1,7 +1,10 @@
-<?php echo $OUTPUT->doctype() ?>
+<!DOCTYPE html>  
+<?php $OUTPUT->doctype(); ?>
 <html <?php echo $OUTPUT->htmlattributes() ?>>
 <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" /> 
     <title><?php echo $PAGE->title ?></title>
+    <meta name="robots" content="noindex, nofollow" />
     <link rel="shortcut icon" href="<?php echo $OUTPUT->pix_url('favicon', 'theme')?>" />
     <?php echo $OUTPUT->standard_head_html() ?>
 </head>

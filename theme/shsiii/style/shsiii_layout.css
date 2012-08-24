@@ -658,3 +658,29 @@ table.category_subcategories tr.r1,
   display: none;
 }
 
+.mform .fitem .fitemtitle {
+  width: 200px;
+}
+
+.mform .fitem .felement,
+.mform .fitem fieldset.felement {
+  padding-left: 30px;
+  margin-left: 200px;
+  width: auto;
+}
+
+.ie .mform .fitem .felement {  
+  margin-left: 0px;
+}
+
+.ie .mform .fitem .fitemtitle label {
+  display: inline-block;
+  min-height: 5px;
+}
+
+.mform .fitem .felement input,
+.mform .fitem .felement select {
+  margin-left: 0;
+}
+
+
