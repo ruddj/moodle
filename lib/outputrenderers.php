@@ -1490,7 +1490,7 @@ class core_renderer extends renderer_base {
             $go = html_writer::empty_tag('input', array('type'=>'submit', 'value'=>get_string('go')));
             $output .= html_writer::tag('noscript', html_writer::tag('div', $go), array('style'=>'inline'));
             $nothing = empty($select->nothing) ? false : key($select->nothing);
-            $output .= $this->page->requires->js_init_call('M.util.init_url_select', array($select->formid, $select->attributes['id'], $nothing));
+            $output .= $this->page->requires->js_init_call('M.util.init_select_autosubmit', array($select->formid, $select->attributes['id'], $nothing));
         } else {
             $output .= html_writer::empty_tag('input', array('type'=>'submit', 'value'=>$select->showbutton));
         }
@@ -1746,7 +1746,7 @@ class core_renderer extends renderer_base {
         // note: this title is displayed only if JS is disabled, otherwise the link will have the new ajax tooltip
         $title = get_string('helpprefix2', '', trim($helpicon->title, ". \t"));
 
-        $attributes = array('href'=>$url, 'title'=>$title);
+        $attributes = array('href'=>$url, 'title'=>$title, 'aria-haspopup' => 'true');
         $id = html_writer::random_id('helpicon');
         $attributes['id'] = $id;
         $output = html_writer::tag('a', $output, $attributes);
@@ -1811,7 +1811,7 @@ class core_renderer extends renderer_base {
         // note: this title is displayed only if JS is disabled, otherwise the link will have the new ajax tooltip
         $title = get_string('helpprefix2', '', trim($title, ". \t"));
 
-        $attributes = array('href'=>$url, 'title'=>$title);
+        $attributes = array('href'=>$url, 'title'=>$title, 'aria-haspopup' => 'true');
         $id = html_writer::random_id('helpicon');
         $attributes['id'] = $id;
         $output = html_writer::tag('a', $output, $attributes);

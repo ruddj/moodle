@@ -29,6 +29,8 @@
 #page-admin-course-index .editcourse th,
 #page-admin-course-index .editcourse td {padding-left:10px;padding-right:10px;}
 #page-admin-course-index .editcourse .count {text-align:right;}
+#page-admin-course-index.dir-rtl .editcourse td[align="left"] {text-align: right;}
+#page-admin-course-index.dir-rtl .editcourse td[align="right"] {text-align: left;}
 
 #page-admin-report-security-index .timewarninghidden {display:none;}
 #page-admin-report-security-index .statuswarning {background-color: #f0e000;}
@@ -161,6 +163,8 @@
 #adminsettings .form-item .form-label {display: block;float: left;width: 12.5em;text-align: right;}
 #adminsettings .form-item .form-label .form-shortname {display:block;}
 #adminsettings .form-item .form-setting {display: block;margin-left: 13.5em;text-align: left;}
+.dir-rtl #admin-spelllanguagelist textarea,
+#page-admin-setting-editorsettingstinymce.dir-rtl .form-textarea textarea {text-align: left;direction: ltr;}
 #adminsettings .form-item .form-setting .form-htmlarea {width:  640px;display:inline;}
 #adminsettings .form-item .form-setting .form-htmlarea .htmlarea {width:  640px;display:block;}
 #adminsettings .form-item .form-setting .form-multicheckbox li {list-style: none;}
