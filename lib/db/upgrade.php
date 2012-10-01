@@ -1206,5 +1206,43 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2012090700.01);
     }
 
+    if ($oldversion < 2012091700.00) {
+
+        // Dropping screenreader field from user.
+        $table = new xmldb_table('user');
+        $field = new xmldb_field('screenreader');
+
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2012091700.00);
+    }
+
+    if ($oldversion < 2012092100.01) {
+        // Some folders still have a sortorder set, which is used for main files but is not
+        // supported by the folder resource. We reset the value here.
+        $sql = 'UPDATE {files} SET sortorder = ? WHERE component = ? AND filearea = ? AND sortorder <> ?';
+        $DB->execute($sql, array(0, 'mod_folder', 'content', 0));
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2012092100.01);
+    }
+
+    if ($oldversion < 2012092600.00) {
+        // Define index idname (unique) to be added to tag
+        $table = new xmldb_table('tag');
+        $index = new xmldb_index('idname', XMLDB_INDEX_UNIQUE, array('id', 'name'));
+
+        // Conditionally launch add index idname
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2012092600.00);
+    }
+
     return true;
 }

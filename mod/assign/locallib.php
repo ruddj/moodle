@@ -343,18 +343,18 @@ class assign {
         } else if ($action == 'gradingbatchoperation') {
             $action = $this->process_grading_batch_operation($mform);
         } else if ($action == 'submitgrade') {
-            if (optional_param('saveandshownext', null, PARAM_ALPHA)) {
+            if (optional_param('saveandshownext', null, PARAM_RAW)) {
                 //save and show next
                 $action = 'grade';
                 if ($this->process_save_grade($mform)) {
                     $action = 'nextgrade';
                 }
-            } else if (optional_param('nosaveandprevious', null, PARAM_ALPHA)) {
+            } else if (optional_param('nosaveandprevious', null, PARAM_RAW)) {
                 $action = 'previousgrade';
-            } else if (optional_param('nosaveandnext', null, PARAM_ALPHA)) {
+            } else if (optional_param('nosaveandnext', null, PARAM_RAW)) {
                 //show next button
                 $action = 'nextgrade';
-            } else if (optional_param('savegrade', null, PARAM_ALPHA)) {
+            } else if (optional_param('savegrade', null, PARAM_RAW)) {
                 //save changes button
                 $action = 'grade';
                 if ($this->process_save_grade($mform)) {
@@ -1864,7 +1864,7 @@ class assign {
      *
      * @return assign_renderer
      */
-    private function get_renderer() {
+    public function get_renderer() {
         global $PAGE;
         if ($this->output) {
             return $this->output;
@@ -1957,6 +1957,7 @@ class assign {
             $grade->locked = 0;
             $grade->grade = -1;
             $grade->grader = $USER->id;
+            $grade->extensionduedate = 0;
             $gid = $DB->insert_record('assign_grades', $grade);
             $grade->id = $gid;
             return $grade;
@@ -2008,10 +2009,6 @@ class assign {
         $userid = $useridlist[$rownum];
         if ($rownum == count($useridlist) - 1) {
             $last = true;
-        }
-        // the placement of this is important so can pass the list of userids above
-        if ($offset) {
-            $_POST = array();
         }
         if (!$userid) {
             throw new coding_exception('Row is out of bounds for the current grading table: ' . $rownum);
@@ -3462,20 +3459,28 @@ class assign {
         }
         $currentgrades->close();
 
+        $adminconfig = $this->get_admin_config();
+        $gradebookplugin = $adminconfig->feedback_plugin_for_gradebook;
+
         // ok - ready to process the updates
         foreach ($modifiedusers as $userid => $modified) {
             $grade = $this->get_user_grade($userid, true);
             $grade->grade= grade_floatval(unformat_float($modified->grade));
             $grade->grader= $USER->id;
 
-            $this->update_grade($grade);
-
             // save plugins data
             foreach ($this->feedbackplugins as $plugin) {
                 if ($plugin->is_visible() && $plugin->is_enabled() && $plugin->supports_quickgrading()) {
                     $plugin->save_quickgrading_changes($userid, $grade);
+                    if (('assignfeedback_' . $plugin->get_type()) == $gradebookplugin) {
+                        // This is the feedback plugin chose to push comments to the gradebook.
+                        $grade->feedbacktext = $plugin->text_for_gradebook($grade);
+                        $grade->feedbackformat = $plugin->format_for_gradebook($grade);
+                    }
                 }
             }
+
+            $this->update_grade($grade);
 
             // save outcomes
             if ($CFG->enableoutcomes) {
@@ -3852,6 +3857,7 @@ class assign {
         $mform->setType('id', PARAM_INT);
         $mform->addElement('hidden', 'rownum', $rownum);
         $mform->setType('rownum', PARAM_INT);
+        $mform->setConstant('rownum', $rownum);
         $mform->addElement('hidden', 'useridlist', implode(',', $useridlist));
         $mform->setType('useridlist', PARAM_TEXT);
         $mform->addElement('hidden', 'ajax', optional_param('ajax', 0, PARAM_INT));
@@ -4341,7 +4347,7 @@ class assign {
         $graderesults = $DB->get_recordset_sql('SELECT u.id as userid, s.timemodified as datesubmitted, g.grade as rawgrade, g.timemodified as dategraded, g.grader as usermodified
                             FROM {user} u
                             LEFT JOIN {assign_submission} s ON u.id = s.userid and s.assignment = ?
-                            LEFT JOIN {assign_grades} g ON u.id = g.userid and g.assignment = ?
+                            JOIN {assign_grades} g ON u.id = g.userid and g.assignment = ?
                             ' . $where, array($assignmentid, $assignmentid, $userid));
 
 

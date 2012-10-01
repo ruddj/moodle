@@ -8815,11 +8815,9 @@ function get_browser_version_classes() {
  * @return bool True for yes, false for no
  */
 function can_use_rotated_text() {
-    global $USER;
-    return (check_browser_version('MSIE', 9) || check_browser_version('Firefox', 2) ||
+    return check_browser_version('MSIE', 9) || check_browser_version('Firefox', 2) ||
             check_browser_version('Chrome', 21) || check_browser_version('Safari', 536.25) ||
-            check_browser_version('Opera', 12) || check_browser_version('Safari iOS', 533)) &&
-            !$USER->screenreader;
+            check_browser_version('Opera', 12) || check_browser_version('Safari iOS', 533);
 }
 
 /**
@@ -10507,17 +10505,12 @@ function object_property_exists( $obj, $property ) {
  */
 function convert_to_array($var) {
     $result = array();
-    $references = array();
 
     // loop over elements/properties
     foreach ($var as $key => $value) {
         // recursively convert objects
         if (is_object($value) || is_array($value)) {
-            // but prevent cycles
-            if (!in_array($value, $references)) {
-                $result[$key] = convert_to_array($value);
-                $references[] = $value;
-            }
+            $result[$key] = convert_to_array($value);
         } else {
             // simple values are untouched
             $result[$key] = $value;

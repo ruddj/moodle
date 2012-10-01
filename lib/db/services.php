@@ -356,6 +356,15 @@ $functions = array(
 
     // === enrol related functions ===
 
+    'core_enrol_get_enrolled_users_with_capability' => array(
+        'classname'   => 'core_enrol_external',
+        'methodname'  => 'get_enrolled_users_with_capability',
+        'classpath'   => 'enrol/externallib.php',
+        'description' => 'For each course and capability specified, return a list of the users that are enrolled in the course
+                          and have that capability',
+        'type'        => 'read',
+    ),
+
     'moodle_enrol_get_enrolled_users' => array(
         'classname'   => 'moodle_enrol_external',
         'methodname'  => 'get_enrolled_users',
@@ -522,7 +531,7 @@ $functions = array(
         'classpath'   => 'course/externallib.php',
         'description' => 'Update categories',
         'type'        => 'write',
-        'capabilities'=> 'moodle:category/manage',
+        'capabilities'=> 'moodle/category:manage',
     ),
 
     'core_course_delete_categories' => array(

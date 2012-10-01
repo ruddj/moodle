@@ -4186,6 +4186,89 @@ class dml_testcase extends database_driver_testcase {
         $this->assertEquals(1, $DB->count_records($tablename));
     }
 
+    function test_transaction_ignore_error_trouble() {
+        $DB = $this->tdb;
+        $dbman = $DB->get_manager();
+
+        $table = $this->get_test_table();
+        $tablename = $table->getName();
+
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('course', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_index('course', XMLDB_INDEX_UNIQUE, array('course'));
+        $dbman->create_table($table);
+
+        // Test error on SQL_QUERY_INSERT.
+        $transaction = $DB->start_delegated_transaction();
+        $this->assertEquals(0, $DB->count_records($tablename));
+        $DB->insert_record($tablename, (object)array('course'=>1));
+        $this->assertEquals(1, $DB->count_records($tablename));
+        try {
+            $DB->insert_record($tablename, (object)array('course'=>1));
+        } catch (Exception $e) {
+            // This must be ignored and it must not roll back the whole transaction.
+        }
+        $DB->insert_record($tablename, (object)array('course'=>2));
+        $this->assertEquals(2, $DB->count_records($tablename));
+        $transaction->allow_commit();
+        $this->assertEquals(2, $DB->count_records($tablename));
+        $this->assertFalse($DB->is_transaction_started());
+
+        // Test error on SQL_QUERY_SELECT.
+        $DB->delete_records($tablename);
+        $transaction = $DB->start_delegated_transaction();
+        $this->assertEquals(0, $DB->count_records($tablename));
+        $DB->insert_record($tablename, (object)array('course'=>1));
+        $this->assertEquals(1, $DB->count_records($tablename));
+        try {
+            $DB->get_records_sql('s e l e c t');
+        } catch (Exception $e) {
+            // This must be ignored and it must not roll back the whole transaction.
+        }
+        $DB->insert_record($tablename, (object)array('course'=>2));
+        $this->assertEquals(2, $DB->count_records($tablename));
+        $transaction->allow_commit();
+        $this->assertEquals(2, $DB->count_records($tablename));
+        $this->assertFalse($DB->is_transaction_started());
+
+        // Test error on structure SQL_QUERY_UPDATE.
+        $DB->delete_records($tablename);
+        $transaction = $DB->start_delegated_transaction();
+        $this->assertEquals(0, $DB->count_records($tablename));
+        $DB->insert_record($tablename, (object)array('course'=>1));
+        $this->assertEquals(1, $DB->count_records($tablename));
+        try {
+            $DB->execute('xxxx');
+        } catch (Exception $e) {
+            // This must be ignored and it must not roll back the whole transaction.
+        }
+        $DB->insert_record($tablename, (object)array('course'=>2));
+        $this->assertEquals(2, $DB->count_records($tablename));
+        $transaction->allow_commit();
+        $this->assertEquals(2, $DB->count_records($tablename));
+        $this->assertFalse($DB->is_transaction_started());
+
+        // Test error on structure SQL_QUERY_STRUCTURE.
+        $DB->delete_records($tablename);
+        $transaction = $DB->start_delegated_transaction();
+        $this->assertEquals(0, $DB->count_records($tablename));
+        $DB->insert_record($tablename, (object)array('course'=>1));
+        $this->assertEquals(1, $DB->count_records($tablename));
+        try {
+            $DB->change_database_structure('xxxx');
+        } catch (Exception $e) {
+            // This must be ignored and it must not roll back the whole transaction.
+        }
+        $DB->insert_record($tablename, (object)array('course'=>2));
+        $this->assertEquals(2, $DB->count_records($tablename));
+        $transaction->allow_commit();
+        $this->assertEquals(2, $DB->count_records($tablename));
+        $this->assertFalse($DB->is_transaction_started());
+
+        // NOTE: SQL_QUERY_STRUCTURE is intentionally not tested here because it should never fail.
+    }
+
     function test_onelevel_rollback() {
         $DB = $this->tdb;
         $dbman = $DB->get_manager();
