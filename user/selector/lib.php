@@ -735,9 +735,13 @@ abstract class groups_user_selector_base extends user_selector_base {
 class group_members_selector extends groups_user_selector_base {
     public function find_users($search) {
         list($wherecondition, $params) = $this->search_sql($search, 'u');
+
+        list($sort, $sortparams) = users_order_by_sql('u', $search, $this->accesscontext);
+
         $roles = groups_get_members_by_role($this->groupid, $this->courseid,
                 $this->required_fields_sql('u') . ', gm.component',
-                'u.lastname, u.firstname', $wherecondition, $params);
+                $sort, $wherecondition, array_merge($params, $sortparams));
+
         return $this->convert_array_format($roles, $search);
     }
 }
@@ -846,7 +850,9 @@ class group_non_members_selector extends groups_user_selector_base {
                   WHERE u.deleted = 0
                         AND gm.id IS NULL
                         AND $searchcondition";
-        $orderby = "ORDER BY u.lastname, u.firstname";
+
+        list($sort, $sortparams) = users_order_by_sql('u', $search, $this->accesscontext);
+        $orderby = ' ORDER BY ' . $sort;
 
         $params = array_merge($searchparams, $roleparams, $enrolparams);
         $params['courseid'] = $this->courseid;
@@ -859,7 +865,7 @@ class group_non_members_selector extends groups_user_selector_base {
             }
         }
 
-        $rs = $DB->get_recordset_sql("$fields $sql $orderby", $params);
+        $rs = $DB->get_recordset_sql("$fields $sql $orderby", array_merge($params, $sortparams));
         $roles =  groups_calculate_role_people($rs, $context);
 
         //don't hold onto user IDs if we're doing validation

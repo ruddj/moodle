@@ -1163,32 +1163,6 @@ class assign {
     }
 
     /**
-     * Return all assignment submissions by ENROLLED students (even empty)
-     *
-     * @param string $sort optional field names for the ORDER BY in the sql query
-     * @param string $dir optional specifying the sort direction, defaults to DESC
-     * @return array The submission objects indexed by id
-     */
-    private function get_all_submissions( $sort="", $dir="DESC") {
-        global $CFG, $DB;
-
-        if ($sort == "lastname" or $sort == "firstname") {
-            $sort = "u.$sort $dir";
-        } else if (empty($sort)) {
-            $sort = "a.timemodified DESC";
-        } else {
-            $sort = "a.$sort $dir";
-        }
-
-        return $DB->get_records_sql("SELECT a.*
-                                       FROM {assign_submission} a, {user} u
-                                      WHERE u.id = a.userid
-                                            AND a.assignment = ?
-                                   ORDER BY $sort", array($this->get_instance()->id));
-
-    }
-
-    /**
      * Generate zip file from array of given files
      *
      * @param array $filesforzipping - array of files to pass into archive_to_pathname - this array is indexed by the final file name and each element in the array is an instance of a stored_file object
@@ -2461,6 +2435,8 @@ class assign {
             $prefix = 'plugingradingbatchoperation_';
 
             if ($data->operation == 'grantextension') {
+                // Reset the form so the grant extension page will create the extension form.
+                $mform = null;
                 return 'grantextension';
             } else if (strpos($data->operation, $prefix) === 0) {
                 $tail = substr($data->operation, strlen($prefix));
@@ -2952,9 +2928,9 @@ class assign {
         }
         $submission = false;
         if ($this->get_instance()->teamsubmission) {
-            $submission = $this->get_group_submission($USER->id, 0, false);
+            $submission = $this->get_group_submission($userid, 0, false);
         } else {
-            $submission = $this->get_user_submission($USER->id, false);
+            $submission = $this->get_user_submission($userid, false);
         }
         if ($submission) {
 
