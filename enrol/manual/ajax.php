@@ -51,10 +51,12 @@ echo $OUTPUT->header(); // Send headers.
 
 $manager = new course_enrolment_manager($PAGE, $course);
 
-$outcome = new stdClass;
+$outcome = new stdClass();
 $outcome->success = true;
-$outcome->response = new stdClass;
+$outcome->response = new stdClass();
 $outcome->error = '';
+
+$searchanywhere = get_user_preferences('userselector_searchanywhere', false);
 
 switch ($action) {
     case 'getassignable':
@@ -63,9 +65,9 @@ switch ($action) {
         break;
     case 'searchusers':
         $enrolid = required_param('enrolid', PARAM_INT);
-        $search  = optional_param('search', '', PARAM_RAW);
+        $search = optional_param('search', '', PARAM_RAW);
         $page = optional_param('page', 0, PARAM_INT);
-        $outcome->response = $manager->get_potential_users($enrolid, $search, true, $page);
+        $outcome->response = $manager->get_potential_users($enrolid, $search, $searchanywhere, $page);
         $extrafields = get_extra_user_fields($context);
         foreach ($outcome->response['users'] as &$user) {
             $user->picture = $OUTPUT->user_picture($user);
@@ -77,6 +79,10 @@ switch ($action) {
             }
             $user->extrafields = implode(', ', $fieldvalues);
         }
+        // Chrome will display users in the order of the array keys, so we need
+        // to ensure that the results ordered array keys. Fortunately, the JavaScript
+        // does not care what the array keys are. It uses user.id where necessary.
+        $outcome->response['users'] = array_values($outcome->response['users']);
         $outcome->success = true;
         break;
     case 'enrol':

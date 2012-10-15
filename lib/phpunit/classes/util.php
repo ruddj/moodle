@@ -533,6 +533,12 @@ class phpunit_util {
         make_temp_directory('');
         make_cache_directory('');
         make_cache_directory('htmlpurifier');
+        // Reset the cache API so that it recreates it's required directories as well.
+        cache_factory::reset();
+        // Purge all data from the caches. This is required for consistency.
+        // Any file caches that happened to be within the data root will have already been clearer (because we just deleted cache)
+        // and now we will purge any other caches as well.
+        cache_helper::purge_all();
     }
 
     /**
@@ -546,6 +552,9 @@ class phpunit_util {
      */
     public static function reset_all_data($logchanges = false) {
         global $DB, $CFG, $USER, $SITE, $COURSE, $PAGE, $OUTPUT, $SESSION, $GROUPLIB_CACHE;
+
+        // Release memory and indirectly call destroy() methods to release resource handles, etc.
+        gc_collect_cycles();
 
         // Show any unhandled debugging messages, the runbare() could already reset it.
         self::display_debugging_messages();
@@ -625,6 +634,14 @@ class phpunit_util {
         }
         $GROUPLIB_CACHE = null;
         //TODO MDL-25290: add more resets here and probably refactor them to new core function
+
+        // Reset course and module caches.
+        if (class_exists('format_base')) {
+            // If file containing class is not loaded, there is no cache there anyway.
+            format_base::reset_course_cache(0);
+        }
+        $reset = 'reset';
+        get_fast_modinfo($reset);
 
         // purge dataroot directory
         self::reset_dataroot();
