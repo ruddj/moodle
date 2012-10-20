@@ -3427,10 +3427,9 @@ class settings_navigation extends navigation_node {
      */
     protected function get_course_modules($course) {
         global $CFG;
-        $mods = $modnames = $modnamesplural = $modnamesused = array();
         // This function is included when we include course/lib.php at the top
         // of this file
-        get_all_mods($course->id, $mods, $modnames, $modnamesplural, $modnamesused);
+        $modnames = get_module_types_names();
         $resources = array();
         $activities = array();
         foreach($modnames as $modname=>$modnamestr) {
@@ -3498,7 +3497,7 @@ class settings_navigation extends navigation_node {
                 $baseurl->param('sesskey', sesskey());
             } else {
                 // Edit on the main course page.
-                $baseurl = new moodle_url('/course/view.php', array('id'=>$course->id, 'sesskey'=>sesskey()));
+                $baseurl = new moodle_url('/course/view.php', array('id'=>$course->id, 'return'=>$this->page->url->out_as_local_url(false), 'sesskey'=>sesskey()));
             }
 
             $editurl = clone($baseurl);

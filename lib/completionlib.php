@@ -971,8 +971,8 @@ class completion_info {
 
         if ($data->userid == $USER->id) {
             $SESSION->completioncache[$cm->course][$cm->id] = $data;
-            $reset = 'reset';
-            get_fast_modinfo($reset);
+            // reset modinfo for user (no need to call rebuild_course_cache())
+            get_fast_modinfo($cm->course, 0, true);
         }
     }
 
@@ -1069,7 +1069,8 @@ class completion_info {
         global $DB;
 
         list($enrolledsql, $params) = get_enrolled_sql(
-                context_course::instance($this->course->id), '', $groupid, true);
+                context_course::instance($this->course->id),
+                'moodle/course:isincompletionreports', $groupid, true);
 
         $sql = 'SELECT u.id, u.firstname, u.lastname, u.idnumber';
         if ($extracontext) {
