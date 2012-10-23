@@ -35,6 +35,11 @@ div.maincalendar fieldset div.ftext {
   margin-top: 10px;
 }
 
+#content {
+  width: auto;
+  height: auto;
+}
+
 /*.filters {
   visibility: hidden;
 }*/
