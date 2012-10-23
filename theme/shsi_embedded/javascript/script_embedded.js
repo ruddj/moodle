@@ -1,5 +1,10 @@
 
-  document.domain = 'sydneyboyshigh.com';
+  if (document.domain.indexOf('sbhs.net.au') >= 0) {
+    document.domain = 'sbhs.net.au';
+  }
+  else if (document.domain.indexOf('sydneyboyshigh.com') >= 0) {
+    document.domain = 'sydneyboyshigh.com'
+  }
 
   // when sent back to the calendar view
   if (window.location.href.indexOf('calendar/view.php') > -1) {
