@@ -761,7 +761,6 @@ class assign {
         $update->teamsubmissiongroupingid = $formdata->teamsubmissiongroupingid;
         $update->blindmarking = $formdata->blindmarking;
 
-
         $result = $DB->update_record('assign', $update);
         $this->instance = $DB->get_record('assign', array('id'=>$update->id), '*', MUST_EXIST);
 
@@ -1028,7 +1027,9 @@ class assign {
                 } else {
                     $displaygrade = format_float($grade);
                 }
-                $o = '<input type="text" name="quickgrade_' . $userid . '" value="' . $displaygrade . '" size="6" maxlength="10" class="quickgrade"/>';
+                $o = '<label class="accesshide" for="quickgrade_' . $userid . '">' . get_string('usergrade', 'assign') . '</label>';
+                $o .= '<input type="text" id="quickgrade_' . $userid . '" name="quickgrade_' . $userid . '" value="' . $displaygrade
+                        . '" size="6" maxlength="10" class="quickgrade"/>';
                 $o .= '&nbsp;/&nbsp;' . format_float($this->get_instance()->grade,2);
                 $o .= '<input type="hidden" name="grademodified_' . $userid . '" value="' . $modified . '"/>';
                 return $o;
@@ -1050,7 +1051,8 @@ class assign {
                 }
             }
             if ($editing) {
-                $o = '<select name="quickgrade_' . $userid . '" class="quickgrade">';
+                $o = '<label class="accesshide" for="quickgrade_' . $userid . '">' . get_string('usergrade', 'assign') . '</label>';
+                $o .= '<select name="quickgrade_' . $userid . '" class="quickgrade">';
                 $o .= '<option value="-1">' . get_string('nograde') . '</option>';
                 foreach ($this->cache['scale'] as $optionid => $option) {
                     $selected = '';
@@ -4077,7 +4079,7 @@ class assign {
      * @return void
      */
     private function process_revert_to_draft($userid = 0) {
-        global $DB;
+        global $DB, $USER;
 
         // Need grade permission
         require_capability('mod/assign:grade', $this->context);
@@ -4087,13 +4089,17 @@ class assign {
             $userid = required_param('userid', PARAM_INT);
         }
 
-        $submission = $this->get_user_submission($userid, false);
+        if ($this->get_instance()->teamsubmission) {
+            $submission = $this->get_group_submission($USER->id, 0, false);
+        } else {
+            $submission = $this->get_user_submission($USER->id, false);
+        }
 
         if (!$submission) {
             return;
         }
         $submission->status = ASSIGN_SUBMISSION_STATUS_DRAFT;
-        $this->update_submission($submission, $USER->id, true, $this->get_instance()->teamsubmission);
+        $this->update_submission($submission, $userid, true, $this->get_instance()->teamsubmission);
 
         // Update the modified time on the grade (grader modified).
         $grade = $this->get_user_grade($userid, true);
