@@ -3174,7 +3174,7 @@ class admin_setting_sitesetselect extends admin_setting_configselect {
      * @return string The site name of the selected site
      */
     public function get_setting() {
-        $site = get_site();
+        $site = course_get_format(get_site())->get_course();
         return $site->{$this->name};
     }
 
@@ -3196,6 +3196,7 @@ class admin_setting_sitesetselect extends admin_setting_configselect {
         $record->timemodified = time();
         // update $SITE
         $SITE->{$this->name} = $data;
+        course_get_format($SITE)->update_course_format_options($record);
         return ($DB->update_record('course', $record) ? '' : get_string('errorsetting', 'admin'));
     }
 }
@@ -3366,7 +3367,7 @@ class admin_setting_sitesetcheckbox extends admin_setting_configcheckbox {
      * @return string
      */
     public function get_setting() {
-        $site = get_site();
+        $site = course_get_format(get_site())->get_course();
         return $site->{$this->name};
     }
 
@@ -3384,6 +3385,7 @@ class admin_setting_sitesetcheckbox extends admin_setting_configcheckbox {
         $record->timemodified  = time();
         // update $SITE
         $SITE->{$this->name} = $data;
+        course_get_format($SITE)->update_course_format_options($record);
         return ($DB->update_record('course', $record) ? '' : get_string('errorsetting', 'admin'));
     }
 }
@@ -3401,7 +3403,7 @@ class admin_setting_sitesettext extends admin_setting_configtext {
      * @return mixed string or null
      */
     public function get_setting() {
-        $site = get_site();
+        $site = course_get_format(get_site())->get_course();
         return $site->{$this->name} != '' ? $site->{$this->name} : NULL;
     }
 
@@ -3443,6 +3445,7 @@ class admin_setting_sitesettext extends admin_setting_configtext {
         $record->timemodified  = time();
         // update $SITE
         $SITE->{$this->name} = $data;
+        course_get_format($SITE)->update_course_format_options($record);
         return ($DB->update_record('course', $record) ? '' : get_string('dbupdatefailed', 'error'));
     }
 }
@@ -3467,7 +3470,7 @@ class admin_setting_special_frontpagedesc extends admin_setting {
      * @return string The current setting
      */
     public function get_setting() {
-        $site = get_site();
+        $site = course_get_format(get_site())->get_course();
         return $site->{$this->name};
     }
 
@@ -3484,6 +3487,7 @@ class admin_setting_special_frontpagedesc extends admin_setting {
         $record->{$this->name} = $data;
         $record->timemodified  = time();
         $SITE->{$this->name} = $data;
+        course_get_format($SITE)->update_course_format_options($record);
         return ($DB->update_record('course', $record) ? '' : get_string('errorsetting', 'admin'));
     }
 
@@ -5702,6 +5706,8 @@ class admin_setting_manageeditors extends admin_setting {
         // display strings
         $txt = get_strings(array('administration', 'settings', 'edit', 'name', 'enable', 'disable',
             'up', 'down', 'none'));
+        $struninstall = get_string('uninstallplugin', 'admin');
+
         $txt->updown = "$txt->up/$txt->down";
 
         $editors_available = editors_get_available();
@@ -5725,8 +5731,8 @@ class admin_setting_manageeditors extends admin_setting {
         $return .= $OUTPUT->box_start('generalbox editorsui');
 
         $table = new html_table();
-        $table->head  = array($txt->name, $txt->enable, $txt->updown, $txt->settings);
-        $table->align = array('left', 'center', 'center', 'center');
+        $table->head  = array($txt->name, $txt->enable, $txt->updown, $txt->settings, $struninstall);
+        $table->align = array('left', 'center', 'center', 'center', 'center');
         $table->width = '90%';
         $table->data  = array();
 
@@ -5779,8 +5785,15 @@ class admin_setting_manageeditors extends admin_setting {
                 $settings = '';
             }
 
+            if ($editor === 'textarea') {
+                $uninstall = '';
+            } else {
+                $uurl = new moodle_url('/admin/editors.php', array('action'=>'uninstall', 'editor'=>$editor, 'sesskey'=>sesskey()));
+                $uninstall = html_writer::link($uurl, $struninstall);
+            }
+
             // add a row to the table
-            $table->data[] =array($displayname, $hideshow, $updown, $settings);
+            $table->data[] =array($displayname, $hideshow, $updown, $settings, $uninstall);
         }
         $return .= html_writer::table($table);
         $return .= get_string('configeditorplugins', 'editor').'<br />'.get_string('tablenosave', 'admin');
@@ -6749,16 +6762,21 @@ class admin_setting_managerepository extends admin_setting {
  */
 class admin_setting_enablemobileservice extends admin_setting_configcheckbox {
 
-    private $xmlrpcuse; //boolean: true => capability 'webservice/xmlrpc:use' is set for authenticated user role
+    /** @var boolean True means that the capability 'webservice/xmlrpc:use' is set for authenticated user role */
+    private $xmlrpcuse;
+    /** @var boolean True means that the capability 'webservice/rest:use' is set for authenticated user role */
+    private $restuse;
 
     /**
-     * Return true if Authenticated user role has the capability 'webservice/xmlrpc:use', otherwise false
+     * Return true if Authenticated user role has the capability 'webservice/xmlrpc:use' and 'webservice/rest:use', otherwise false.
+     *
      * @return boolean
      */
-    private function is_xmlrpc_cap_allowed() {
+    private function is_protocol_cap_allowed() {
         global $DB, $CFG;
 
-        //if the $this->xmlrpcuse variable is not set, it needs to be set
+        // We keep xmlrpc enabled for backward compatibility.
+        // If the $this->xmlrpcuse variable is not set, it needs to be set.
         if (empty($this->xmlrpcuse) and $this->xmlrpcuse!==false) {
             $params = array();
             $params['permission'] = CAP_ALLOW;
@@ -6767,20 +6785,29 @@ class admin_setting_enablemobileservice extends admin_setting_configcheckbox {
             $this->xmlrpcuse = $DB->record_exists('role_capabilities', $params);
         }
 
-        return $this->xmlrpcuse;
+        // If the $this->restuse variable is not set, it needs to be set.
+        if (empty($this->restuse) and $this->restuse!==false) {
+            $params = array();
+            $params['permission'] = CAP_ALLOW;
+            $params['roleid'] = $CFG->defaultuserroleid;
+            $params['capability'] = 'webservice/rest:use';
+            $this->restuse = $DB->record_exists('role_capabilities', $params);
+        }
+
+        return ($this->xmlrpcuse && $this->restuse);
     }
 
     /**
-     * Set the 'webservice/xmlrpc:use' to the Authenticated user role (allow or not)
+     * Set the 'webservice/xmlrpc:use'/'webservice/rest:use' to the Authenticated user role (allow or not)
      * @param type $status true to allow, false to not set
      */
-    private function set_xmlrpc_cap($status) {
+    private function set_protocol_cap($status) {
         global $CFG;
-        if ($status and !$this->is_xmlrpc_cap_allowed()) {
+        if ($status and !$this->is_protocol_cap_allowed()) {
             //need to allow the cap
             $permission = CAP_ALLOW;
             $assign = true;
-        } else if (!$status and $this->is_xmlrpc_cap_allowed()){
+        } else if (!$status and $this->is_protocol_cap_allowed()){
             //need to disallow the cap
             $permission = CAP_INHERIT;
             $assign = true;
@@ -6788,6 +6815,7 @@ class admin_setting_enablemobileservice extends admin_setting_configcheckbox {
         if (!empty($assign)) {
             $systemcontext = get_system_context();
             assign_capability('webservice/xmlrpc:use', $permission, $CFG->defaultuserroleid, $systemcontext->id, true);
+            assign_capability('webservice/rest:use', $permission, $CFG->defaultuserroleid, $systemcontext->id, true);
         }
     }
 
@@ -6834,7 +6862,7 @@ class admin_setting_enablemobileservice extends admin_setting_configcheckbox {
         require_once($CFG->dirroot . '/webservice/lib.php');
         $webservicemanager = new webservice();
         $mobileservice = $webservicemanager->get_external_service_by_shortname(MOODLE_OFFICIAL_MOBILE_SERVICE);
-        if ($mobileservice->enabled and $this->is_xmlrpc_cap_allowed()) {
+        if ($mobileservice->enabled and $this->is_protocol_cap_allowed()) {
             return $this->config_read($this->name); //same as returning 1
         } else {
             return 0;
@@ -6860,6 +6888,7 @@ class admin_setting_enablemobileservice extends admin_setting_configcheckbox {
         require_once($CFG->dirroot . '/webservice/lib.php');
         $webservicemanager = new webservice();
 
+        $updateprotocol = false;
         if ((string)$data === $this->yes) {
              //code run when enable mobile web service
              //enable web service systeme if necessary
@@ -6875,11 +6904,20 @@ class admin_setting_enablemobileservice extends admin_setting_configcheckbox {
 
              if (!in_array('xmlrpc', $activeprotocols)) {
                  $activeprotocols[] = 'xmlrpc';
+                 $updateprotocol = true;
+             }
+
+             if (!in_array('rest', $activeprotocols)) {
+                 $activeprotocols[] = 'rest';
+                 $updateprotocol = true;
+             }
+
+             if ($updateprotocol) {
                  set_config('webserviceprotocols', implode(',', $activeprotocols));
              }
 
              //allow xml-rpc:use capability for authenticated user
-             $this->set_xmlrpc_cap(true);
+             $this->set_protocol_cap(true);
 
          } else {
              //disable web service system if no other services are enabled
@@ -6894,11 +6932,21 @@ class admin_setting_enablemobileservice extends admin_setting_configcheckbox {
                  $protocolkey = array_search('xmlrpc', $activeprotocols);
                  if ($protocolkey !== false) {
                     unset($activeprotocols[$protocolkey]);
+                    $updateprotocol = true;
+                 }
+
+                 $protocolkey = array_search('rest', $activeprotocols);
+                 if ($protocolkey !== false) {
+                    unset($activeprotocols[$protocolkey]);
+                    $updateprotocol = true;
+                 }
+
+                 if ($updateprotocol) {
                     set_config('webserviceprotocols', implode(',', $activeprotocols));
                  }
 
                  //disallow xml-rpc:use capability for authenticated user
-                 $this->set_xmlrpc_cap(false);
+                 $this->set_protocol_cap(false);
              }
 
              //disable the mobile service

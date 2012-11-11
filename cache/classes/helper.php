@@ -446,11 +446,32 @@ class cache_helper {
     }
 
     /**
-     * Hashes a descriptive key to make it shorter and stil unique.
-     * @param string $key
+     * Hashes a descriptive key to make it shorter and still unique.
+     * @param string|int $key
+     * @param cache_definition $definition
      * @return string
      */
-    public static function hash_key($key) {
-        return crc32($key);
+    public static function hash_key($key, cache_definition $definition) {
+        if ($definition->uses_simple_keys()) {
+            // We put the key first so that we can be sure the start of the key changes.
+            return (string)$key . '-' . $definition->generate_single_key_prefix();
+        }
+        $key = $definition->generate_single_key_prefix() . '-' . $key;
+        return sha1($key);
+    }
+
+    /**
+     * Finds all definitions and updates them within the cache config file.
+     *
+     * @param bool $coreonly If set to true only core definitions will be updated.
+     */
+    public static function update_definitions($coreonly = false) {
+        global $CFG;
+        // Include locallib
+        require_once($CFG->dirroot.'/cache/locallib.php');
+        // First update definitions
+        cache_config_writer::update_definitions($coreonly);
+        // Second reset anything we have already initialised to ensure we're all up to date.
+        cache_factory::reset();
     }
 }

@@ -91,7 +91,12 @@ class csv_import_reader {
         // Fix mac/dos newlines
         $content = preg_replace('!\r\n?!', "\n", $content);
         // Remove any spaces or new lines at the end of the file.
-        $content = trim($content);
+        if ($delimiter_name == 'tab') {
+            // trim() by default removes tabs from the end of content which is undesirable in a tab separated file.
+            $content = trim($content, chr(0x20) . chr(0x0A) . chr(0x0D) . chr(0x00) . chr(0x0B));
+        } else {
+            $content = trim($content);
+        }
 
         $csv_delimiter = csv_import_reader::get_delimiter($delimiter_name);
         // $csv_encode    = csv_import_reader::get_encoded_delimiter($delimiter_name);
@@ -105,7 +110,15 @@ class csv_import_reader {
         // str_getcsv doesn't iterate through the csv data properly. It has
         // problems with line returns.
         while ($fgetdata = fgetcsv($fp, 0, $csv_delimiter, $enclosure)) {
-            $columns[] = $fgetdata;
+            // Check to see if we have an empty line.
+            if (count($fgetdata) == 1) {
+                if ($fgetdata[0] !== null) {
+                    // The element has data. Add it to the array.
+                    $columns[] = $fgetdata;
+                }
+            } else {
+                $columns[] = $fgetdata;
+            }
         }
         $col_count = 0;
 

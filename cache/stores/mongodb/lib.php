@@ -419,9 +419,45 @@ class cachestore_mongodb implements cache_store {
             $return['usesafe'] = true;
             if (!empty($data->usesafevalue)) {
                 $return['usesafe'] = (int)$data->usesafevalue;
+                $return['usesafevalue'] = $return['usesafe'];
             }
         }
         return $return;
+    }
+
+    /**
+     * Allows the cache store to set its data against the edit form before it is shown to the user.
+     *
+     * @param moodleform $editform
+     * @param array $config
+     */
+    public static function config_set_edit_form_data(moodleform $editform, array $config) {
+        $data = array();
+        if (!empty($config['server'])) {
+            $data['server'] = $config['server'];
+        }
+        if (!empty($config['database'])) {
+            $data['database'] = $config['database'];
+        }
+        if (isset($config['extendedmode'])) {
+            $data['extendedmode'] = (bool)$config['extendedmode'];
+        }
+        if (!empty($config['username'])) {
+            $data['username'] = $config['username'];
+        }
+        if (!empty($config['password'])) {
+            $data['password'] = $config['password'];
+        }
+        if (!empty($config['replicaset'])) {
+            $data['replicaset'] = $config['replicaset'];
+        }
+        if (isset($config['usesafevalue'])) {
+            $data['usesafe'] = true;
+            $data['usesafevalue'] = (int)$data['usesafe'];
+        } else if (isset($config['usesafe'])) {
+            $data['usesafe'] = (bool)$config['usesafe'];
+        }
+        $editform->set_data($data);
     }
 
     /**

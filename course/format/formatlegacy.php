@@ -98,8 +98,46 @@ class format_legacy extends format_base {
             }
         }
 
-        // else, default behavior:
-        return parent::get_view_url($section, $options);
+        // if function is not defined
+        if (!$this->uses_sections() ||
+                !array_key_exists('coursedisplay', $this->course_format_options())) {
+            // default behaviour
+            return parent::get_view_url($section, $options);
+        }
+
+        $course = $this->get_course();
+        $url = new moodle_url('/course/view.php', array('id' => $course->id));
+
+        $sr = null;
+        if (array_key_exists('sr', $options)) {
+            $sr = $options['sr'];
+        }
+        if (is_object($section)) {
+            $sectionno = $section->section;
+        } else {
+            $sectionno = $section;
+        }
+        if ($sectionno !== null) {
+            if ($sr !== null) {
+                if ($sr) {
+                    $usercoursedisplay = COURSE_DISPLAY_MULTIPAGE;
+                    $sectionno = $sr;
+                } else {
+                    $usercoursedisplay = COURSE_DISPLAY_SINGLEPAGE;
+                }
+            } else {
+                $usercoursedisplay = $course->coursedisplay;
+            }
+            if ($sectionno != 0 && $usercoursedisplay == COURSE_DISPLAY_MULTIPAGE) {
+                $url->param('section', $sectionno);
+            } else {
+                if (!empty($options['navigation'])) {
+                    return null;
+                }
+                $url->set_anchor('section-'.$sectionno);
+            }
+        }
+        return $url;
     }
 
     /**
@@ -137,27 +175,37 @@ class format_legacy extends format_base {
      * First this function calls callback_FORMATNAME_display_content() if it exists to check
      * if the navigation should be extended at all
      *
-     * Then it calls function callback_FORMATNAME_load_content() if it exist to actually extend
+     * Then it calls function callback_FORMATNAME_load_content() if it exists to actually extend
      * navigation
      *
      * By default the parent method is called
      *
      * @param global_navigation $navigation
      * @param navigation_node $node The course node within the navigation
-     * @return array Array of sections where each element also contains the element 'sectionnode'
-     *     referring to the corresponding section node
      */
-    public function extend_course_navigation(&$navigation, navigation_node $node) {
+    public function extend_course_navigation($navigation, navigation_node $node) {
+        global $PAGE;
+        // if course format displays section on separate pages and we are on course/view.php page
+        // and the section parameter is specified, make sure this section is expanded in
+        // navigation
+        if ($navigation->includesectionnum === false) {
+            $selectedsection = optional_param('section', null, PARAM_INT);
+            if ($selectedsection !== null && (!defined('AJAX_SCRIPT') || AJAX_SCRIPT == '0') &&
+                    $PAGE->url->compare(new moodle_url('/course/view.php'), URL_MATCH_BASE)) {
+                $navigation->includesectionnum = $selectedsection;
+            }
+        }
+
         // check if there are callbacks to extend course navigation
         $displayfunc = 'callback_'.$this->format.'_display_content';
         if (function_exists($displayfunc) && !$displayfunc()) {
-            return array();
+            return;
         }
         $featurefunction = 'callback_'.$this->format.'_load_content';
         if (function_exists($featurefunction) && ($course = $this->get_course())) {
-            return $featurefunction($navigation, $course, $node);
+            $featurefunction($navigation, $course, $node);
         } else {
-            return parent::extend_navigation($navigation, $node);
+            parent::extend_course_navigation($navigation, $node);
         }
     }
 
@@ -201,5 +249,102 @@ class format_legacy extends format_base {
             return blocks_parse_default_blocks_list($format['defaultblocks']);
         }
         return parent::get_default_blocks();
+    }
+
+    /**
+     * Definitions of the additional options that this course format uses for course
+     *
+     * By default course formats have the options that existed in Moodle 2.3:
+     * - coursedisplay
+     * - numsections
+     * - hiddensections
+     *
+     * @param bool $foreditform
+     * @return array of options
+     */
+    public function course_format_options($foreditform = false) {
+        static $courseformatoptions = false;
+        if ($courseformatoptions === false) {
+            $courseconfig = get_config('moodlecourse');
+            $courseformatoptions = array(
+                'numsections' => array(
+                    'default' => $courseconfig->numsections,
+                    'type' => PARAM_INT,
+                ),
+                'hiddensections' => array(
+                    'default' => $courseconfig->hiddensections,
+                    'type' => PARAM_INT,
+                ),
+                'coursedisplay' => array(
+                    'default' => $courseconfig->coursedisplay,
+                    'type' => PARAM_INT,
+                ),
+            );
+        }
+        if ($foreditform && !isset($courseformatoptions['coursedisplay']['label'])) {
+            $courseconfig = get_config('moodlecourse');
+            $sectionmenu = array();
+            for ($i = 0; $i <= $courseconfig->maxsections; $i++) {
+                $sectionmenu[$i] = "$i";
+            }
+            $courseformatoptionsedit = array(
+                'numsections' => array(
+                    'label' => new lang_string('numberweeks'),
+                    'element_type' => 'select',
+                    'element_attributes' => array($sectionmenu),
+                ),
+                'hiddensections' => array(
+                    'label' => new lang_string('hiddensections'),
+                    'help' => 'hiddensections',
+                    'help_component' => 'moodle',
+                    'element_type' => 'select',
+                    'element_attributes' => array(
+                        array(
+                            0 => new lang_string('hiddensectionscollapsed'),
+                            1 => new lang_string('hiddensectionsinvisible')
+                        )
+                    ),
+                ),
+                'coursedisplay' => array(
+                    'label' => new lang_string('coursedisplay'),
+                    'element_type' => 'select',
+                    'element_attributes' => array(
+                        array(
+                            COURSE_DISPLAY_SINGLEPAGE => new lang_string('coursedisplay_single'),
+                            COURSE_DISPLAY_MULTIPAGE => new lang_string('coursedisplay_multi')
+                        )
+                    ),
+                    'help' => 'coursedisplay',
+                    'help_component' => 'moodle',
+                )
+            );
+            $courseformatoptions = array_merge_recursive($courseformatoptions, $courseformatoptionsedit);
+        }
+        return $courseformatoptions;
+    }
+
+    /**
+     * Updates format options for a course
+     *
+     * Legacy course formats may assume that course format options
+     * ('coursedisplay', 'numsections' and 'hiddensections') are shared between formats.
+     * Therefore we make sure to copy them from the previous format
+     *
+     * @param stdClass|array $data return value from {@link moodleform::get_data()} or array with data
+     * @param stdClass $oldcourse if this function is called from {@link update_course()}
+     *     this object contains information about the course before update
+     * @return bool whether there were any changes to the options values
+     */
+    public function update_course_format_options($data, $oldcourse = null) {
+        if ($oldcourse !== null) {
+            $data = (array)$data;
+            $oldcourse = (array)$oldcourse;
+            foreach ($this->course_format_options() as $key => $unused) {
+                if (array_key_exists($key, $oldcourse) && !array_key_exists($key, $data)) {
+                    $data[$key] = $oldcourse[$key];
+                }
+            }
+        }
+        return $this->update_format_options($data);
     }
 }

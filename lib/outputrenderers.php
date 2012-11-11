@@ -492,7 +492,13 @@ class core_renderer extends renderer_base {
      * @return string HTML fragment.
      */
     public function main_content() {
-        return $this->unique_main_content_token;
+        // This is here because it is the only place we can inject the "main" role over the entire main content area
+        // without requiring all theme's to manually do it, and without creating yet another thing people need to
+        // remember in the theme.
+        // This is an unfortunate hack. DO NO EVER add anything more here.
+        // DO NOT add classes.
+        // DO NOT add an id.
+        return '<div role="main">'.$this->unique_main_content_token.'</div>';
     }
 
     /**
@@ -914,6 +920,12 @@ class core_renderer extends renderer_base {
         if (empty($bc->blockinstanceid) || !strip_tags($bc->title)) {
             $bc->collapsible = block_contents::NOT_HIDEABLE;
         }
+        $skiptitle = strip_tags($bc->title);
+        if ($bc->blockinstanceid && !empty($skiptitle)) {
+            $bc->attributes['aria-labelledby'] = 'instance-'.$bc->blockinstanceid.'-header';
+        } else if (!empty($bc->arialabel)) {
+            $bc->attributes['aria-label'] = $bc->arialabel;
+        }
         if ($bc->collapsible == block_contents::HIDDEN) {
             $bc->add_class('hidden');
         }
@@ -921,7 +933,7 @@ class core_renderer extends renderer_base {
             $bc->add_class('block_with_controls');
         }
 
-        $skiptitle = strip_tags($bc->title);
+
         if (empty($skiptitle)) {
             $output = '';
             $skipdest = '';
@@ -955,7 +967,11 @@ class core_renderer extends renderer_base {
 
         $title = '';
         if ($bc->title) {
-            $title = html_writer::tag('h2', $bc->title, null);
+            $attributes = array();
+            if ($bc->blockinstanceid) {
+                $attributes['id'] = 'instance-'.$bc->blockinstanceid.'-header';
+            }
+            $title = html_writer::tag('h2', $bc->title, $attributes);
         }
 
         $controlshtml = $this->block_controls($bc->controls);
@@ -1661,7 +1677,13 @@ class core_renderer extends renderer_base {
             $ratinghtml .= html_writer::empty_tag('input', $attributes);
 
             if (!$rating->settings->scale->isnumeric) {
-                $ratinghtml .= $this->help_icon_scale($rating->settings->scale->courseid, $rating->settings->scale);
+                // If a global scale, try to find current course ID from the context
+                if (empty($rating->settings->scale->courseid) and $coursecontext = $rating->context->get_course_context(false)) {
+                    $courseid = $coursecontext->instanceid;
+                } else {
+                    $courseid = $rating->settings->scale->courseid;
+                }
+                $ratinghtml .= $this->help_icon_scale($courseid, $rating->settings->scale);
             }
             $ratinghtml .= html_writer::end_tag('span');
             $ratinghtml .= html_writer::end_tag('div');
@@ -2514,7 +2536,7 @@ EOD;
 
         //accessibility: heading for navbar list  (MDL-20446)
         $navbarcontent = html_writer::tag('span', get_string('pagepath'), array('class'=>'accesshide'));
-        $navbarcontent .= html_writer::tag('ul', join('', $htmlblocks));
+        $navbarcontent .= html_writer::tag('ul', join('', $htmlblocks), array('role'=>'navigation'));
         // XHTML
         return $navbarcontent;
     }

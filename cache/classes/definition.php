@@ -39,6 +39,13 @@ defined('MOODLE_INTERNAL') || die();
  *          [int] Sets the mode for the definition. Must be one of cache_store::MODE_*
  *
  * Optional settings:
+ *     + simplekeys
+ *          [bool] Set to true if your cache will only use simple keys for its items.
+ *          Simple keys consist of digits, underscores and the 26 chars of the english language. a-zA-Z0-9_
+ *          If true the keys won't be hashed before being passed to the cache store for gets/sets/deletes. It will be
+ *          better for performance and possible only becase we know the keys are safe.
+ *     + simpledata
+ *          [bool] If set to true we know that the data is scalar or array of scalar.
  *     + requireidentifiers
  *          [array] An array of identifiers that must be provided to the cache when it is created.
  *     + requiredataguarantee
@@ -126,6 +133,18 @@ class cache_definition {
      * @var string
      */
     protected $area;
+
+    /**
+     * If set to true we know the keys are simple. a-zA-Z0-9_
+     * @var bool
+     */
+    protected $simplekeys = false;
+
+    /**
+     * Set to true if we know the data is scalar or array of scalar.
+     * @var bool
+     */
+    protected $simpledata = false;
 
     /**
      * An array of identifiers that must be provided when the definition is used to create a cache.
@@ -281,6 +300,8 @@ class cache_definition {
         $area = (string)$definition['area'];
 
         // Set the defaults.
+        $simplekeys = false;
+        $simpledata = false;
         $requireidentifiers = array();
         $requiredataguarantee = false;
         $requiremultipleidentifiers = false;
@@ -297,6 +318,12 @@ class cache_definition {
         $mappingsonly = false;
         $invalidationevents = array();
 
+        if (array_key_exists('simplekeys', $definition)) {
+            $simplekeys = (bool)$definition['simplekeys'];
+        }
+        if (array_key_exists('simpledata', $definition)) {
+            $simpledata = (bool)$definition['simpledata'];
+        }
         if (array_key_exists('requireidentifiers', $definition)) {
             $requireidentifiers = (array)$definition['requireidentifiers'];
         }
@@ -398,6 +425,8 @@ class cache_definition {
         $cachedefinition->mode = $mode;
         $cachedefinition->component = $component;
         $cachedefinition->area = $area;
+        $cachedefinition->simplekeys = $simplekeys;
+        $cachedefinition->simpledata = $simpledata;
         $cachedefinition->requireidentifiers = $requireidentifiers;
         $cachedefinition->requiredataguarantee = $requiredataguarantee;
         $cachedefinition->requiremultipleidentifiers = $requiremultipleidentifiers;
@@ -503,6 +532,17 @@ class cache_definition {
     }
 
     /**
+     * Returns true if this definition is using simple keys.
+     *
+     * Simple keys contain only a-zA-Z0-9_
+     *
+     * @return bool
+     */
+    public function uses_simple_keys() {
+        return $this->simplekeys;
+    }
+
+    /**
      * Returns the identifiers that are being used for this definition.
      * @return array
      */
@@ -532,6 +572,14 @@ class cache_definition {
      */
     public function is_for_mappings_only() {
         return $this->mappingsonly;
+    }
+
+    /**
+     * Returns true if the data is known to be scalar or array of scalar.
+     * @return bool
+     */
+    public function uses_simple_data() {
+        return $this->simpledata;
     }
 
     /**
