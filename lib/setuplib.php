@@ -1292,41 +1292,6 @@ function make_cache_directory($directory, $exceptiononerror = true) {
     return make_writable_directory("$CFG->cachedir/$directory", $exceptiononerror);
 }
 
-
-/**
- * Initialises an Memcached instance
- * @global memcached $MCACHE
- * @return boolean Returns true if an mcached instance could be successfully initialised
- */
-function init_memcached() {
-    global $CFG, $MCACHE;
-
-    include_once($CFG->libdir . '/memcached.class.php');
-    $MCACHE = new memcached;
-    if ($MCACHE->status()) {
-        return true;
-    }
-    unset($MCACHE);
-    return false;
-}
-
-/**
- * Initialises an eAccelerator instance
- * @global eaccelerator $MCACHE
- * @return boolean Returns true if an eAccelerator instance could be successfully initialised
- */
-function init_eaccelerator() {
-    global $CFG, $MCACHE;
-
-    include_once($CFG->libdir . '/eaccelerator.class.php');
-    $MCACHE = new eaccelerator;
-    if ($MCACHE->status()) {
-        return true;
-    }
-    unset($MCACHE);
-    return false;
-}
-
 /**
  * Checks if current user is a web crawler.
  *
@@ -1349,11 +1314,17 @@ function is_web_crawler() {
             return true;
         } else if (strpos($_SERVER['HTTP_USER_AGENT'], '[ZSEBOT]') !== false ) {  // Zoomspider
             return true;
-        } else if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSNBOT') !== false ) {  // MSN Search
+        } else if (stripos($_SERVER['HTTP_USER_AGENT'], 'msnbot') !== false ) {  // MSN Search
+            return true;
+        } else if (strpos($_SERVER['HTTP_USER_AGENT'], 'bingbot') !== false ) {  // Bing
             return true;
         } else if (strpos($_SERVER['HTTP_USER_AGENT'], 'Yandex') !== false ) {
             return true;
         } else if (strpos($_SERVER['HTTP_USER_AGENT'], 'AltaVista') !== false ) {
+            return true;
+        } else if (stripos($_SERVER['HTTP_USER_AGENT'], 'baiduspider') !== false ) {  // Baidu
+            return true;
+        } else if (strpos($_SERVER['HTTP_USER_AGENT'], 'Teoma') !== false ) {  // Ask.com
             return true;
         }
     }

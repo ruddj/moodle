@@ -1427,15 +1427,16 @@ function print_section($course, $section, $mods, $modnamesused, $absolute=false,
             $modcontext = context_module::instance($mod->id);
             $canviewhidden = has_capability('moodle/course:viewhiddenactivities', $modcontext);
             $accessiblebutdim = false;
+            $conditionalhidden = false;
             if ($canviewhidden) {
                 $accessiblebutdim = !$mod->visible;
                 if (!empty($CFG->enableavailability)) {
-                    $accessiblebutdim = $accessiblebutdim ||
-                        $mod->availablefrom > time() ||
+                    $conditionalhidden = $mod->availablefrom > time() ||
                         ($mod->availableuntil && $mod->availableuntil < time()) ||
                         count($mod->conditionsgrade) > 0 ||
                         count($mod->conditionscompletion) > 0;
                 }
+                $accessiblebutdim = $conditionalhidden || $accessiblebutdim;
             }
 
             $liclasses = array();
@@ -1491,8 +1492,12 @@ function print_section($course, $section, $mods, $modnamesused, $absolute=false,
                 $linkclasses = '';
                 $textclasses = '';
                 if ($accessiblebutdim) {
-                    $linkclasses .= ' dimmed conditionalhidden';
-                    $textclasses .= ' dimmed_text conditionalhidden';
+                    $linkclasses .= ' dimmed';
+                    $textclasses .= ' dimmed_text';
+                    if ($conditionalhidden) {
+                        $linkclasses .= ' conditionalhidden';
+                        $textclasses .= ' conditionalhidden';
+                    }
                     $accesstext = '<span class="accesshide">'.
                         get_string('hiddenfromstudents').': </span>';
                 } else {
@@ -2759,7 +2764,7 @@ function course_create_sections_if_missing($courseorid, $sections) {
  * Updates both tables {course_sections} and {course_modules}
  *
  * @param int|stdClass $courseorid course id or course object
- * @param int $modid id of the module already existing in course_modules table
+ * @param int $cmid id of the module already existing in course_modules table
  * @param int $sectionnum relative number of the section (field course_sections.section)
  *     If section does not exist it will be created
  * @param int|stdClass $beforemod id or object with field id corresponding to the module
@@ -2767,25 +2772,31 @@ function course_create_sections_if_missing($courseorid, $sections) {
  *     end of the section
  * @return int The course_sections ID where the module is inserted
  */
-function course_add_cm_to_section($courseorid, $modid, $sectionnum, $beforemod = null) {
+function course_add_cm_to_section($courseorid, $cmid, $sectionnum, $beforemod = null) {
     global $DB, $COURSE;
     if (is_object($beforemod)) {
         $beforemod = $beforemod->id;
     }
+    if (is_object($courseorid)) {
+        $courseid = $courseorid->id;
+    } else {
+        $courseid = $courseorid;
+    }
     course_create_sections_if_missing($courseorid, $sectionnum);
-    $section = get_fast_modinfo($courseorid)->get_section_info($sectionnum);
+    // Do not try to use modinfo here, there is no guarantee it is valid!
+    $section = $DB->get_record('course_sections', array('course'=>$courseid, 'section'=>$sectionnum), '*', MUST_EXIST);
     $modarray = explode(",", trim($section->sequence));
     if (empty($section->sequence)) {
-        $newsequence = "$modid";
+        $newsequence = "$cmid";
     } else if ($beforemod && ($key = array_keys($modarray, $beforemod))) {
-        $insertarray = array($modid, $beforemod);
+        $insertarray = array($cmid, $beforemod);
         array_splice($modarray, $key[0], 1, $insertarray);
         $newsequence = implode(",", $modarray);
     } else {
-        $newsequence = "$section->sequence,$modid";
+        $newsequence = "$section->sequence,$cmid";
     }
     $DB->set_field("course_sections", "sequence", $newsequence, array("id" => $section->id));
-    $DB->set_field('course_modules', 'section', $section->id, array('id' => $modid));
+    $DB->set_field('course_modules', 'section', $section->id, array('id' => $cmid));
     if (is_object($courseorid)) {
         rebuild_course_cache($courseorid->id, true);
     } else {

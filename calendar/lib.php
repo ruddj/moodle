@@ -2112,24 +2112,22 @@ class calendar_event {
             if ($usingeditor) {
                 switch ($this->properties->eventtype) {
                     case 'user':
-                        $this->editorcontext = $this->properties->context;
                         $this->properties->courseid = 0;
+                        $this->properties->course = 0;
                         $this->properties->groupid = 0;
                         $this->properties->userid = $USER->id;
                         break;
                     case 'site':
-                        $this->editorcontext = $this->properties->context;
                         $this->properties->courseid = SITEID;
+                        $this->properties->course = SITEID;
                         $this->properties->groupid = 0;
                         $this->properties->userid = $USER->id;
                         break;
                     case 'course':
-                        $this->editorcontext = $this->properties->context;
                         $this->properties->groupid = 0;
                         $this->properties->userid = $USER->id;
                         break;
                     case 'group':
-                        $this->editorcontext = $this->properties->context;
                         $this->properties->userid = $USER->id;
                         break;
                     default:
@@ -2137,6 +2135,13 @@ class calendar_event {
                         // fail gracefully
                         $usingeditor = false;
                         break;
+                }
+
+                // If we are actually using the editor, we recalculate the context because some default values
+                // were set when calculate_context() was called from the constructor.
+                if ($usingeditor) {
+                    $this->properties->context = $this->calculate_context($this->properties);
+                    $this->editorcontext = $this->properties->context;
                 }
 
                 $editor = $this->properties->description;
@@ -2157,7 +2162,6 @@ class calendar_event {
                                                 $this->editoroptions,
                                                 $editor['text'],
                                                 $this->editoroptions['forcehttps']);
-
                 $DB->set_field('event', 'description', $this->properties->description, array('id'=>$this->properties->id));
             }
 
@@ -2692,13 +2696,13 @@ function calendar_get_eventtype_choices($courseid) {
     calendar_get_allowed_types($allowed, $courseid);
 
     if ($allowed->user) {
-        $choices[0] = get_string('userevents', 'calendar');
+        $choices['user'] = get_string('userevents', 'calendar');
     }
     if ($allowed->site) {
-        $choices[SITEID] = get_string('globalevents', 'calendar');
+        $choices['site'] = get_string('siteevents', 'calendar');
     }
     if (!empty($allowed->courses)) {
-        $choices[$courseid] = get_string('courseevents', 'calendar');
+        $choices['course'] = get_string('courseevents', 'calendar');
     }
     if (!empty($allowed->groups) and is_array($allowed->groups)) {
         $choices['group'] = get_string('group');
@@ -2714,11 +2718,15 @@ function calendar_get_eventtype_choices($courseid) {
  * @return int The insert ID, if any.
  */
 function calendar_add_subscription($sub) {
-    global $DB, $USER;
+    global $DB, $USER, $SITE;
 
-    $sub->courseid = $sub->eventtype;
-    if ($sub->eventtype == 'group') {
+    if ($sub->eventtype === 'site') {
+        $sub->courseid = $SITE->id;
+    } else if ($sub->eventtype === 'group' || $sub->eventtype === 'course') {
         $sub->courseid = $sub->course;
+    } else {
+        // User events.
+        $sub->courseid = 0;
     }
     $sub->userid = $USER->id;
 
@@ -2794,10 +2802,10 @@ function calendar_add_icalendar_event($event, $courseid, $subscriptionid = null)
         $eventrecord->userid = $sub->userid;
         $eventrecord->groupid = $sub->groupid;
         $eventrecord->courseid = $sub->courseid;
+        $eventrecord->eventtype = $sub->eventtype;
     } else {
-        $eventrecord->userid = $USER->id;
-        $eventrecord->groupid = 0; // TODO: ???
-        $eventrecord->courseid = $courseid;
+        // We should never do anything with an event without a subscription reference.
+        return 0;
     }
 
     if ($updaterecord = $DB->get_record('event', array('uuid' => $eventrecord->uuid))) {
