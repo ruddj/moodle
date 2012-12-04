@@ -69,7 +69,7 @@ class calendar_addsubscription_form extends moodleform {
         $mform->setType('pollinterval', PARAM_INT);
 
         // Import file
-        $mform->addElement('filepicker', 'importfile', get_string('importfromfile', 'calendar'));
+        $mform->addElement('filepicker', 'importfile', get_string('importfromfile', 'calendar'), null, array('accepted_types' => '.ics'));
 
         // Disable appropriate elements depending on import from value.
         $mform->disabledIf('pollinterval', 'importfrom', 'eq', CALENDAR_IMPORT_FROM_FILE);
@@ -105,19 +105,32 @@ class calendar_addsubscription_form extends moodleform {
      * @return array
      */
     public function validation($data, $files) {
+        global $USER;
+
         $errors = parent::validation($data, $files);
 
-        if (empty($data['url']) && empty($data['importfile'])) {
-            if (!empty($data['importfrom']) && $data['importfrom'] == CALENDAR_IMPORT_FROM_FILE) {
+        if ($data['importfrom'] == CALENDAR_IMPORT_FROM_FILE) {
+            if (empty($data['importfile'])) {
                 $errors['importfile'] = get_string('errorrequiredurlorfile', 'calendar');
             } else {
-                $errors['url'] = get_string('errorrequiredurlorfile', 'calendar');
+                // Make sure the file area is not empty and contains only one file.
+                $draftitemid = $data['importfile'];
+                $fs = get_file_storage();
+                $usercontext = context_user::instance($USER->id);
+                $files = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftitemid, 'id DESC', false);
+                if (count($files) !== 1) {
+                    $errors['importfile'] = get_string('errorrequiredurlorfile', 'calendar');
+                }
             }
-        } else if (!empty($data['url'])) {
+        } else if (($data['importfrom'] == CALENDAR_IMPORT_FROM_URL)) {
             if (clean_param($data['url'], PARAM_URL) !== $data['url']) {
                 $errors['url']  = get_string('invalidurl', 'error');
             }
+        } else {
+            // Shouldn't happen.
+            $errors['url'] = get_string('errorrequiredurlorfile', 'calendar');
         }
+
         return $errors;
     }
 
