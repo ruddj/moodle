@@ -23,6 +23,8 @@
  */
 
 $string['linkedcourse'] = 'Link course';
+$string['linkcourses'] = 'Link courses';
+$string['linkmultiplecourses'] = 'Link multiple courses';
 $string['meta:config'] = 'Configure meta enrol instances';
 $string['meta:selectaslinked'] = 'Select course as meta linked';
 $string['meta:unenrol'] = 'Unenrol suspended users';
@@ -31,4 +33,8 @@ $string['nosyncroleids_desc'] = 'By default all course level role assignments ar
 $string['pluginname'] = 'Course meta link';
 $string['pluginname_desc'] = 'Course meta link enrolment plugin synchronises enrolments and roles in two different courses.';
 $string['syncall'] = 'Synchronise all enrolled users';
+$string['addmultiple'] = 'Allow selection of Multiple linked classes';
+$string['addmultiple_desc'] = 'Allow selection of Multiple linked classes.';
+$string['addmultiple_rowlimit'] = 'Max number of courses to show.';
+$string['addmultiple_rowlimit_desc'] = 'Set the max number of courses to show. Set to 0 for unlimited';
 $string['syncall_desc'] = 'If enabled all enrolled users are synchronised even if they have no role in parent course, if disabled only users that have at least one synchronised role are enrolled in child course.';
