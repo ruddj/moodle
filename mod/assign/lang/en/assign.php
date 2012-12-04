@@ -88,6 +88,7 @@ $string['download all submissions'] = 'Download all submissions in a zip file.';
 $string['duedate'] = 'Due date';
 $string['duedate_help'] = 'This is when the assignment is due. If late submissions are allowed, any assignments submitted after this date are marked as late.';
 $string['duedateno'] = 'No due date';
+$string['submissionempty'] = 'Nothing was submitted';
 $string['duedatereached'] = 'The due date for this assignment has now passed';
 $string['duedatevalidation'] = 'Due date must be after the allow submissions from date.';
 $string['editsubmission'] = 'Edit my submission';
@@ -102,6 +103,7 @@ $string['gradersubmissionupdatedhtml'] = '{$a->username} has updated their assig
 for <i>\'{$a->assignment}\'  at {$a->timeupdated}</i><br /><br />
 It is <a href="{$a->url}">available on the web site</a>.';
 $string['gradersubmissionupdatedsmall'] = '{$a->username} has updated their submission for assignment {$a->assignment}.';
+$string['gradeuser'] = 'Grade {$a}';
 $string['enabled'] = 'Enabled';
 $string['errornosubmissions'] = 'There are no submissions to download';
 $string['errorquickgradingvsadvancedgrading'] = 'The grades were not saved because this assignment is currently using advanced grading';
