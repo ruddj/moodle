@@ -736,3 +736,17 @@ table.userenrolment tr.r1 {
 .mform .fitem .felement {
   text-align: left;
 }
+
+div.file-picker a:active,
+div.file-picker a:hover {
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+div.forumpost div.header a:active,
+div.forumpost div.header a:hover {
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+
