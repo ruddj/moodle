@@ -1022,6 +1022,8 @@ class assign {
 
         static $scalegrades = array();
 
+        $o = '';
+
         if ($this->get_instance()->grade >= 0) {
             // Normal number
             if ($editing && $this->get_instance()->grade > 0) {
@@ -1030,17 +1032,20 @@ class assign {
                 } else {
                     $displaygrade = format_float($grade);
                 }
-                $o = '<label class="accesshide" for="quickgrade_' . $userid . '">' . get_string('usergrade', 'assign') . '</label>';
-                $o .= '<input type="text" id="quickgrade_' . $userid . '" name="quickgrade_' . $userid . '" value="' . $displaygrade
-                        . '" size="6" maxlength="10" class="quickgrade"/>';
+                $o .= '<label class="accesshide" for="quickgrade_' . $userid . '">' . get_string('usergrade', 'assign') . '</label>';
+                $o .= '<input type="text" id="quickgrade_' . $userid . '" name="quickgrade_' . $userid . '" value="' .
+                      $displaygrade . '" size="6" maxlength="10" class="quickgrade"/>';
                 $o .= '&nbsp;/&nbsp;' . format_float($this->get_instance()->grade,2);
                 $o .= '<input type="hidden" name="grademodified_' . $userid . '" value="' . $modified . '"/>';
                 return $o;
             } else {
+                $o .= '<input type="hidden" name="grademodified_' . $userid . '" value="' . $modified . '"/>';
                 if ($grade == -1 || $grade === null) {
-                    return '-';
+                    $o .= '-';
+                    return $o;
                 } else {
-                    return format_float(($grade),2) .'&nbsp;/&nbsp;'. format_float($this->get_instance()->grade,2);
+                    $o .= format_float(($grade),2) .'&nbsp;/&nbsp;'. format_float($this->get_instance()->grade,2);
+                    return $o;
                 }
             }
 
@@ -1050,11 +1055,12 @@ class assign {
                 if ($scale = $DB->get_record('scale', array('id'=>-($this->get_instance()->grade)))) {
                     $this->cache['scale'] = make_menu_from_list($scale->scale);
                 } else {
-                    return '-';
+                    $o .= '-';
+                    return $o;
                 }
             }
             if ($editing) {
-                $o = '<label class="accesshide" for="quickgrade_' . $userid . '">' . get_string('usergrade', 'assign') . '</label>';
+                $o .= '<label class="accesshide" for="quickgrade_' . $userid . '">' . get_string('usergrade', 'assign') . '</label>';
                 $o .= '<select name="quickgrade_' . $userid . '" class="quickgrade">';
                 $o .= '<option value="-1">' . get_string('nograde') . '</option>';
                 foreach ($this->cache['scale'] as $optionid => $option) {
@@ -1070,9 +1076,11 @@ class assign {
             } else {
                 $scaleid = (int)$grade;
                 if (isset($this->cache['scale'][$scaleid])) {
-                    return $this->cache['scale'][$scaleid];
+                    $o .= $this->cache['scale'][$scaleid];
+                    return $o;
                 }
-                return '-';
+                $o .= '-';
+                return $o;
             }
         }
     }
@@ -1123,22 +1131,37 @@ class assign {
     /**
      * Load a count of users submissions in the current module that require grading
      * This means the submission modification time is more recent than the
-     * grading modification time.
+     * grading modification time and the status is SUBMITTED.
      *
      * @return int number of matching submissions
      */
     public function count_submissions_need_grading() {
         global $DB;
 
-        $params = array($this->get_course_module()->instance);
+        if ($this->get_instance()->teamsubmission) {
+            // This does not make sense for group assignment because the submission is shared.
+            return 0;
+        }
 
-        return $DB->count_records_sql("SELECT COUNT('x')
-                                       FROM {assign_submission} s
-                                       LEFT JOIN {assign_grades} g ON s.assignment = g.assignment AND s.userid = g.userid
-                                       WHERE s.assignment = ?
-                                           AND s.timemodified IS NOT NULL
-                                           AND (s.timemodified > g.timemodified OR g.timemodified IS NULL)",
-                                       $params);
+        $currentgroup = groups_get_activity_group($this->get_course_module(), true);
+        list($esql, $params) = get_enrolled_sql($this->get_context(), 'mod/assign:submit', $currentgroup, false);
+
+        $params['assignid'] = $this->get_instance()->id;
+        $params['submitted'] = ASSIGN_SUBMISSION_STATUS_SUBMITTED;
+
+        $sql = 'SELECT COUNT(s.userid)
+                   FROM {assign_submission} s
+                   LEFT JOIN {assign_grades} g ON
+                        s.assignment = g.assignment AND
+                        s.userid = g.userid
+                   JOIN(' . $esql . ') AS e ON e.id = s.userid
+                   WHERE
+                        s.assignment = :assignid AND
+                        s.timemodified IS NOT NULL AND
+                        s.status = :submitted AND
+                        (s.timemodified > g.timemodified OR g.timemodified IS NULL)';
+
+        return $DB->count_records_sql($sql, $params);
     }
 
     /**
@@ -1153,8 +1176,15 @@ class assign {
             return 0;
         }
 
-        $sql = 'SELECT COUNT(id) FROM {assign_grades} WHERE assignment = ?';
-        $params = array($this->get_course_module()->instance);
+        $currentgroup = groups_get_activity_group($this->get_course_module(), true);
+        list($esql, $params) = get_enrolled_sql($this->get_context(), 'mod/assign:submit', $currentgroup, false);
+
+        $params['assignid'] = $this->get_instance()->id;
+
+        $sql = 'SELECT COUNT(g.userid)
+                   FROM {assign_grades} g
+                   JOIN(' . $esql . ') AS e ON e.id = g.userid
+                   WHERE g.assignment = :assignid';
 
         return $DB->count_records_sql($sql, $params);
     }
@@ -1171,14 +1201,33 @@ class assign {
             return 0;
         }
 
-        $sql = 'SELECT COUNT(id) FROM {assign_submission} WHERE assignment = ?';
-        $params = array($this->get_course_module()->instance);
+        $params = array();
 
         if ($this->get_instance()->teamsubmission) {
-            // only look at team submissions
-            $sql .= ' AND userid = ?';
-            $params[] = 0;
+            // We cannot join on the enrolment tables for group submissions (no userid).
+            $sql = 'SELECT COUNT(s.groupid)
+                        FROM {assign_submission} s
+                        WHERE
+                            s.assignment = :assignid AND
+                            s.timemodified IS NOT NULL AND
+                            s.userid = :groupuserid';
+
+            $params['assignid'] = $this->get_instance()->id;
+            $params['groupuserid'] = 0;
+        } else {
+            $currentgroup = groups_get_activity_group($this->get_course_module(), true);
+            list($esql, $params) = get_enrolled_sql($this->get_context(), 'mod/assign:submit', $currentgroup, false);
+
+            $params['assignid'] = $this->get_instance()->id;
+
+            $sql = 'SELECT COUNT(s.userid)
+                       FROM {assign_submission} s
+                       JOIN(' . $esql . ') AS e ON e.id = s.userid
+                       WHERE
+                            s.assignment = :assignid AND
+                            s.timemodified IS NOT NULL';
         }
+
         return $DB->count_records_sql($sql, $params);
     }
 
@@ -1190,14 +1239,32 @@ class assign {
      */
     public function count_submissions_with_status($status) {
         global $DB;
-        $sql = 'SELECT COUNT(id) FROM {assign_submission} WHERE assignment = ? AND status = ?';
-        $params = array($this->get_course_module()->instance, $status);
+
+        $currentgroup = groups_get_activity_group($this->get_course_module(), true);
+        list($esql, $params) = get_enrolled_sql($this->get_context(), 'mod/assign:submit', $currentgroup, false);
+
+        $params['assignid'] = $this->get_instance()->id;
+        $params['submissionstatus'] = $status;
 
         if ($this->get_instance()->teamsubmission) {
-            // only look at team submissions
-            $sql .= ' AND userid = ?';
-            $params[] = 0;
+            $sql = 'SELECT COUNT(s.groupid)
+                        FROM {assign_submission} s
+                        WHERE
+                            s.assignment = :assignid AND
+                            s.timemodified IS NOT NULL AND
+                            s.userid = :groupuserid AND
+                            s.status = :submissionstatus';
+            $params['groupuserid'] = 0;
+        } else {
+            $sql = 'SELECT COUNT(s.userid)
+                        FROM {assign_submission} s
+                        JOIN(' . $esql . ') AS e ON e.id = s.userid
+                        WHERE
+                            s.assignment = :assignid AND
+                            s.timemodified IS NOT NULL AND
+                            s.status = :submissionstatus';
         }
+
         return $DB->count_records_sql($sql, $params);
     }
 
@@ -1964,12 +2031,7 @@ class assign {
             $submission->userid       = $userid;
             $submission->timecreated = time();
             $submission->timemodified = $submission->timecreated;
-
-            if ($this->get_instance()->submissiondrafts) {
-                $submission->status = ASSIGN_SUBMISSION_STATUS_DRAFT;
-            } else {
-                $submission->status = ASSIGN_SUBMISSION_STATUS_SUBMITTED;
-            }
+            $submission->status = ASSIGN_SUBMISSION_STATUS_DRAFT;
             $sid = $DB->insert_record('assign_submission', $submission);
             $submission->id = $sid;
             return $submission;
@@ -2113,6 +2175,9 @@ class assign {
                 $showsubmit = $showedit && $teamsubmission && ($teamsubmission->status == ASSIGN_SUBMISSION_STATUS_DRAFT);
             } else {
                 $showsubmit = $showedit && $submission && ($submission->status == ASSIGN_SUBMISSION_STATUS_DRAFT);
+            }
+            if (!$this->get_instance()->submissiondrafts) {
+                $showsubmit = false;
             }
             $viewfullnames = has_capability('moodle/site:viewfullnames', $this->get_course_context());
 
@@ -2260,6 +2325,7 @@ class assign {
         }
 
         $gradingactions = new url_select($links);
+        $gradingactions->set_label(get_string('choosegradingaction', 'assign'));
 
         $gradingmanager = get_grading_manager($this->get_context(), 'mod_assign', 'submissions');
 
@@ -2653,6 +2719,9 @@ class assign {
             if ($submission && ($submission->status == ASSIGN_SUBMISSION_STATUS_SUBMITTED)) {
                 $showsubmit = false;
             }
+            if (!$this->get_instance()->submissiondrafts) {
+                $showsubmit = false;
+            }
             $extensionduedate = null;
             if ($grade) {
                 $extensionduedate = $grade->extensionduedate;
@@ -2980,7 +3049,7 @@ class assign {
      * @param int $userid - Optional userid so we can see if a different user can submit
      * @return bool
      */
-    private function submissions_open($userid = 0) {
+    public function submissions_open($userid = 0) {
         global $USER;
 
         if (!$userid) {
@@ -3448,19 +3517,16 @@ class assign {
         // gets a list of possible users and look for values based upon that.
         foreach ($participants as $userid => $unused) {
             $modified = optional_param('grademodified_' . $userid, -1, PARAM_INT);
-            if ($modified >= 0) {
-                // gather the userid, updated grade and last modified value
-                $record = new stdClass();
-                $record->userid = $userid;
-                $record->grade = unformat_float(required_param('quickgrade_' . $record->userid, PARAM_TEXT));
-                $record->lastmodified = $modified;
-                $record->gradinginfo = grade_get_grades($this->get_course()->id, 'mod', 'assign', $this->get_instance()->id, array($userid));
-                $users[$userid] = $record;
+            // Gather the userid, updated grade and last modified value.
+            $record = new stdClass();
+            $record->userid = $userid;
+            $gradevalue = optional_param('quickgrade_' . $userid, '', PARAM_TEXT);
+            if($modified >= 0) {
+                $record->grade = unformat_float(optional_param('quickgrade_' . $record->userid, -1, PARAM_TEXT));
             }
-        }
-        if (empty($users)) {
-            // Quick check to see whether we have any users to update and we don't
-            return get_string('quickgradingchangessaved', 'assign'); // Technical lie
+            $record->lastmodified = $modified;
+            $record->gradinginfo = grade_get_grades($this->get_course()->id, 'mod', 'assign', $this->get_instance()->id, array($userid));
+            $users[$userid] = $record;
         }
 
         list($userids, $params) = $DB->get_in_or_equal(array_keys($users), SQL_PARAMS_NAMED);
@@ -3904,6 +3970,11 @@ class assign {
                 $grademenu = make_grades_menu($this->get_instance()->grade);
                 if (count($grademenu) > 0) {
                     $gradingelement = $mform->addElement('select', 'grade', get_string('grade').':', $grademenu);
+
+                    // The grade is already formatted with format_float so it needs to be converted back to an integer.
+                    if (!empty($data->grade)) {
+                        $data->grade = (int)unformat_float($data->grade);
+                    }
                     $mform->setType('grade', PARAM_INT);
                     if ($gradingdisabled) {
                         $gradingelement->freeze();
