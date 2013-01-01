@@ -655,7 +655,7 @@ function print_log_xls($course, $user, $date, $order='l.time DESC', $modname,
     // Creating worksheets
     for ($wsnumber = 1; $wsnumber <= $nroPages; $wsnumber++) {
         $sheettitle = get_string('logs').' '.$wsnumber.'-'.$nroPages;
-        $worksheet[$wsnumber] =& $workbook->add_worksheet($sheettitle);
+        $worksheet[$wsnumber] = $workbook->add_worksheet($sheettitle);
         $worksheet[$wsnumber]->set_column(1, 1, 30);
         $worksheet[$wsnumber]->write_string(0, 0, get_string('savedat').
                                     userdate(time(), $strftimedatetime));
@@ -769,7 +769,7 @@ function print_log_ods($course, $user, $date, $order='l.time DESC', $modname,
     // Creating worksheets
     for ($wsnumber = 1; $wsnumber <= $nroPages; $wsnumber++) {
         $sheettitle = get_string('logs').' '.$wsnumber.'-'.$nroPages;
-        $worksheet[$wsnumber] =& $workbook->add_worksheet($sheettitle);
+        $worksheet[$wsnumber] = $workbook->add_worksheet($sheettitle);
         $worksheet[$wsnumber]->set_column(1, 1, 30);
         $worksheet[$wsnumber]->write_string(0, 0, get_string('savedat').
                                     userdate(time(), $strftimedatetime));
@@ -1748,17 +1748,20 @@ function print_section($course, $section, $mods, $modnamesused, $absolute=false,
             if (!$mod->uservisible) {
                 echo '<div class="availabilityinfo">'.$mod->availableinfo.'</div>';
             } else if ($canviewhidden && !empty($CFG->enableavailability)) {
-                $visibilityclass = '';
-                if (!$mod->visible) {
-                    $visibilityclass = 'accesshide';
-                }
-                $ci = new condition_info($mod);
-                $fullinfo = $ci->get_full_information();
-                if($fullinfo) {
-                    echo '<div class="availabilityinfo '.$visibilityclass.'">'.get_string($mod->showavailability
-                        ? 'userrestriction_visible'
-                        : 'userrestriction_hidden','condition',
-                        $fullinfo).'</div>';
+                // Don't add availability information if user is not editing and activity is hidden.
+                if ($mod->visible || $PAGE->user_is_editing()) {
+                    $hidinfoclass = '';
+                    if (!$mod->visible) {
+                        $hidinfoclass = 'hide';
+                    }
+                    $ci = new condition_info($mod);
+                    $fullinfo = $ci->get_full_information();
+                    if($fullinfo) {
+                        echo '<div class="availabilityinfo '.$hidinfoclass.'">'.get_string($mod->showavailability
+                            ? 'userrestriction_visible'
+                            : 'userrestriction_hidden','condition',
+                            $fullinfo).'</div>';
+                    }
                 }
             }
 
@@ -4596,7 +4599,7 @@ function include_course_ajax($course, $usedmodules = array(), $enabledmodules = 
     // Add the module chooser
     $PAGE->requires->yui_module('moodle-course-modchooser',
         'M.course.init_chooser',
-        array(array('courseid' => $course->id))
+        array(array('courseid' => $course->id, 'closeButtonTitle' => get_string('close', 'editor')))
     );
     $PAGE->requires->strings_for_js(array(
             'addresourceoractivity',
