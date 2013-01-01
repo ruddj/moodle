@@ -417,6 +417,8 @@ class assign {
             $o .= $this->view_plugin_grading_batch_operation($mform);
         } else if ($action == 'viewpluginpage') {
              $o .= $this->view_plugin_page();
+        } else if ($action == 'viewcourseindex') {
+             $o .= $this->view_course_index();
         } else {
             $o .= $this->view_submission_page();
         }
@@ -1154,7 +1156,7 @@ class assign {
                    LEFT JOIN {assign_grades} g ON
                         s.assignment = g.assignment AND
                         s.userid = g.userid
-                   JOIN(' . $esql . ') AS e ON e.id = s.userid
+                   JOIN(' . $esql . ') e ON e.id = s.userid
                    WHERE
                         s.assignment = :assignid AND
                         s.timemodified IS NOT NULL AND
@@ -1183,7 +1185,7 @@ class assign {
 
         $sql = 'SELECT COUNT(g.userid)
                    FROM {assign_grades} g
-                   JOIN(' . $esql . ') AS e ON e.id = g.userid
+                   JOIN(' . $esql . ') e ON e.id = g.userid
                    WHERE g.assignment = :assignid';
 
         return $DB->count_records_sql($sql, $params);
@@ -1222,7 +1224,7 @@ class assign {
 
             $sql = 'SELECT COUNT(s.userid)
                        FROM {assign_submission} s
-                       JOIN(' . $esql . ') AS e ON e.id = s.userid
+                       JOIN(' . $esql . ') e ON e.id = s.userid
                        WHERE
                             s.assignment = :assignid AND
                             s.timemodified IS NOT NULL';
@@ -1258,7 +1260,7 @@ class assign {
         } else {
             $sql = 'SELECT COUNT(s.userid)
                         FROM {assign_submission} s
-                        JOIN(' . $esql . ') AS e ON e.id = s.userid
+                        JOIN(' . $esql . ') e ON e.id = s.userid
                         WHERE
                             s.assignment = :assignid AND
                             s.timemodified IS NOT NULL AND
@@ -1687,7 +1689,84 @@ class assign {
     }
 
     /**
-     * View a page rendered by a plugin
+     * View a summary listing of all assignments in the current course.
+     *
+     * @return string
+     */
+    private function view_course_index() {
+        global $USER;
+
+        $o = '';
+
+        $course = $this->get_course();
+        $strplural = get_string('modulenameplural', 'assign');
+
+        if (!$cms = get_coursemodules_in_course('assign', $course->id, 'm.duedate')) {
+            $o .= $this->get_renderer()->notification(get_string('thereareno', 'moodle', $strplural));
+            $o .= $this->get_renderer()->continue_button(new moodle_url('/course/view.php', array('id' => $course->id)));
+            return $o;
+        }
+
+        $strsectionname  = get_string('sectionname', 'format_'.$course->format);
+        $usesections = course_format_uses_sections($course->format);
+        $modinfo = get_fast_modinfo($course);
+
+        if ($usesections) {
+            $sections = $modinfo->get_section_info_all();
+        }
+        $courseindexsummary = new assign_course_index_summary($usesections, $strsectionname);
+
+        $timenow = time();
+
+        $currentsection = '';
+        foreach ($modinfo->instances['assign'] as $cm) {
+            if (!$cm->uservisible) {
+                continue;
+            }
+
+            $timedue        = $cms[$cm->id]->duedate;
+
+            $sectionname = '';
+            if ($usesections && $cm->sectionnum) {
+                $sectionname = get_section_name($course, $sections[$cm->sectionnum]);
+            }
+
+            $submitted = '';
+            $context = context_module::instance($cm->id);
+
+            $assignment = new assign($context, $cm, $course);
+
+            if (has_capability('mod/assign:grade', $context)) {
+                $submitted = $assignment->count_submissions_with_status(ASSIGN_SUBMISSION_STATUS_SUBMITTED);
+
+            } else if (has_capability('mod/assign:submit', $context)) {
+                $usersubmission = $assignment->get_user_submission($USER->id, false);
+
+                if (!empty($usersubmission->status)) {
+                    $submitted = get_string('submissionstatus_' . $usersubmission->status, 'assign');
+                } else {
+                    $submitted = get_string('submissionstatus_', 'assign');
+                }
+            }
+            $grading_info = grade_get_grades($course->id, 'mod', 'assign', $cm->instance, $USER->id);
+            if (isset($grading_info->items[0]) && !$grading_info->items[0]->grades[$USER->id]->hidden ) {
+                $grade = $grading_info->items[0]->grades[$USER->id]->str_grade;
+            } else {
+                $grade = '-';
+            }
+
+            $courseindexsummary->add_assign_info($cm->id, $cm->name, $sectionname, $timedue, $submitted, $grade);
+
+        }
+
+        $o .= $this->get_renderer()->render($courseindexsummary);
+        $o .= $this->view_footer();
+
+        return $o;
+    }
+
+    /**
+     * View a page rendered by a plugin.
      *
      * Uses url parameters 'pluginaction', 'pluginsubtype', 'plugin', and 'id'
      *
@@ -1961,11 +2040,26 @@ class assign {
                 }
             }
         }
-        if ($zipfile = $this->pack_files($filesforzipping)) {
+        $result = '';
+        if (count($filesforzipping) == 0) {
+            $header = new assign_header($this->get_instance(),
+                                        $this->get_context(),
+                                        '',
+                                        $this->get_course_module()->id,
+                                        get_string('downloadall', 'assign'));
+            $result .= $this->get_renderer()->render($header);
+            $result .= $this->get_renderer()->notification(get_string('nosubmission', 'assign'));
+            $url = new moodle_url('/mod/assign/view.php', array('id'=>$this->get_course_module()->id,
+                                                                    'action'=>'grading'));
+            $result .= $this->get_renderer()->continue_button($url);
+            $result .= $this->view_footer();
+        } else if ($zipfile = $this->pack_files($filesforzipping)) {
             $this->add_to_log('download all submissions', get_string('downloadall', 'assign'));
             // Send file and delete after sending.
             send_temp_file($zipfile, $filename);
+            // We will not get here - send_temp_file calls exit.
         }
+        return $result;
     }
 
     /**
@@ -2795,7 +2889,7 @@ class assign {
                 }
 
                 $gradeddate = $gradebookgrade->dategraded;
-                $grader = $DB->get_record('user', array('id'=>$gradebookgrade->usermodified));
+                $grader = $DB->get_record('user', array('id'=>$grade->grader));
 
                 $feedbackstatus = new assign_feedback_status($gradefordisplay,
                                                       $gradeddate,
