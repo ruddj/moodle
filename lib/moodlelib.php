@@ -3082,7 +3082,12 @@ function require_login($courseorid = NULL, $autologinguest = true, $cm = NULL, $
         if ($preventredirect) {
             throw new require_login_exception('Activity is hidden');
         }
-        redirect($CFG->wwwroot, get_string('activityiscurrentlyhidden'));
+        if ($course->id != SITEID) {
+            $url = new moodle_url('/course/view.php', array('id'=>$course->id));
+        } else {
+            $url = new moodle_url('/');
+        }
+        redirect($url, get_string('activityiscurrentlyhidden'));
     }
 
     // Finally access granted, update lastaccess times
@@ -5161,9 +5166,8 @@ function moodle_process_email($modargs,$body) {
 /**
  * Get mailer instance, enable buffering, flush buffer or disable buffering.
  *
- * @global object
  * @param string $action 'get', 'buffer', 'close' or 'flush'
- * @return object|null mailer instance if 'get' used or nothing
+ * @return moodle_phpmailer|null mailer instance if 'get' used or nothing
  */
 function get_mailer($action='get') {
     global $CFG;
@@ -5502,7 +5506,6 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml='', $a
 
     if ($mail->Send()) {
         set_send_count($user);
-        $mail->IsSMTP();                               // use SMTP directly
         if (!empty($mail->SMTPDebug)) {
             echo '</pre>';
         }
@@ -10385,6 +10388,11 @@ function get_performance_info() {
     $info['includecount'] = count($inc);
     $info['html'] .= '<span class="included">Included '.$info['includecount'].' files</span> ';
     $info['txt']  .= 'includecount: '.$info['includecount'].' ';
+
+    if (!empty($CFG->early_install_lang)) {
+        // We can not track more performance before installation, sorry.
+        return $info;
+    }
 
     $filtermanager = filter_manager::instance();
     if (method_exists($filtermanager, 'get_performance_summary')) {

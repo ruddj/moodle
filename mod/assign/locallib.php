@@ -1477,6 +1477,23 @@ class assign {
     }
 
     /**
+     * Mark in the database that this grade record should have an update notification sent by cron.
+     *
+     * @param stdClass $grade a grade record keyed on id
+     * @return bool true for success
+     */
+    public function notify_grade_modified($grade) {
+        global $DB;
+
+        $grade->timemodified = time();
+        if ($grade->mailed != 1) {
+            $grade->mailed = 0;
+        }
+
+        return $DB->update_record('assign_grades', $grade);
+    }
+
+    /**
      * Update a grade in the grade table for the assignment and in the gradebook
      *
      * @param stdClass $grade a grade record keyed on id
@@ -1880,6 +1897,39 @@ class assign {
     }
 
     /**
+     * Rewrite plugin file urls so they resolve correctly in an exported zip.
+     *
+     * @param stdClass $user - The user record
+     * @param assign_plugin $plugin - The assignment plugin
+     */
+    public function download_rewrite_pluginfile_urls($text, $user, $plugin) {
+        $groupmode = groups_get_activity_groupmode($this->get_course_module());
+        $groupname = '';
+        if ($groupmode) {
+            $groupid = groups_get_activity_group($this->get_course_module(), true);
+            $groupname = groups_get_group_name($groupid).'-';
+        }
+
+        if ($this->is_blind_marking()) {
+            $prefix = $groupname . get_string('participant', 'assign');
+            $prefix = str_replace('_', ' ', $prefix);
+            $prefix = clean_filename($prefix . '_' . $this->get_uniqueid_for_user($user->id) . '_');
+        } else {
+            $prefix = $groupname . fullname($user);
+            $prefix = str_replace('_', ' ', $prefix);
+            $prefix = clean_filename($prefix . '_' . $this->get_uniqueid_for_user($user->id) . '_');
+        }
+
+        $subtype = $plugin->get_subtype();
+        $type = $plugin->get_type();
+        $prefix = $prefix . $subtype . '_' . $type . '_';
+
+        $result = str_replace('@@PLUGINFILE@@/', $prefix, $text);
+
+        return $result;
+    }
+
+    /**
      * render the content in editor that is often used by plugin
      *
      * @param string $filearea
@@ -2028,7 +2078,7 @@ class assign {
                 if ($submission) {
                     foreach ($this->submissionplugins as $plugin) {
                         if ($plugin->is_enabled() && $plugin->is_visible()) {
-                            $pluginfiles = $plugin->get_files($submission);
+                            $pluginfiles = $plugin->get_files($submission, $student);
                             foreach ($pluginfiles as $zipfilename => $file) {
                                 $subtype = $plugin->get_subtype();
                                 $type = $plugin->get_type();
@@ -2175,6 +2225,10 @@ class assign {
             $grade->grade = -1;
             $grade->grader = $USER->id;
             $grade->extensionduedate = 0;
+
+            // The mailed flag can be one of 3 values: 0 is unsent, 1 is sent and 2 is do not send yet.
+            // This is because students only want to be notified about certain types of update (grades and feedback).
+            $grade->mailed = 2;
             $gid = $DB->insert_record('assign_grades', $grade);
             $grade->id = $gid;
             return $grade;
@@ -3712,6 +3766,7 @@ class assign {
             }
 
             $this->update_grade($grade);
+            $this->notify_grade_modified($grade);
 
             // save outcomes
             if ($CFG->enableoutcomes) {
@@ -4406,6 +4461,7 @@ class assign {
             }
         }
         $this->update_grade($grade);
+        $this->notify_grade_modified($grade);
         $user = $DB->get_record('user', array('id' => $userid), '*', MUST_EXIST);
 
         $this->add_to_log('grade submission', $this->format_grade_for_log($grade));
