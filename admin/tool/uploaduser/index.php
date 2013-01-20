@@ -285,7 +285,11 @@ if ($formdata = $mform2->is_cancelled()) {
             $userserrors++;
             continue;
         }
-
+        if ($user->username !== clean_param($user->username, PARAM_USERNAME)) {
+            $upt->track('status', get_string('invalidusername', 'error', 'username'), 'error');
+            $upt->track('username', $errorstr, 'error');
+            $userserrors++;
+        }
         if ($existinguser = $DB->get_record('user', array('username'=>$user->username, 'mnethostid'=>$CFG->mnet_localhost_id))) {
             $upt->track('id', $existinguser->id, 'normal', false);
         }
@@ -523,6 +527,16 @@ if ($formdata = $mform2->is_cancelled()) {
                             }
                         }
 
+                        if ($column === 'lang') {
+                            if (empty($user->lang)) {
+                                // Do not change to not-set value.
+                                continue;
+                            } else if (clean_param($user->lang, PARAM_LANG) === '') {
+                                $upt->track('status', get_string('cannotfindlang', 'error', $user->lang), 'warning');
+                                continue;
+                            }
+                        }
+
                         if (in_array($column, $upt->columns)) {
                             $upt->track($column, s($existinguser->$column).'-->'.s($user->$column), 'info', false);
                         }
@@ -676,6 +690,13 @@ if ($formdata = $mform2->is_cancelled()) {
             }
             if (!validate_email($user->email)) {
                 $upt->track('email', get_string('invalidemail'), 'warning');
+            }
+
+            if (empty($user->lang)) {
+                $user->lang = '';
+            } else if (clean_param($user->lang, PARAM_LANG) === '') {
+                $upt->track('status', get_string('cannotfindlang', 'error', $user->lang), 'warning');
+                $user->lang = '';
             }
 
             $forcechangepassword = false;

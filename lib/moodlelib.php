@@ -1306,7 +1306,7 @@ function set_config($name, $value, $plugin=NULL) {
                 $DB->insert_record('config', $config, false);
             }
         }
-
+        cache_helper::invalidate_by_definition('core', 'config', array(), 'core');
     } else { // plugin scope
         if ($id = $DB->get_field('config_plugins', 'id', array('name'=>$name, 'plugin'=>$plugin))) {
             if ($value===null) {
@@ -1323,6 +1323,7 @@ function set_config($name, $value, $plugin=NULL) {
                 $DB->insert_record('config_plugins', $config, false);
             }
         }
+        cache_helper::invalidate_by_definition('core', 'config', array(), $plugin);
     }
 
     return true;
@@ -1345,63 +1346,55 @@ function set_config($name, $value, $plugin=NULL) {
 function get_config($plugin, $name = NULL) {
     global $CFG, $DB;
 
-    // normalise component name
-    if ($plugin === 'moodle' or $plugin === 'core') {
-        $plugin = NULL;
-    }
-
-    if (!empty($name)) { // the user is asking for a specific value
-        if (!empty($plugin)) {
-            if (isset($CFG->forced_plugin_settings[$plugin]) and array_key_exists($name, $CFG->forced_plugin_settings[$plugin])) {
-                // setting forced in config file
-                return $CFG->forced_plugin_settings[$plugin][$name];
-            } else {
-                return $DB->get_field('config_plugins', 'value', array('plugin'=>$plugin, 'name'=>$name));
-            }
-        } else {
-            if (array_key_exists($name, $CFG->config_php_settings)) {
-                // setting force in config file
-                return $CFG->config_php_settings[$name];
-            } else {
-                return $DB->get_field('config', 'value', array('name'=>$name));
-            }
-        }
-    }
-
-    // the user is after a recordset
-    if ($plugin) {
-        $localcfg = $DB->get_records_menu('config_plugins', array('plugin'=>$plugin), '', 'name,value');
-        if (isset($CFG->forced_plugin_settings[$plugin])) {
-            foreach($CFG->forced_plugin_settings[$plugin] as $n=>$v) {
-                if (is_null($v) or is_array($v) or is_object($v)) {
-                    // we do not want any extra mess here, just real settings that could be saved in db
-                    unset($localcfg[$n]);
-                } else {
-                    //convert to string as if it went through the DB
-                    $localcfg[$n] = (string)$v;
-                }
-            }
-        }
-        if ($localcfg) {
-            return (object)$localcfg;
-        } else {
-            return new stdClass();
-        }
-
+    if ($plugin === 'moodle' || $plugin === 'core' || empty($plugin)) {
+        $forced =& $CFG->config_php_settings;
+        $iscore = true;
+        $plugin = 'core';
     } else {
-        // this part is not really used any more, but anyway...
-        $localcfg = $DB->get_records_menu('config', array(), '', 'name,value');
-        foreach($CFG->config_php_settings as $n=>$v) {
-            if (is_null($v) or is_array($v) or is_object($v)) {
-                // we do not want any extra mess here, just real settings that could be saved in db
-                unset($localcfg[$n]);
-            } else {
-                //convert to string as if it went through the DB
-                $localcfg[$n] = (string)$v;
-            }
+        if (array_key_exists($plugin, $CFG->forced_plugin_settings)) {
+            $forced =& $CFG->forced_plugin_settings[$plugin];
+        } else {
+            $forced = array();
         }
-        return (object)$localcfg;
+        $iscore = false;
     }
+
+    if (!empty($name) && array_key_exists($name, $forced)) {
+        return (string)$forced[$name];
+    }
+
+    $cache = cache::make('core', 'config');
+    $result = $cache->get($plugin);
+    if (!$result) {
+        // the user is after a recordset
+        $result = new stdClass;
+        if (!$iscore) {
+            $result = $DB->get_records_menu('config_plugins', array('plugin'=>$plugin), '', 'name,value');
+        } else {
+            // this part is not really used any more, but anyway...
+            $result = $DB->get_records_menu('config', array(), '', 'name,value');;
+        }
+        $cache->set($plugin, $result);
+    }
+
+    if (!empty($name)) {
+        if (array_key_exists($name, $result)) {
+            return $result[$name];
+        }
+        return false;
+    }
+
+    foreach ($forced as $key => $value) {
+        if (is_null($value) or is_array($value) or is_object($value)) {
+            // we do not want any extra mess here, just real settings that could be saved in db
+            unset($result[$key]);
+        } else {
+            //convert to string as if it went through the DB
+            $result[$key] = (string)$value;
+        }
+    }
+
+    return (object)$result;
 }
 
 /**
@@ -1418,8 +1411,10 @@ function unset_config($name, $plugin=NULL) {
     if (empty($plugin)) {
         unset($CFG->$name);
         $DB->delete_records('config', array('name'=>$name));
+        cache_helper::invalidate_by_definition('core', 'config', array(), 'core');
     } else {
         $DB->delete_records('config_plugins', array('name'=>$name, 'plugin'=>$plugin));
+        cache_helper::invalidate_by_definition('core', 'config', array(), $plugin);
     }
 
     return true;
@@ -1433,10 +1428,15 @@ function unset_config($name, $plugin=NULL) {
  */
 function unset_all_config_for_plugin($plugin) {
     global $DB;
+    // Delete from the obvious config_plugins first
     $DB->delete_records('config_plugins', array('plugin' => $plugin));
+    // Next delete any suspect settings from config
     $like = $DB->sql_like('name', '?', true, true, false, '|');
     $params = array($DB->sql_like_escape($plugin.'_', '|') . '%');
     $DB->delete_records_select('config', $like, $params);
+    // Finally clear both the plugin cache and the core cache (suspect settings now removed from core).
+    cache_helper::invalidate_by_definition('core', 'config', array(), array('core', $plugin));
+
     return true;
 }
 
@@ -3082,7 +3082,12 @@ function require_login($courseorid = NULL, $autologinguest = true, $cm = NULL, $
         if ($preventredirect) {
             throw new require_login_exception('Activity is hidden');
         }
-        redirect($CFG->wwwroot, get_string('activityiscurrentlyhidden'));
+        if ($course->id != SITEID) {
+            $url = new moodle_url('/course/view.php', array('id'=>$course->id));
+        } else {
+            $url = new moodle_url('/');
+        }
+        redirect($url, get_string('activityiscurrentlyhidden'));
     }
 
     // Finally access granted, update lastaccess times
@@ -3466,39 +3471,6 @@ function set_bounce_count($user,$reset=false) {
         $pref->userid = $user->id;
         $DB->insert_record('user_preferences', $pref, false);
     }
-}
-
-/**
- * Keeps track of login attempts
- *
- * @global object
- */
-function update_login_count() {
-    global $SESSION;
-
-    $max_logins = 10;
-
-    if (empty($SESSION->logincount)) {
-        $SESSION->logincount = 1;
-    } else {
-        $SESSION->logincount++;
-    }
-
-    if ($SESSION->logincount > $max_logins) {
-        unset($SESSION->wantsurl);
-        print_error('errortoomanylogins');
-    }
-}
-
-/**
- * Resets login attempts
- *
- * @global object
- */
-function reset_login_count() {
-    global $SESSION;
-
-    $SESSION->logincount = 0;
 }
 
 /**
@@ -4134,10 +4106,13 @@ function guest_user() {
  *
  * @param string $username  User's username
  * @param string $password  User's password
- * @return user|flase A {@link $USER} object or false if error
+ * @param bool $ignorelockout useful when guessing is prevented by other mechanism such as captcha or SSO
+ * @param int $failurereason login failure reason, can be used in renderers (it may disclose if account exists)
+ * @return stdClass|false A {@link $USER} object or false if error
  */
-function authenticate_user_login($username, $password) {
+function authenticate_user_login($username, $password, $ignorelockout=false, &$failurereason=null) {
     global $CFG, $DB;
+    require_once("$CFG->libdir/authlib.php");
 
     $authsenabled = get_enabled_auth_plugins();
 
@@ -4146,11 +4121,13 @@ function authenticate_user_login($username, $password) {
         if (!empty($user->suspended)) {
             add_to_log(SITEID, 'login', 'error', 'index.php', $username);
             error_log('[client '.getremoteaddr()."]  $CFG->wwwroot  Suspended Login:  $username  ".$_SERVER['HTTP_USER_AGENT']);
+            $failurereason = AUTH_LOGIN_SUSPENDED;
             return false;
         }
         if ($auth=='nologin' or !is_enabled_auth($auth)) {
             add_to_log(SITEID, 'login', 'error', 'index.php', $username);
             error_log('[client '.getremoteaddr()."]  $CFG->wwwroot  Disabled Login:  $username  ".$_SERVER['HTTP_USER_AGENT']);
+            $failurereason = AUTH_LOGIN_SUSPENDED; // Legacy way to suspend user.
             return false;
         }
         $auths = array($auth);
@@ -4159,6 +4136,7 @@ function authenticate_user_login($username, $password) {
         // Check if there's a deleted record (cheaply), this should not happen because we mangle usernames in delete_user().
         if ($DB->get_field('user', 'id', array('username'=>$username, 'mnethostid'=>$CFG->mnet_localhost_id,  'deleted'=>1))) {
             error_log('[client '.getremoteaddr()."]  $CFG->wwwroot  Deleted Login:  $username  ".$_SERVER['HTTP_USER_AGENT']);
+            $failurereason = AUTH_LOGIN_NOUSER;
             return false;
         }
 
@@ -4166,6 +4144,7 @@ function authenticate_user_login($username, $password) {
         if (!empty($CFG->authpreventaccountcreation)) {
             add_to_log(SITEID, 'login', 'error', 'index.php', $username);
             error_log('[client '.getremoteaddr()."]  $CFG->wwwroot  Unknown user, can not create new accounts:  $username  ".$_SERVER['HTTP_USER_AGENT']);
+            $failurereason = AUTH_LOGIN_NOUSER;
             return false;
         }
 
@@ -4173,6 +4152,24 @@ function authenticate_user_login($username, $password) {
         $auths = $authsenabled;
         $user = new stdClass();
         $user->id = 0;
+    }
+
+    if ($ignorelockout) {
+        // Some other mechanism protects against brute force password guessing,
+        // for example login form might include reCAPTCHA or this function
+        // is called from a SSO script.
+
+    } else if ($user->id) {
+        // Verify login lockout after other ways that may prevent user login.
+        if (login_is_lockedout($user)) {
+            add_to_log(SITEID, 'login', 'error', 'index.php', $username);
+            error_log('[client '.getremoteaddr()."]  $CFG->wwwroot  Login lockout:  $username  ".$_SERVER['HTTP_USER_AGENT']);
+            $failurereason = AUTH_LOGIN_LOCKOUT;
+            return false;
+        }
+
+    } else {
+        // We can not lockout non-existing accounts.
     }
 
     foreach ($auths as $auth) {
@@ -4208,6 +4205,7 @@ function authenticate_user_login($username, $password) {
         }
 
         if (empty($user->id)) {
+            $failurereason = AUTH_LOGIN_NOUSER;
             return false;
         }
 
@@ -4215,9 +4213,12 @@ function authenticate_user_login($username, $password) {
             // just in case some auth plugin suspended account
             add_to_log(SITEID, 'login', 'error', 'index.php', $username);
             error_log('[client '.getremoteaddr()."]  $CFG->wwwroot  Suspended Login:  $username  ".$_SERVER['HTTP_USER_AGENT']);
+            $failurereason = AUTH_LOGIN_SUSPENDED;
             return false;
         }
 
+        login_attempt_valid($user);
+        $failurereason = AUTH_LOGIN_OK;
         return $user;
     }
 
@@ -4226,6 +4227,14 @@ function authenticate_user_login($username, $password) {
     if (debugging('', DEBUG_ALL)) {
         error_log('[client '.getremoteaddr()."]  $CFG->wwwroot  Failed Login:  $username  ".$_SERVER['HTTP_USER_AGENT']);
     }
+
+    if ($user->id) {
+        login_attempt_failed($user);
+        $failurereason = AUTH_LOGIN_FAILED;
+    } else {
+        $failurereason = AUTH_LOGIN_NOUSER;
+    }
+
     return false;
 }
 
@@ -5161,9 +5170,8 @@ function moodle_process_email($modargs,$body) {
 /**
  * Get mailer instance, enable buffering, flush buffer or disable buffering.
  *
- * @global object
  * @param string $action 'get', 'buffer', 'close' or 'flush'
- * @return object|null mailer instance if 'get' used or nothing
+ * @return moodle_phpmailer|null mailer instance if 'get' used or nothing
  */
 function get_mailer($action='get') {
     global $CFG;
@@ -5502,7 +5510,6 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml='', $a
 
     if ($mail->Send()) {
         set_send_count($user);
-        $mail->IsSMTP();                               // use SMTP directly
         if (!empty($mail->SMTPDebug)) {
             echo '</pre>';
         }
@@ -5879,7 +5886,7 @@ function get_file_browser() {
 function get_file_packer($mimetype='application/zip') {
     global $CFG;
 
-    static $fp = array();;
+    static $fp = array();
 
     if (isset($fp[$mimetype])) {
         return $fp[$mimetype];
@@ -10385,6 +10392,11 @@ function get_performance_info() {
     $info['includecount'] = count($inc);
     $info['html'] .= '<span class="included">Included '.$info['includecount'].' files</span> ';
     $info['txt']  .= 'includecount: '.$info['includecount'].' ';
+
+    if (!empty($CFG->early_install_lang)) {
+        // We can not track more performance before installation, sorry.
+        return $info;
+    }
 
     $filtermanager = filter_manager::instance();
     if (method_exists($filtermanager, 'get_performance_summary')) {

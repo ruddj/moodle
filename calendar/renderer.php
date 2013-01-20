@@ -43,6 +43,7 @@ class core_calendar_renderer extends plugin_renderer_base {
      * @return string
      */
     public function basic_export_form($allowthisweek, $allownextweek, $allownextmonth, $userid, $authtoken) {
+        global $CFG;
 
         $output  = html_writer::tag('div', get_string('export', 'calendar'), array('class'=>'header'));
         $output .= html_writer::start_tag('fieldset');
@@ -84,8 +85,20 @@ class core_calendar_renderer extends plugin_renderer_base {
         $output .= html_writer::empty_tag('input', array('type'=>'radio', 'name'=>'preset_time', 'id'=>'pt_recupc', 'value'=>'recentupcoming'));
         $output .= html_writer::tag('label', get_string('recentupcoming', 'calendar'), array('for'=>'pt_recupc'));
         $output .= html_writer::empty_tag('br');
-        $output .= html_writer::end_tag('div');
 
+        if ($CFG->calendar_customexport) {
+            $a = new stdClass();
+            $now = time();
+            $time = $now - $CFG->calendar_exportlookback * DAYSECS;
+            $a->timestart = userdate($time, get_string('strftimedatefullshort', 'langconfig'));
+            $time = $now + $CFG->calendar_exportlookahead * DAYSECS;
+            $a->timeend = userdate($time, get_string('strftimedatefullshort', 'langconfig'));
+            $output .= html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'preset_time', 'id' => 'pt_custom', 'value' => 'custom'));
+            $output .= html_writer::tag('label', get_string('customexport', 'calendar', $a), array('for' => 'pt_custom'));
+            $output .= html_writer::empty_tag('br');
+        }
+
+        $output .= html_writer::end_tag('div');
         $output .= html_writer::start_tag('div', array('class'=>'rightalign'));
         $output .= html_writer::empty_tag('input', array('type'=>'hidden', 'name'=>'cal_d', 'value'=>''));
         $output .= html_writer::empty_tag('input', array('type'=>'hidden', 'name'=>'cal_m', 'value'=>''));
@@ -736,6 +749,7 @@ class core_calendar_renderer extends plugin_renderer_base {
         $table->head  = array(
             get_string('colcalendar', 'calendar'),
             get_string('collastupdated', 'calendar'),
+            get_string('eventkind', 'calendar'),
             get_string('colpoll', 'calendar'),
             get_string('colactions', 'calendar')
         );
@@ -762,10 +776,12 @@ class core_calendar_renderer extends plugin_renderer_base {
 
             $cell = new html_table_cell($this->subscription_action_form($sub, $courseid));
             $cell->colspan = 2;
+            $type = $sub->eventtype . 'events';
 
             $table->data[] = new html_table_row(array(
                 new html_table_cell($label),
                 new html_table_cell($lastupdated),
+                new html_table_cell(get_string($type, 'calendar')),
                 $cell
             ));
         }
