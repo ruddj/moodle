@@ -9,81 +9,76 @@ html {
 body {
     margin: 0;
     padding: 0;
-    background: #eee url([[pix:theme|core/bground]]) repeat-x;
+    min-width: 775px;
+    background: #eee url([[pix:theme|core/bground]]) repeat-x fixed;
 }
 #page-wrapper {
     width: 100%;
     max-width: 1050px;
     margin: 0 auto;
-    background: transparent;
+    background: none;
+    border: 1px solid #eee;
 }
 #page {
     width: 100%;
     max-width: 1010px;
     margin: 0 auto;
     padding: 0 20px;
-    background: white;
+    background: #fff;
 }
 /*
 3 Column Page Layout
 -----------------------*/
+
 #page-content {
-    position: relative;    /* fixes IE7 overflow hidden bug stoping layout jumping out of place */
     clear: both;
     float: left;
-    width: 100%;            /* width of whole page */
-    overflow: hidden;        /* This chops off any overhanging divs */
-    /* background: #dddfd9;        *//* Left column background colour */
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    /*background-color: #dddfd9;  */    /* Right column background colour */
 }
 #region-main-box {
     float: left;
-    width: 200%;
+    right: 25%;
     position: relative;
-    left: 200px;
-    background: white;        /* Centre column background colour */
-}
-#region-post-box {
-    float: left;
     width: 100%;
+    background-color: #fff;      /* Center column background colour */
+}
+#region-pre-box {
+    float: left;
+    right: 50%;
     position: relative;
-    left: 50%;
-    margin-left: -400px;
-    /* background: #dddfd9;        *//* Right column background colour */
-}
-#region-main-wrap {
-    float:right;
-    width:50%;
-    position:relative;
-    right:100%;
-}
-#region-main-pad {
-    margin:0 20px 0 420px;
-    overflow:hidden;
+    width: 100%;
+    /* background-color: #dddfd9;     */    /* Left column background colour */
 }
 #region-main {
-    width:100%;
-    overflow:hidden;
+    float: left;
+    overflow: hidden;
+    position: relative;
+    width: 50%;
+    left: 100%;
+    background-color: #fff;
 }
-
 #region-pre {
-    float:left;
-    width:200px;
-    position:relative;
-    margin-left:-50%;
-    left:200px;
-    overflow:hidden;
+    float: left;
+    overflow: hidden;
+    position: relative;
+    width: 25%;
+    left: 25%;
 }
-
-
 #region-post {
-    float:left;
-    width:200px;
-    position:relative;
-    left:0px;
-    overflow:hidden;
+    float: left;
+    overflow: hidden;
+    position: relative;
+    width: 25%;
+    left: 75%;
+
 }
-
-
+#region-main .region-content {
+    padding: 0 20px;
+}
+/*
 #page-content #region-main-box .region-content {
     margin: 0;
     padding:0;
@@ -91,7 +86,8 @@ body {
 #page-site-index .headingblock {
     margin-bottom:9px;
     /*margin-left: 3px;*/
-}
+}*/
+
 /*#page-footer {
     clear:both;
     float:left;
@@ -102,70 +98,36 @@ body {
     background-color: #fff;
 }*/
 /*
-Block Region Layout
------------------------*/
-#region-pre .block-region {
-    float: left;
-    width: 220px;
-    margin: 0;
-    padding: 0;
-}
-#region-post .block-region {
-    float: right;
-    width: 220px;
-    margin: 0;
-    padding: 0;
-}
-/*
-PLEASE DO NOT ALTER THESE SETTINGS UNLESS YOU KNOW WHAT YOU ARE DOING AS IT WILL BREAK PAGE LAYOUT
-------------------------------------------------------------------------------------------------*/
-/*
-SIDE-PRE-ONLY (Left Column + Middle Column)
-----------------------------------------*/
-.side-pre-only #region-main-box {width: 200%; left: 220px;}
-.side-pre-only #region-post-box {width: 100%; left: 50%; margin-left: -220px; background-color: #fff;}
-.side-pre-only #region-main-wrap {width: 50%; right: 100%;}
-.side-pre-only #region-main-pad {margin: 0px 10px 0px 230px;}
-.side-pre-only #region-main {width: 100%;}
-.side-pre-only #region-pre {width: 220px; left: 0px; margin-left:-50%;}
-.side-pre-only #region-post {width: 0px; left: 0px;}
-/*
-SIDE-POST-ONLY (Middle Column + Right Column)
-------------------------------------------*/
-.side-post-only #page-content { background-color: #fff;}
-.side-post-only #region-main-box {width: 200%; left: 220px;}
-.side-post-only #region-post-box {width: 100%; left: 50%; margin-left: -440px;}
-.side-post-only #region-main-wrap {width: 50%; right: 100%;}
-.side-post-only #region-main-pad {margin: 0px 10px 0px 230px;}
-.side-post-only #region-main {width: 100%;}
-.side-post-only #region-pre {width: 0px;left: 0px;}
-.side-post-only #region-post {width: 220px; left: 0px;}
-/*
-SIDE-POST-ONLY WHEN MOVING BLOCKS (Left Column + Middle Column + Right Column)
----------------------------------------------------------------------------*/
-.blocks-moving.side-post-only #region-main-box {left: 220px;}
-.blocks-moving.side-post-only #region-post-box {margin-left: -440px;}
-.blocks-moving.side-post-only #region-main-pad {margin: 0 10px 0 450px;}
-.blocks-moving.side-post-only #region-pre {width: 220px;left: 220px;}
-.blocks-moving.side-post-only #region-post {width: 220px;left: 0px;}
-/*
-CONTENT-ONLY - NO SIDE BLOCKS WHATSOEVER (Middle Column Only)
-----------------------------------------------------------*/
-.content-only #page-content { background-color: #fff;}
-.content-only #region-main-box {width: 200%; left: 0px;}
-.content-only #region-post-box {width: 100%; left: 50%; margin-left: 0px; background-color: #fff;}
-.content-only #region-main-wrap {width: 50%; right: 100%;}
-.content-only #region-main-pad {margin: 0px 10px 0px 10px;}
-.content-only #region-main {width: 100%}
-.content-only #region-pre { width:0;left:0;}
-.content-only #region-post { width: 0;left:0;}
-/*
-PAGELAYOUT-REPORT
--------------------------*/
-.pagelayout-report #page-content #region-main-box #region-post-box #region-main-wrap #region-main-pad #region-main .region-content .no-overflow {overflow: auto;}
 
 
+/** SIDE-PRE-ONLY **/
 
+.side-pre-only #region-main-box {right: 0%;}
+.side-pre-only #region-pre-box {right: 77%;}
+.side-pre-only #region-main {left: 100%; width: 77%;}
+.side-pre-only #region-pre {left: 0; width: 23%;}
+.side-pre-only #region-post {width: 0;}
+
+
+/** SIDE-POST-ONLY **/
+
+.side-post-only #region-main-box {right: 23%;}
+.side-post-only #region-pre-box {right: 0; background-color: #fff;}
+.side-post-only #region-main {left: 25%; width: 75%;}
+.side-post-only #region-pre {width: 0;}
+.side-post-only #region-post {left: 25%; width: 23%;}
+.has_dock.side-post-only #region-main {margin-left: 0;}
+
+/** CONTENT ONLY - NO BLOCKS WHATSOEVER **/
+
+.content-only #region-main-box {right: 0;}
+.content-only #region-pre-box {right: 0;}
+.content-only #region-main {left: 0; width: 100%;}
+.content-only #region-pre {width: 0;}
+.content-only #region-post {width: 0;}
+
+.pagelayout-report #page-content #region-main {overflow:auto;}
+.pagelayout-report #page-content #region-main .region-content {overflow: visible;}
 
 
 

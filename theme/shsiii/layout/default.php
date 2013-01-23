@@ -16,11 +16,29 @@ $hascustommenu = (empty($PAGE->layout_options['nocustommenu']) && !empty($custom
 
 $hasfootnote = (!empty($PAGE->theme->settings->footnote));
 
+$courseheader = $coursecontentheader = $coursecontentfooter = $coursefooter = '';
+if (empty($PAGE->layout_options['nocourseheaderfooter'])) {
+    $courseheader = $OUTPUT->course_header();
+    $coursecontentheader = $OUTPUT->course_content_header();
+    if (empty($PAGE->layout_options['nocoursefooter'])) {
+        $coursecontentfooter = $OUTPUT->course_content_footer();
+        $coursefooter = $OUTPUT->course_footer();
+    }
+}
+
 $bodyclasses = array();
 if ($showsidepre && !$showsidepost) {
-    $bodyclasses[] = 'side-pre-only';
+    if (!right_to_left()) {
+        $bodyclasses[] = 'side-pre-only';
+    } else {
+        $bodyclasses[] = 'side-post-only';
+    }
 } else if ($showsidepost && !$showsidepre) {
-    $bodyclasses[] = 'side-post-only';
+    if (!right_to_left()) {
+        $bodyclasses[] = 'side-post-only';
+    } else {
+        $bodyclasses[] = 'side-pre-only';
+    }
 } else if (!$showsidepost && !$showsidepre) {
     $bodyclasses[] = 'content-only';
 }
@@ -48,10 +66,10 @@ if ($hascustommenu) {
 <?php $OUTPUT->doctype(); ?>
 <html <?php echo $OUTPUT->htmlattributes() ?>>
 <head>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title><?php echo $PAGE->title ?></title>
-  <meta name="robots" content="noindex, nofollow" />
-  <link rel="shortcut icon" href="<?php echo $OUTPUT->pix_url('favicon', 'theme')?>" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title><?php echo $PAGE->title ?></title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="shortcut icon" href="<?php echo $OUTPUT->pix_url('favicon', 'theme')?>" />
   <!--[if lt IE 9]>
     <script type="text/javascript">
       (function(){if(!/*@cc_on!@*/0)return;var e = "abbr,article,aside,audio,canvas,datalist,details,eventsource,figure,footer,header,hgroup,mark,menu,meter,nav,output,progress,section,time,video".split(','),i=e.length;while(i--){document.createElement(e[i])}})()
@@ -62,7 +80,7 @@ if ($hascustommenu) {
   <![endif]-->
 
 
-  <?php echo $OUTPUT->standard_head_html() ?>
+    <?php echo $OUTPUT->standard_head_html() ?>
 </head>
 
 <body id="<?php p($PAGE->bodyid) ?>" class="<?php p($PAGE->bodyclasses.' '.join(' ', $bodyclasses)) ?>">
@@ -204,61 +222,75 @@ if ($hascustommenu) {
 
 <div id="page-wrapper">
   <div id="page">
+<!-- END OF HEADER -->
+<!-- START CUSTOMMENU AND NAVBAR -->
+
+        <?php if (!empty($courseheader)) { ?>
+            <div id="course-header"><?php echo $courseheader; ?></div>
+        <?php } ?>
 
       <?php if (count($PAGE->navbar->get_items()) > 1): ?>
-        <?php if ($hasnavbar): ?>
-          <div class="breadcrumb">
-          <?php echo $OUTPUT->navbar(); ?>
-          </div>
-        <?php endif; ?>
+        <?php if ($hasnavbar) { ?>
+            <div class="navbar clearfix">
+                <div class="breadcrumb"><?php echo $OUTPUT->navbar(); ?></div>
+                <div class="navbutton"> <?php echo $PAGE->button; ?></div>
+            </div>
+        <?php } ?>
       <?php endif; ?>
 
 <!-- END OF CUSTOMMENU AND NAVBAR -->
-
     <div id="page-content">
        <div id="region-main-box">
-           <div id="region-post-box">
-              <div id="region-main-wrap">
-                 <div id="region-main-pad">
-                   <div id="region-main">
-                     <div class="region-content">
+           <div id="region-pre-box">
+               <div id="region-main">
+                   <div class="region-content">
                        <?php if ($COURSE->id > 1) : ?>
                          <h2 class="coursetitle">
                            <?php echo $COURSE->fullname; ?>
                          </h2>
                        <?php endif; ?>
 
+                       <?php echo $coursecontentheader; ?>
                        <?php echo $OUTPUT->main_content() ?>
-
-                     </div>
+                       <?php echo $coursecontentfooter; ?>
                    </div>
-                 </div>
                </div>
 
-                <?php if ($hassidepre) { ?>
-                <div id="region-pre" class="block-region">
+               <?php if ($hassidepre OR (right_to_left() AND $hassidepost)) { ?>
+               <div id="region-pre" class="block-region">
                    <div class="region-content">
-                        <?php echo $OUTPUT->blocks_for_region('side-pre') ?>
-                   </div>
-                </div>
-                <?php } ?>
+                           <?php
+                       if (!right_to_left()) {
+                           echo $OUTPUT->blocks_for_region('side-pre');
+                       } elseif ($hassidepost) {
+                           echo $OUTPUT->blocks_for_region('side-post');
+                   } ?>
 
-                <?php if ($hassidepost) { ?>
-                <div id="region-post" class="block-region">
-                   <div class="region-content">
-                        <?php echo $OUTPUT->blocks_for_region('side-post') ?>
                    </div>
-                </div>
-                <?php } ?>
+               </div>
+               <?php } ?>
+
+               <?php if ($hassidepost OR (right_to_left() AND $hassidepre)) { ?>
+               <div id="region-post" class="block-region">
+                   <div class="region-content">
+                          <?php
+                      if (!right_to_left()) {
+                          echo $OUTPUT->blocks_for_region('side-post');
+                      } elseif ($hassidepre) {
+                          echo $OUTPUT->blocks_for_region('side-pre');
+                   } ?>
+                   </div>
+               </div>
+               <?php } ?>
+
             </div>
         </div>
     </div>
-    <? /*
+
     <!-- START OF FOOTER -->
-    <?php if ($hasfooter) { ?>
-    <div id="page-footer" class="clearfix">
-    </div>
-    <?php } ?>*/ ?>
+    <?php /* if (!empty($coursefooter)) { ?>
+        <div id="course-footer"><?php echo $coursefooter; ?></div>
+    <?php } */ ?>
     <div class="clearfix"></div>
   </div>
 </div>

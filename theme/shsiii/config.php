@@ -5,15 +5,16 @@ $THEME->name = 'shsiii';
 $THEME->parents = array('base');
 
 $THEME->sheets = array(
-    'shsiii_layout',   /** Must come first: Page layout **/
+    'shsiii_pagelayout',   /** Must come first: Page layout **/
     'shsiii_styles',   /** Must come second: default styles **/
     'shsiii_menu',
     'shsiii_blocks',
     'shsiii_mod',
     'shsiii_calendar',
     'shsiii_dock',
+    'shsiii_rtl',
     'shsiii_settings',
-    'rtl'
+
 );
 
 $THEME->parents_exclude_sheets = array(
@@ -127,6 +128,13 @@ $THEME->layouts = array(
         'file' => 'default.php',
         'regions' => array('side-pre'),
         'defaultregion' => 'side-pre',
+    ),
+    // The pagelayout used for safebrowser and securewindow.
+    'secure' => array(
+        'file' => 'default.php',
+        'regions' => array('side-pre', 'side-post'),
+        'defaultregion' => 'side-pre',
+        'options' => array('nofooter'=>true, 'nonavbar'=>true, 'nocustommenu'=>true, 'nologinlinks'=>true, 'nocourseheaderfooter'=>true),
     ),
 );
 

@@ -119,11 +119,11 @@ h1#sitelogo.moodle a.logo img {
 
 .headermenu,
 .langmenu {
-  float:right;
+  float: right;
   clear: right;
-  font-size:1em;
-  margin:0px;
-  text-align:right;
+  font-size: 1em;
+  margin: 0;
+  text-align: right;
   position: relative;
   top: 10px;
   background-color: #f1efe7;
@@ -315,7 +315,9 @@ input[type="submit"], input[type="cancel"], button {
 .coursebox .summary {
     float: right;
 }
-.coursebox .summary p { margin: 5px 0 0;}
+.coursebox .summary p {
+    margin: 5px 0 0;
+}
 .coursebox .info h3.name {
     padding: 0;
     margin: 5px 0 0;
@@ -530,13 +532,26 @@ tab styles for ie6 & ie7
     top: 3.5em;
     padding: 0.2em 0;
 }
+/* Filemanager
+-------------------------*/
+.filemanager select,
+.filemanager input,
+.filemanager button,
+.filemanager textarea,
+.file-picker select,
+.file-picker input,
+.file-picker button,
+.file-picker textarea {
+    background-color: #EEE;
+}
+/* Important z-index fixes
+-------------------------*/
 .yui-skin-sam .yui-panel-container {
     z-index: 999999!important;
 }
 body#page-course-view-topics.path-course div.moodle-dialogue-base div.yui3-widget{
     z-index: 600!important;
 }
-
 
 hr {
   height: 1px;
