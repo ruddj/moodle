@@ -37,7 +37,6 @@ $id = required_param('id', PARAM_INT);// course id
 $searchtext = required_param('searchtext', PARAM_RAW);// Get the search parameter.
 
 $course = $DB->get_record('course', array('id'=>$id), '*', MUST_EXIST);
-$context = context_course::instance($courseid, MUST_EXIST);
 
 // row limit unlimited if not set in config
 $enrol = enrol_get_plugin('meta');
@@ -52,6 +51,7 @@ function get_valid_courses($courses, $cid) {
         if (isset($existing[$c->id]) || $c->id == $cid || $c->id == SITEID) {
             continue;
         }
+        context_helper::preload_from_record($c);
         $coursecontext = get_context_instance(CONTEXT_COURSE, $c->id);
         if (!has_capability('enrol/meta:selectaslinked', $coursecontext)) {
             continue;

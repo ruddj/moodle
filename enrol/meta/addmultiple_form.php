@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -24,13 +23,13 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
 defined('MOODLE_INTERNAL') || die();
 
 require_once("$CFG->libdir/formslib.php");
 
 class enrol_meta_addmultiple_form extends moodleform {
     protected $course;
+
     private static $jsmodule = array(
                 'name' => 'course_selector',
                 'fullpath' => '/enrol/meta/module.js',
@@ -69,8 +68,8 @@ class enrol_meta_addmultiple_form extends moodleform {
 
     function validation($data, $files) {
         global $DB, $CFG;
-        $errors = array();
-        // TODO: this is duplicated here because it may be necessary one we implement ajax course selection element
+
+        // TODO: this is duplicated here because it may be necessary once we implement ajax course selection element
 
         $errors = parent::validation($data, $files);
         if (!isset($data['links'])){
