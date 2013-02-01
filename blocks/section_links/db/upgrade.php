@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -16,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file keeps track of upgrades to the glossary random block
+ * This file keeps track of upgrades to the section links block
  *
  * Sometimes, changes between versions involve alterations to database structures
  * and other major things that may break installations.
@@ -32,38 +31,52 @@
  * Please do not forget to use upgrade_set_timeout()
  * before any action that may take longer time to finish.
  *
- * @since 2.0
- * @package blocks
- * @copyright 2012 Mark Nelson <markn@moodle.com>
- * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since 2.5
+ * @package block_section_links
+ * @copyright 2013 Sam Hemelryk
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 /**
- * Handles upgrading instances of this block.
+ * Upgrade code for the section links block.
  *
+ * @global moodle_database $DB
  * @param int $oldversion
  * @param object $block
  */
-function xmldb_block_glossary_random_upgrade($oldversion, $block) {
+function xmldb_block_section_links_upgrade($oldversion, $block) {
     global $DB;
 
+    // Moodle v2.3.0 release upgrade line
+    // Put any upgrade step following this
+
     // Moodle v2.4.0 release upgrade line
-    // Put any upgrade step following this.
+    // Put any upgrade step following this
 
-    if ($oldversion < 2012112901) {
-        // Get the instances of this block.
-        if ($blocks = $DB->get_records('block_instances', array('blockname' => 'glossary_random', 'pagetypepattern' => 'my-index'))) {
-            // Loop through and remove them from the My Moodle page.
-            foreach ($blocks as $block) {
-                blocks_delete_instance($block);
+    // Moodle v2.5.0 release upgrade line
+    // Put any upgrade step following this
+
+    if ($oldversion < 2013012200.00) {
+
+        // The section links block used to use its own crazy plugin name.
+        // Here we are converting it to the proper component name.
+        $oldplugin = 'blocks/section_links';
+        $newplugin = 'block_section_links';
+
+        // Use the proper API here... thats what we should be doing as it ensures any caches etc are cleared
+        // along the way!
+        // It may be quicker to just write an SQL statement but that would be reckless.
+        $config = get_config($oldplugin);
+        if (!empty($config)) {
+            foreach ($config as $name => $value) {
+                set_config($name, $value, $newplugin);
+                unset_config($name, $oldplugin);
             }
-
         }
 
-        // Savepoint reached.
-        upgrade_block_savepoint(true, 2012112901, 'glossary_random');
+        // Main savepoint reached.
+        upgrade_block_savepoint(true, 2013012200.00, 'section_links');
     }
-
 
     return true;
 }

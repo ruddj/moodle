@@ -679,6 +679,34 @@ function is_dataroot_insecure($fetchtest=false) {
     return INSECURE_DATAROOT_WARNING;
 }
 
+/**
+ * Enables CLI maintenance mode by creating new dataroot/climaintenance.html file.
+ */
+function enable_cli_maintenance_mode() {
+    global $CFG;
+
+    if (file_exists("$CFG->dataroot/climaintenance.html")) {
+        unlink("$CFG->dataroot/climaintenance.html");
+    }
+
+    if (isset($CFG->maintenance_message) and !html_is_blank($CFG->maintenance_message)) {
+        $data = $CFG->maintenance_message;
+        $data = bootstrap_renderer::early_error_content($data, null, null, null);
+        $data = bootstrap_renderer::plain_page(get_string('sitemaintenance', 'admin'), $data);
+
+    } else if (file_exists("$CFG->dataroot/climaintenance.template.html")) {
+        $data = file_get_contents("$CFG->dataroot/climaintenance.template.html");
+
+    } else {
+        $data = get_string('sitemaintenance', 'admin');
+        $data = bootstrap_renderer::early_error_content($data, null, null, null);
+        $data = bootstrap_renderer::plain_page(get_string('sitemaintenance', 'admin'), $data);
+    }
+
+    file_put_contents("$CFG->dataroot/climaintenance.html", $data);
+    chmod("$CFG->dataroot/climaintenance.html", $CFG->filepermissions);
+}
+
 /// CLASS DEFINITIONS /////////////////////////////////////////////////////////
 
 
@@ -8043,7 +8071,7 @@ class admin_setting_configcolourpicker extends admin_setting {
         $PAGE->requires->js_init_call('M.util.init_colour_picker', array($this->get_id(), $this->previewconfig));
         $content  = html_writer::start_tag('div', array('class'=>'form-colourpicker defaultsnext'));
         $content .= html_writer::tag('div', $OUTPUT->pix_icon('i/loading', get_string('loading', 'admin'), 'moodle', array('class'=>'loadingicon')), array('class'=>'admin_colourpicker clearfix'));
-        $content .= html_writer::empty_tag('input', array('type'=>'text','id'=>$this->get_id(), 'name'=>$this->get_full_name(), 'value'=>$this->get_setting(), 'size'=>'12'));
+        $content .= html_writer::empty_tag('input', array('type'=>'text','id'=>$this->get_id(), 'name'=>$this->get_full_name(), 'value'=>$data, 'size'=>'12'));
         if (!empty($this->previewconfig)) {
             $content .= html_writer::empty_tag('input', array('type'=>'button','id'=>$this->get_id().'_preview', 'value'=>get_string('preview'), 'class'=>'admin_colourpicker_preview'));
         }

@@ -498,17 +498,8 @@ $CFG->admin = 'admin';
 // Divert all outgoing emails to this address to test and debug emailing features
 // $CFG->divertallemailsto = 'root@localhost.local'; // NOT FOR PRODUCTION SERVERS!
 //
-// special magic evil developer only wanting to edit the xmldb files manually
-// AND don't use the XMLDBEditor nor the prev/next stuff at all (Mahara and others)
-// Uncomment these if you're lazy like Penny
+// Uncomment if you want to allow empty comments when modifying install.xml files.
 // $CFG->xmldbdisablecommentchecking = true;    // NOT FOR PRODUCTION SERVERS!
-// $CFG->xmldbdisablenextprevchecking = true;   // NOT FOR PRODUCTION SERVERS!
-//
-// Special magic - evil developer only wanting to edit xmldb files manually
-// AND allowing the XMLDBEditor to reconstruct the prev/next elements every
-// time one file is loaded and saved (Moodle).
-// Uncomment this if you're lazy like Petr
-// $CFG->xmldbreconstructprevnext = true;   // NOT FOR PRODUCTION SERVERS!
 //
 // Since 2.0 sql queries are not shown during upgrade by default.
 // Please note that this setting may produce very long upgrade page on large sites.
@@ -536,11 +527,48 @@ $CFG->admin = 'admin';
 //                                        'otherplugin' => array('mysetting' => 'myvalue', 'thesetting' => 'thevalue'));
 //
 //=========================================================================
-// 9. PHPUNIT SUPPORT
+// 10. PHPUNIT SUPPORT
 //=========================================================================
 // $CFG->phpunit_prefix = 'phpu_';
 // $CFG->phpunit_dataroot = '/home/example/phpu_moodledata';
 // $CFG->phpunit_directorypermissions = 02777; // optional
+//
+//=========================================================================
+// 11. BEHAT SUPPORT
+//=========================================================================
+// Behat uses http://localhost:8000 as default URL to run
+// the acceptance tests, you can override this value.
+// Example:
+//   $CFG->behat_wwwroot = 'http://192.168.1.250:8000';
+//
+// You can override default Moodle configuration for Behat and add your own
+// params; here you can add more profiles, use different Mink drivers than Selenium...
+// These params would be merged with the default Moodle behat.yml, giving priority
+// to the ones specified here. The array format is YAML, following the Behat
+// params hierarchy. More info: http://docs.behat.org/guides/7.config.html
+// Example:
+//   $CFG->behat_config = array(
+//       'default' => array(
+//           'formatter' => array(
+//               'name' => 'pretty',
+//               'parameters' => array(
+//                   'decorated' => true,
+//                   'verbose' => false
+//               )
+//           )
+//       )
+//   );
+//
+// You can completely switch to test environment when "php admin/tool/behat/cli/util --enable",
+// this means that all the site accesses will be routed to the test environment instead of
+// the regular one, so NEVER USE THIS SETTING IN PRODUCTION SITES. This setting is useful
+// when working with cloud CI (continous integration) servers which requires public sites to run the
+// tests, or in testing/development installations when you are developing in a pre-PHP 5.4 server.
+// Note that with this setting enabled $CFG->behat_wwwroot is ignored and $CFG->behat_wwwroot
+// value will be the regular $CFG->wwwroot value.
+// Example:
+//   $CFG->behat_switchcompletely = true;
+//
 
 //=========================================================================
 // ALL DONE!  To continue installation, visit your main page with a browser

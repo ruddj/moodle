@@ -356,7 +356,7 @@ function print_log($course, $user=0, $date=0, $order="l.time ASC", $page=0, $per
     echo $OUTPUT->paging_bar($totalcount, $page, $perpage, "$url&perpage=$perpage");
 
     $table = new html_table();
-    $table->classes = array('logtable','generalbox');
+    $table->classes = array('logtable','generaltable');
     $table->align = array('right', 'left', 'left');
     $table->head = array(
         get_string('time'),
@@ -1144,7 +1144,8 @@ function get_module_metadata($course, $modnames, $sectionreturn = null) {
         // NOTE: this is legacy stuff, module subtypes are very strongly discouraged!!
         $gettypesfunc =  $modname.'_get_types';
         if (function_exists($gettypesfunc)) {
-            if ($types = $gettypesfunc()) {
+            $types = $gettypesfunc();
+            if (is_array($types) && count($types) > 0) {
                 $group = new stdClass();
                 $group->name = $modname;
                 $group->icon = $OUTPUT->pix_icon('icon', '', $modname, array('class' => 'icon'));
@@ -1193,7 +1194,11 @@ function get_module_metadata($course, $modnames, $sectionreturn = null) {
             $module->archetype = plugin_supports('mod', $modname, FEATURE_MOD_ARCHETYPE, MOD_ARCHETYPE_OTHER);
             $modlist[$course->id][$modname] = $module;
         }
-        $return[$modname] = $modlist[$course->id][$modname];
+        if (isset($modlist[$course->id][$modname])) {
+            $return[$modname] = $modlist[$course->id][$modname];
+        } else {
+            debugging("Invalid module metadata configuration for {$modname}");
+        }
     }
 
     return $return;
