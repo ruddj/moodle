@@ -13,7 +13,7 @@ require_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM, SI
 // First get a list of meta courses matching "M-"
 $searchparam = 'M-%';
 
-$select = $DB->sql_like('idnumber', '?', false, false);
+$select = $DB->sql_like('idnumber', '?', $casesensitive = true, false);
 $rs = $DB->get_recordset_select('course', $select, array($searchparam), 'shortname ASC', 'id, fullname, shortname, idnumber, visible', 0, 0);
 
 foreach ($rs as $c) {
@@ -33,6 +33,7 @@ foreach ($rs as $c) {
 
     // Find matching courses
     $cs = $DB->get_recordset_select('course', $select, array($classParam), 'shortname ASC', 'id, fullname, shortname, idnumber, visible', 0, 0);
+    
     foreach ($cs as $m) {
       if (isset($existing[$m->id])) {
         continue;
