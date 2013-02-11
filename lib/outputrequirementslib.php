@@ -282,6 +282,22 @@ class page_requirements_manager {
         if ($page->pagelayout === 'frametop') {
             $this->js_init_call('M.util.init_frametop');
         }
+
+        // Include block drag/drop if editing is on
+        if ($page->user_is_editing()) {
+            $params = array(
+                'courseid' => $page->course->id,
+                'pagetype' => $page->pagetype,
+                'pagelayout' => $page->pagelayout,
+                'subpage' => $page->subpage,
+                'regions' => $page->blocks->get_regions(),
+                'contextid' => $page->context->id,
+            );
+            if (!empty($page->cm->id)) {
+                $params['cmid'] = $page->cm->id;
+            }
+            $page->requires->yui_module('moodle-core-blocks', 'M.core_blocks.init_dragdrop', array($params), null, true);
+        }
     }
 
     /**
@@ -433,7 +449,10 @@ class page_requirements_manager {
                     $module = array('name'     => 'core_dndupload',
                                     'fullpath' => '/lib/form/dndupload.js',
                                     'requires' => array('node', 'event', 'json', 'core_filepicker'),
-                                    'strings'  => array(array('uploadformlimit', 'moodle'), array('droptoupload', 'moodle'), array('maxfilesreached', 'moodle'), array('dndenabled_inbox', 'moodle'), array('fileexists', 'moodle')));
+                                    'strings'  => array(array('uploadformlimit', 'moodle'), array('droptoupload', 'moodle'), array('maxfilesreached', 'moodle'),
+                                                        array('dndenabled_inbox', 'moodle'), array('fileexists', 'moodle'), array('maxbytesforfile', 'moodle'),
+                                                        array('maxareabytesreached', 'moodle')
+                                                    ));
                     break;
             }
 

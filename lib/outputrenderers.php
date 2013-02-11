@@ -2331,6 +2331,7 @@ EOD;
         if (empty($message)) {
             return '';
         }
+        $message = $this->pix_icon('i/warning', get_string('error'), '', array('class' => 'icon icon-pre', 'title'=>'')) . $message;
         return html_writer::tag('span', $message, array('class' => 'error'));
     }
 

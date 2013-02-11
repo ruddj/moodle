@@ -1408,46 +1408,46 @@ class moodlelib_testcase extends advanced_testcase {
         $longvalue = str_repeat('a', 1334);
         try {
             set_user_preference('_test_long_user_preference', $longvalue);
-            $this->assertFail('Exception expected - longer than 1333 chars not allowed as preference value');
-        } catch (Exception $e) {
-            $this->assertTrue($e instanceof coding_exception);
+            $this->fail('Exception expected - longer than 1333 chars not allowed as preference value');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
         }
 
         //test invalid params
         try {
             set_user_preference('_test_user_preferences_pref', array());
-            $this->assertFail('Exception expected - array not valid preference value');
-        } catch (Exception $ex) {
+            $this->fail('Exception expected - array not valid preference value');
+        } catch (coding_exception $ex) {
             $this->assertTrue(true);
         }
         try {
             set_user_preference('_test_user_preferences_pref', new stdClass);
-            $this->assertFail('Exception expected - class not valid preference value');
-        } catch (Exception $ex) {
+            $this->fail('Exception expected - class not valid preference value');
+        } catch (coding_exception $ex) {
             $this->assertTrue(true);
         }
         try {
-            set_user_preference('_test_user_preferences_pref', 1, array('xx'=>1));
-            $this->assertFail('Exception expected - user instance expected');
-        } catch (Exception $ex) {
+            set_user_preference('_test_user_preferences_pref', 1, array('xx' => 1));
+            $this->fail('Exception expected - user instance expected');
+        } catch (coding_exception $ex) {
             $this->assertTrue(true);
         }
         try {
             set_user_preference('_test_user_preferences_pref', 1, 'abc');
-            $this->assertFail('Exception expected - user instance expected');
-        } catch (Exception $ex) {
+            $this->fail('Exception expected - user instance expected');
+        } catch (coding_exception $ex) {
             $this->assertTrue(true);
         }
         try {
             set_user_preference('', 1);
-            $this->assertFail('Exception expected - invalid name accepted');
-        } catch (Exception $ex) {
+            $this->fail('Exception expected - invalid name accepted');
+        } catch (coding_exception $ex) {
             $this->assertTrue(true);
         }
         try {
             set_user_preference('1', 1);
-            $this->assertFail('Exception expected - invalid name accepted');
-        } catch (Exception $ex) {
+            $this->fail('Exception expected - invalid name accepted');
+        } catch (coding_exception $ex) {
             $this->assertTrue(true);
         }
 
@@ -2131,9 +2131,15 @@ class moodlelib_testcase extends advanced_testcase {
      * Test the function date_format_string().
      */
     function test_date_format_string() {
+        global $CFG;
+
         // Forcing locale and timezone.
         $oldlocale = setlocale(LC_TIME, '0');
-        setlocale(LC_TIME, 'en_AU.UTF-8');
+        if ($CFG->ostype == 'WINDOWS') {
+            setlocale(LC_TIME, 'English_Australia.1252');
+        } else {
+            setlocale(LC_TIME, 'en_AU.UTF-8');
+        }
         $systemdefaulttimezone = date_default_timezone_get();
         date_default_timezone_set('Australia/Perth');
 
@@ -2153,6 +2159,10 @@ class moodlelib_testcase extends advanced_testcase {
                 'str' => '%A, %d %B %Y, %I:%M %p',
                 'expected' => 'Saturday, 01 January 2011, 10:00 AM'
             ),
+            // Following tests pass on Windows only because en lang pack does
+            // not contain localewincharset, in real life lang pack maintainers
+            // may use only characters that are present in localewincharset
+            // in format strings!
             array(
                 'tz' => 99,
                 'str' => 'Žluťoučký koníček %A',

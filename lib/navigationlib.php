@@ -195,8 +195,6 @@ class navigation_node implements renderable {
         if ($this->text === null) {
             throw new coding_exception('You must set the text for the node when you create it.');
         }
-        // Default the title to the text
-        $this->title = $this->text;
         // Instantiate a new navigation node collection for this nodes children
         $this->children = new navigation_node_collection();
     }
@@ -2157,8 +2155,7 @@ class global_navigation extends navigation_node {
             $usernode->add(get_string('messages', 'message'), $url, self::TYPE_SETTING, null, 'messages');
         }
 
-        $context = context_user::instance($USER->id);
-        if ($iscurrentuser && has_capability('moodle/user:manageownfiles', $context)) {
+        if ($iscurrentuser && has_capability('moodle/user:manageownfiles', context_user::instance($USER->id))) {
             $url = new moodle_url('/user/files.php');
             $usernode->add(get_string('myfiles'), $url, self::TYPE_SETTING);
         }
@@ -4027,20 +4024,15 @@ class settings_navigation extends navigation_node {
 
         $categorynode = $this->add(print_context_name($this->context), null, null, null, 'categorysettings');
         $categorynode->force_open();
+        $onmanagepage = $this->page->url->compare(new moodle_url('/course/manage.php'), URL_MATCH_BASE);
 
-        if (has_any_capability(array('moodle/category:manage', 'moodle/course:create'), $this->context)) {
-            $url = new moodle_url('/course/category.php', array('id'=>$this->context->instanceid, 'sesskey'=>sesskey()));
-            if ($this->page->user_is_editing()) {
-                $url->param('categoryedit', '0');
-                $editstring = get_string('turneditingoff');
-            } else {
-                $url->param('categoryedit', '1');
-                $editstring = get_string('turneditingon');
-            }
+        if (can_edit_in_category($this->context->instanceid) && !$onmanagepage) {
+            $url = new moodle_url('/course/manage.php', array('id' => $this->context->instanceid));
+            $editstring = get_string('managecategorythis');
             $categorynode->add($editstring, $url, self::TYPE_SETTING, null, null, new pix_icon('i/edit', ''));
         }
 
-        if ($this->page->user_is_editing() && has_capability('moodle/category:manage', $this->context)) {
+        if (has_capability('moodle/category:manage', $this->context)) {
             $editurl = new moodle_url('/course/editcategory.php', array('id' => $this->context->instanceid));
             $categorynode->add(get_string('editcategorythis'), $editurl, self::TYPE_SETTING, null, 'edit', new pix_icon('i/edit', ''));
 
