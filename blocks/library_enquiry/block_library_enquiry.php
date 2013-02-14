@@ -10,7 +10,9 @@
 * Also Based on simpledocssearch v0.1 Written by Darren Smith (with some help from Marky Clarky) on 21/3/2006
 * Uses some code from Juilan Ridden, MonteNet
 * License: GPL
-*
+ *
+ * @package   block_library
+ * @copyright 2011 James Rudd
 *
 */
 

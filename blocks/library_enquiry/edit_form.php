@@ -8,12 +8,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-/**
- * Form for editing Library block instances.
- *
- * @copyright 2011 James Rudd
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+
 class block_library_enquiry_edit_form extends block_edit_form {
     protected function specific_definition($mform) {
         // Fields for editing HTML block title and contents.
