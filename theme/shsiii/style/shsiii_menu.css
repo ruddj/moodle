@@ -54,7 +54,7 @@ ul.dropdown {
     top:0px;
     z-index:597;
     float:left;
-    font:13px "Trebuchet MS",Arial,Helvetica,sans-serif;
+/*    font:13px "Trebuchet MS",Arial,Helvetica,sans-serif;*/
 }
 ul.dropdown li {
     float:left;

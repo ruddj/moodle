@@ -233,7 +233,7 @@ if ($hascustommenu) {
         <?php if ($hasnavbar) { ?>
             <div class="navbar clearfix">
                 <div class="breadcrumb"><?php echo $OUTPUT->navbar(); ?></div>
-                <div class="navbutton"> <?php echo $PAGE->button; ?></div>
+                <? /* <div class="navbutton"> <?php echo $PAGE->button; ?></div> */ ?>
             </div>
         <?php } ?>
       <?php endif; ?>
@@ -342,10 +342,10 @@ if ($hascustommenu) {
       }
 
       // fix position of the core dock
-      Y.on('windowresize', dockAlign);
-      if (M.core_dock) {
-        M.core_dock.on('dock:shown', dockAlign);
-      }
+      //Y.on('windowresize', dockAlign);
+      //if (M.core_dock) {
+      //  M.core_dock.on('dock:shown', dockAlign);
+      //}
     });
   });
 </script>

@@ -40,14 +40,14 @@ body {
 }
 #region-main-box {
     float: left;
-    right: 25%;
+    right: 20%;
     position: relative;
     width: 100%;
     background-color: #fff;      /* Center column background colour */
 }
 #region-pre-box {
     float: left;
-    right: 50%;
+    right: 60%;
     position: relative;
     width: 100%;
     /* background-color: #dddfd9;     */    /* Left column background colour */
@@ -56,7 +56,7 @@ body {
     float: left;
     overflow: hidden;
     position: relative;
-    width: 50%;
+    width: 60%;
     left: 100%;
     background-color: #fff;
 }
@@ -64,15 +64,15 @@ body {
     float: left;
     overflow: hidden;
     position: relative;
-    width: 25%;
-    left: 25%;
+    width: 20%;
+    left: 20%;
 }
 #region-post {
     float: left;
     overflow: hidden;
     position: relative;
-    width: 25%;
-    left: 75%;
+    width: 20%;
+    left: 80%;
 
 }
 #region-main .region-content {
@@ -85,7 +85,7 @@ body {
 }
 #page-site-index .headingblock {
     margin-bottom:9px;
-    /*margin-left: 3px;*/
+    margin-left: 3px;
 }*/
 
 /*#page-footer {
@@ -97,25 +97,25 @@ body {
     padding: 0;
     background-color: #fff;
 }*/
-/*
+
 
 
 /** SIDE-PRE-ONLY **/
 
-.side-pre-only #region-main-box {right: 0%;}
-.side-pre-only #region-pre-box {right: 77%;}
-.side-pre-only #region-main {left: 100%; width: 77%;}
-.side-pre-only #region-pre {left: 0; width: 23%;}
+.side-pre-only #region-main-box { right: 0%; }
+.side-pre-only #region-pre-box {right: 80%;}
+.side-pre-only #region-main {left: 100%; width: 80%;}
+.side-pre-only #region-pre {left: 0; width: 20%;}
 .side-pre-only #region-post {width: 0;}
 
 
 /** SIDE-POST-ONLY **/
 
-.side-post-only #region-main-box {right: 23%;}
+.side-post-only #region-main-box {right: 20%;}
 .side-post-only #region-pre-box {right: 0; background-color: #fff;}
-.side-post-only #region-main {left: 25%; width: 75%;}
+.side-post-only #region-main {left: 20%; width: 80%;}
 .side-post-only #region-pre {width: 0;}
-.side-post-only #region-post {left: 25%; width: 23%;}
+.side-post-only #region-post {left: 20%; width: 20%;}
 .has_dock.side-post-only #region-main {margin-left: 0;}
 
 /** CONTENT ONLY - NO BLOCKS WHATSOEVER **/
@@ -281,7 +281,7 @@ div#topnav div.userblock ul.menu {
   background: transparent;
 
   padding: inherit;
-  margin: inherit;
+  margin: 0;
   padding-left: 0;
   margin-left: 20px;
 
@@ -608,7 +608,7 @@ table.category_subcategories tr.r1,
 
 .helpresponse-block #coursesearchnavbar {
   position: relative;
-  top: -6px;
+  top: 4px;
 }
 
 #topnav div.mainlinks ul.dropdown li:first-child {

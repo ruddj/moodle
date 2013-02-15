@@ -4,8 +4,14 @@ body {
 }
 
 body, #page, select, input, button, textarea {
-  font-family: Geneva, Tahoma, "Nimbus Sans L", sans-serif
+  font-family: Arial, sans-serif
 }
+
+a:link,
+html a:visited {
+  color: #095197;
+}
+
 
 h2.main, fieldset {
   margin-left: 20px;
@@ -36,8 +42,13 @@ div.maincalendar fieldset div.ftext {
 }
 
 #content {
-  width: auto;
+  width: 94%;
   height: auto;
+}
+
+table.calendarmonth .day {
+  font-weight: normal;
+  font-size: 10px;
 }
 
 /*.filters {
