@@ -13,7 +13,17 @@
 * Uses some code from Juilan Ridden, MonteNet
 * License: GPL
 *
-*
+* @package   block_library
+* @copyright 2013 James Rudd
+* @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
 */
 
-$plugin->version = 2011031500;
+
+defined('MOODLE_INTERNAL') || die();
+
+$plugin->cron      = 0;
+$plugin->version = 2013021400;
+$plugin->requires  = 2010112400; // Moodle 2.0
+$plugin->component = 'block_library_enquiry';      // Full name of the plugin (used for diagnostics)
+$plugin->maturity  = MATURITY_STABLE; // = 200
+$plugin->release   = 'v1.0.1';
