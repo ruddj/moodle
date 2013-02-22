@@ -2719,14 +2719,14 @@ function print_course_search($value="", $return=false, $format="plain") {
         $output  = '<form id="'.$id.'" action="'.$CFG->wwwroot.'/course/search.php" method="get">';
         $output .= '<fieldset class="coursesearchbox invisiblefieldset">';
         $output .= '<label for="shortsearchbox">'.$strsearchcourses.': </label>';
-        $output .= '<input type="text" id="shortsearchbox" size="12" name="search" alt="'.s($strsearchcourses).'" value="'.s($value).'" />';
+        $output .= '<input type="text" id="shortsearchbox" size="12" name="search" value="'.s($value).'" />';
         $output .= '<input type="submit" value="'.get_string('go').'" />';
         $output .= '</fieldset></form>';
     } else if ($format == 'navbar') {
         $output  = '<form id="coursesearchnavbar" action="'.$CFG->wwwroot.'/course/search.php" method="get">';
         $output .= '<fieldset class="coursesearchbox invisiblefieldset">';
         $output .= '<label for="navsearchbox">'.$strsearchcourses.': </label>';
-        $output .= '<input type="text" id="navsearchbox" size="20" name="search" alt="'.s($strsearchcourses).'" value="'.s($value).'" />';
+        $output .= '<input type="text" id="navsearchbox" size="20" name="search" value="'.s($value).'" />';
         $output .= '<input type="submit" value="'.get_string('go').'" />';
         $output .= '</fieldset></form>';
     }
@@ -2848,6 +2848,7 @@ function add_mod_to_section($mod, $beforemod=NULL) {
         }
 
         $DB->set_field("course_sections", "sequence", $newsequence, array("id"=>$section->id));
+        $DB->set_field("course_modules", "section", $section->id, array("id" => $mod->id));
         return $section->id;     // Return course_sections ID that was used.
 
     } else {  // Insert a new record
@@ -2857,7 +2858,9 @@ function add_mod_to_section($mod, $beforemod=NULL) {
         $section->summary  = "";
         $section->summaryformat = FORMAT_HTML;
         $section->sequence = $mod->coursemodule;
-        return $DB->insert_record("course_sections", $section);
+        $section->id = $DB->insert_record("course_sections", $section);
+        $DB->set_field("course_modules", "section", $section->id, array("id" => $mod->id));
+        return $section->id;
     }
 }
 
