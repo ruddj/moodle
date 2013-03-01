@@ -1600,5 +1600,15 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2012120301.11);
     }
 
+    if ($oldversion < 2012120301.13) {
+        // Delete entries regarding invalid 'interests' option which breaks course.
+        $DB->delete_records('course_sections_avail_fields', array('userfield' => 'interests'));
+        $DB->delete_records('course_modules_avail_fields', array('userfield' => 'interests'));
+        // Clear course cache (will be rebuilt on first visit) in case of changes to these.
+        rebuild_course_cache(0, true);
+
+        upgrade_main_savepoint(true, 2012120301.13);
+    }
+
     return true;
 }
