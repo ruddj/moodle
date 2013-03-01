@@ -1413,7 +1413,7 @@ function get_config($plugin, $name = NULL) {
 
     $cache = cache::make('core', 'config');
     $result = $cache->get($plugin);
-    if (!$result) {
+    if ($result === false) {
         // the user is after a recordset
         $result = new stdClass;
         if (!$iscore) {
@@ -9134,10 +9134,14 @@ function moodle_needs_upgrading() {
             continue;
         }
         $module = new stdClass();
+        $plugin = new stdClass();
         if (!is_readable($fullmod.'/version.php')) {
             continue;
         }
         include($fullmod.'/version.php');  // defines $module with version etc
+        if (!isset($module->version) and isset($plugin->version)) {
+            $module = $plugin;
+        }
         if (empty($installed[$mod])) {
             return true;
         } else if ($module->version > $installed[$mod]->version) {

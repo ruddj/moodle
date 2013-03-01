@@ -15,17 +15,21 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Folder module version information
+ * Flatfile enrolment plugin installation.
  *
- * @package    mod
- * @subpackage folder
- * @copyright  2009 Petr Skoda  {@link http://skodak.org}
+ * @package    enrol_flatfile
+ * @copyright  2013 Petr Skoda {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$module->version   = 2013012100;       // The current module version (Date: YYYYMMDDXX)
-$module->requires  = 2012112900;    // Requires this Moodle version
-$module->component = 'mod_folder';     // Full name of the plugin (used for diagnostics)
-$module->cron      = 0;
+function xmldb_enrol_flatfile_install() {
+    global $CFG, $DB;
+
+    // Flatfile role mappings are empty by default now.
+    $roles = get_all_roles();
+    foreach ($roles as $role) {
+        set_config('map_'.$role->id, $role->shortname, 'enrol_flatfile');
+    }
+}
