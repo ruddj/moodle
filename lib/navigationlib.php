@@ -662,6 +662,20 @@ class navigation_node implements renderable {
             $this->parent->make_inactive();
         }
     }
+
+    /**
+     * Hides the node and any children it has.
+     *
+     * @since 2.3.5
+     */
+    public function hide() {
+        $this->display = false;
+        if ($this->has_children()) {
+            foreach ($this->children as $child) {
+                $child->hide();
+            }
+        }
+    }
 }
 
 /**
@@ -2588,16 +2602,19 @@ class global_navigation extends navigation_node {
             $participants = $coursenode->add(get_string('participants'), new moodle_url('/user/index.php?id='.$course->id), self::TYPE_CONTAINER, get_string('participants'), 'participants');
             $currentgroup = groups_get_course_group($course, true);
             if ($course->id == $SITE->id) {
+                $filtervar = 'courseid';
                 $filterselect = '';
             } else if ($course->id && !$currentgroup) {
+                $filtervar = 'courseid';
                 $filterselect = $course->id;
             } else {
+                $filtervar = 'groupid';
                 $filterselect = $currentgroup;
             }
             $filterselect = clean_param($filterselect, PARAM_INT);
             if (($CFG->bloglevel == BLOG_GLOBAL_LEVEL or ($CFG->bloglevel == BLOG_SITE_LEVEL and (isloggedin() and !isguestuser())))
                and has_capability('moodle/blog:view', get_context_instance(CONTEXT_SYSTEM))) {
-                $blogsurls = new moodle_url('/blog/index.php', array('courseid' => $filterselect));
+                $blogsurls = new moodle_url('/blog/index.php', array($filtervar => $filterselect));
                 $participants->add(get_string('blogscourse','blog'), $blogsurls->out());
             }
             if (!empty($CFG->enablenotes) && (has_capability('moodle/notes:manage', $this->page->context) || has_capability('moodle/notes:view', $this->page->context))) {
@@ -2728,18 +2745,18 @@ class global_navigation extends navigation_node {
     public function set_expansion_limit($type) {
         global $SITE;
         $nodes = $this->find_all_of_type($type);
-        foreach ($nodes as &$node) {
+        foreach ($nodes as $node) {
             // We need to generate the full site node
             if ($type == self::TYPE_COURSE && $node->key == $SITE->id) {
                 continue;
             }
-            foreach ($node->children as &$child) {
+            foreach ($node->children as $child) {
                 // We still want to show course reports and participants containers
                 // or there will be navigation missing.
                 if ($type == self::TYPE_COURSE && $child->type === self::TYPE_CONTAINER) {
                     continue;
                 }
-                $child->display = false;
+                $child->hide();
             }
         }
         return true;
