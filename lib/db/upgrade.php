@@ -1670,5 +1670,91 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2013022600.00);
     }
 
+    // Add index to field "timemodified" for grade_grades_history table.
+    if ($oldversion < 2013030400.00) {
+        $table = new xmldb_table('grade_grades_history');
+        $field = new xmldb_field('timemodified');
+
+        if ($dbman->field_exists($table, $field)) {
+            $index = new xmldb_index('timemodified', XMLDB_INDEX_NOTUNIQUE, array('timemodified'));
+            if (!$dbman->index_exists($table, $index)) {
+                $dbman->add_index($table, $index);
+            }
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013030400.00);
+    }
+
+    if ($oldversion < 2013030400.02) {
+        // Cleanup qformat blackboard settings.
+        unset_all_config_for_plugin('qformat_blackboard');
+
+        upgrade_main_savepoint(true, 2013030400.02);
+    }
+
+    // This is checking to see if the site has been running a specific version with a bug in it
+    // because this upgrade step is slow and is only needed if the site has been running with the affected versions.
+    if ($oldversion >= 2012062504.08 && $oldversion < 2012062504.13) {
+        // Retrieve the list of course_sections as a recordset to save memory.
+        // This is to fix a regression caused by MDL-37939.
+        // In this case the upgrade step is fixing records where:
+        // The data in course_sections.sequence contains the correct module id
+        // The section field for on the course modules table may have been updated to point to the incorrect id.
+
+        // This query is looking for sections where the sequence is not in sync with the course_modules table.
+        // The syntax for the like query is looking for a value in a comma separated list.
+        // It adds a comma to either site of the list and then searches for LIKE '%,id,%'.
+        $sequenceconcat = $DB->sql_concat("','", 's.sequence', "','");
+        $moduleconcat = $DB->sql_concat("'%,'", 'cm.id', "',%'");
+        $sql = 'SELECT s2.id, s2.course, s2.sequence
+                FROM {course_sections} s2
+                JOIN(
+                    SELECT DISTINCT s.id
+                    FROM
+                    {course_modules} cm
+                    JOIN {course_sections} s
+                    ON
+                        cm.course = s.course
+                    WHERE cm.section != s.id AND ' . $sequenceconcat . ' LIKE ' . $moduleconcat . '
+                ) d
+                ON s2.id = d.id';
+        $coursesections = $DB->get_recordset_sql($sql);
+
+        foreach ($coursesections as $coursesection) {
+            // Retrieve all of the actual modules in this course and section combination to reduce DB calls.
+            $actualsectionmodules = $DB->get_records('course_modules',
+                    array('course' => $coursesection->course, 'section' => $coursesection->id), '', 'id, section');
+
+            // Break out the current sequence so that we can compare it.
+            $currentsequence = explode(',', $coursesection->sequence);
+            $orphanlist = array();
+
+            // Check each of the modules in the current sequence.
+            foreach ($currentsequence as $cmid) {
+                if (!empty($cmid) && !isset($actualsectionmodules[$cmid])) {
+                    $orphanlist[] = $cmid;
+                }
+            }
+
+            if (!empty($orphanlist)) {
+                list($sql, $params) = $DB->get_in_or_equal($orphanlist, SQL_PARAMS_NAMED);
+                $sql = "id $sql";
+
+                $DB->set_field_select('course_modules', 'section', $coursesection->id, $sql, $params);
+
+                // And clear the sectioncache and modinfo cache - they'll be regenerated on next use.
+                $course = new stdClass();
+                $course->id = $coursesection->course;
+                $course->sectioncache = null;
+                $course->modinfo = null;
+                $DB->update_record('course', $course);
+            }
+        }
+        $coursesections->close();
+
+        // No savepoint needed for this change.
+    }
+
     return true;
 }

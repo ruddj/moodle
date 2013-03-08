@@ -15,15 +15,33 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'qformat_blackboard', language 'en', branch 'MOODLE_20_STABLE'
+ * File unit tests
  *
- * @package    qformat_blackboard
- * @copyright  2010 Helen Foster
+ * @package    cachestore_file
+ * @copyright  2013 Sam Hemelryk
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['defaultname'] = 'Imported question {$a}';
-$string['importnotext'] = 'Missing question text in XML file';
-$string['notenoughtsubans'] = 'Unable to import matching question \'{$a}\' because a matching question must comprise at least two questions and three answers.';
-$string['pluginname'] = 'Blackboard';
-$string['pluginname_help'] = 'Blackboard format enables questions saved in the Blackboard version 5 "POOL" type export format to be imported.';
+defined('MOODLE_INTERNAL') || die();
+
+// Include the necessary evils.
+global $CFG;
+require_once($CFG->dirroot.'/cache/tests/fixtures/stores.php');
+require_once($CFG->dirroot.'/cache/stores/file/lib.php');
+
+/**
+ * File unit test class.
+ *
+ * @package    cachestore_file
+ * @copyright  2013 Sam Hemelryk
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class cachestore_file_test extends cachestore_tests {
+    /**
+     * Returns the file class name
+     * @return string
+     */
+    protected function get_class_name() {
+        return 'cachestore_file';
+    }
+}

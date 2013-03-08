@@ -864,7 +864,7 @@ sup {vertical-align: super;}
     background: none;
     border: none;
     /* Override the z-index set incorrectly by the YUI dialogue */
-    z-index: 600!important;
+    z-index: 600;
 }
 
 
@@ -1020,7 +1020,9 @@ sup {vertical-align: super;}
 .moodle-dialogue .tooltiptext {
     max-height: 300px;
 }
-
+.moodle-dialogue-base .moodle-dialogue.moodle-dialogue-tooltip {
+    z-index: 3001;
+}
 
 /* Question Bank - Question Chooser "Close" button */
 #page-question-edit.dir-rtl a.container-close {right:auto;left:6px;}

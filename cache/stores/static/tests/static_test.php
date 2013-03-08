@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This static is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,18 +15,33 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for the calculated question type.
+ * Static unit tests
  *
- * @package    qformat_blackboard
- * @copyright  2011 The Open University
+ * @package    cachestore_static
+ * @copyright  2013 Sam Hemelryk
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'qformat_blackboard';
-$plugin->version   = 2012112900;
+// Include the necessary evils.
+global $CFG;
+require_once($CFG->dirroot.'/cache/tests/fixtures/stores.php');
+require_once($CFG->dirroot.'/cache/stores/static/lib.php');
 
-$plugin->requires  = 2012112900;
-
-$plugin->maturity  = MATURITY_STABLE;
+/**
+ * Static unit test class.
+ *
+ * @package    cachestore_static
+ * @copyright  2013 Sam Hemelryk
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class cachestore_static_test extends cachestore_tests {
+    /**
+     * Returns the static class name
+     * @return string
+     */
+    protected function get_class_name() {
+        return 'cachestore_static';
+    }
+}
