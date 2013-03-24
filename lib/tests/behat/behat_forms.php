@@ -111,7 +111,7 @@ class behat_forms extends behat_base {
         try {
 
             // Expand fieldsets.
-            $fieldsets = $this->find_all('css', 'fieldset.collapsed.jsprocessed a.fheader');
+            $fieldsets = $this->find_all('css', 'fieldset.collapsed a.fheader');
 
             // We are supposed to have fieldsets here, otherwise exception.
 
@@ -177,6 +177,22 @@ class behat_forms extends behat_base {
 
         // Adding a click as Selenium requires it to fire some JS events.
         $selectnode->click();
+    }
+
+    /**
+     * Selects the specified id|name|label from the specified radio button.
+     *
+     * @When /^I select "(?P<radio_button_string>(?:[^"]|\\")*)" radio button$/
+     * @throws ElementNotFoundException Thrown by behat_base::find
+     * @param string $radio The radio button id, name or label value
+     */
+    public function select_radio($radio) {
+
+        $radionode = $this->find_radio($radio);
+        $radionode->check();
+
+        // Adding a click as Selenium requires it to fire some JS events.
+        $radionode->click();
     }
 
     /**
