@@ -2379,7 +2379,9 @@ class global_navigation extends navigation_node {
         $coursenode = $parent->add($coursename, $url, self::TYPE_COURSE, $shortname, $course->id);
         $coursenode->nodetype = self::NODETYPE_BRANCH;
         $coursenode->hidden = (!$course->visible);
-        $coursenode->title($fullname);
+        // We need to decode &amp;'s here as they will have been added by format_string above and attributes will be encoded again
+        // later.
+        $coursenode->title(str_replace('&amp;', '&', $fullname));
         if (!$forcegeneric) {
             $this->addedcourses[$course->id] = $coursenode;
         }
@@ -2445,7 +2447,7 @@ class global_navigation extends navigation_node {
         }
 
         // Badges.
-        if ($CFG->enablebadges && has_capability('moodle/badges:viewbadges', $this->page->context)) {
+        if (!empty($CFG->enablebadges) && has_capability('moodle/badges:viewbadges', $this->page->context)) {
             $url = new moodle_url($CFG->wwwroot . '/badges/view.php',
                     array('type' => 2, 'id' => $course->id));
 
@@ -2971,6 +2973,7 @@ class navbar extends navigation_node {
      * @return array
      */
     public function get_items() {
+        global $CFG;
         $items = array();
         // Make sure that navigation is initialised
         if (!$this->has_items()) {
@@ -3007,6 +3010,11 @@ class navbar extends navigation_node {
                     if (!$navigationactivenode->mainnavonly) {
                         $items[] = $navigationactivenode;
                     }
+                    if (!empty($CFG->navshowcategories) &&
+                            $navigationactivenode->type === self::TYPE_COURSE &&
+                            $navigationactivenode->parent->key === 'currentcourse') {
+                        $items = array_merge($items, $this->get_course_categories());
+                    }
                     $navigationactivenode = $navigationactivenode->parent;
                 }
             } else if ($navigationactivenode) {
@@ -3014,6 +3022,11 @@ class navbar extends navigation_node {
                 while ($navigationactivenode && $navigationactivenode->parent !== null) {
                     if (!$navigationactivenode->mainnavonly) {
                         $items[] = $navigationactivenode;
+                    }
+                    if (!empty($CFG->navshowcategories) &&
+                            $navigationactivenode->type === self::TYPE_COURSE &&
+                            $navigationactivenode->parent->key === 'currentcourse') {
+                        $items = array_merge($items, $this->get_course_categories());
                     }
                     $navigationactivenode = $navigationactivenode->parent;
                 }
@@ -3037,6 +3050,40 @@ class navbar extends navigation_node {
 
         $this->items = array_reverse($items);
         return $this->items;
+    }
+
+    /**
+     * Get the list of categories leading to this course.
+     *
+     * This function is used by {@link navbar::get_items()} to add back the "courses"
+     * node and category chain leading to the current course.  Note that this is only ever
+     * called for the current course, so we don't need to bother taking in any parameters.
+     *
+     * @return array
+     */
+    private function get_course_categories() {
+        $categories = array();
+        foreach ($this->page->categories as $category) {
+            $url = new moodle_url('/course/index.php', array('categoryid' => $category->id));
+            $name = format_string($category->name, true, array('context' => context_coursecat::instance($category->id)));
+            $categories[] = navigation_node::create($name, $url, self::TYPE_CATEGORY, null, $category->id);
+            $id = $category->parent;
+        }
+        if (is_enrolled(context_course::instance($this->page->course->id))) {
+            $courses = $this->page->navigation->get('mycourses');
+        } else {
+            $courses = $this->page->navigation->get('courses');
+        }
+        if (!$courses) {
+            // Courses node may not be present.
+            $courses = navigation_node::create(
+                get_string('courses'),
+                new moodle_url('/course/index.php'),
+                self::TYPE_CONTAINER
+            );
+        }
+        $categories[] = $courses;
+        return $categories;
     }
 
     /**
@@ -4013,6 +4060,15 @@ class settings_navigation extends navigation_node {
             if (!empty($CFG->useexternalblogs) && $CFG->maxexternalblogsperuser > 0 && has_capability('moodle/blog:manageexternal', context_system::instance())) {
                 $blog->add(get_string('externalblogs', 'blog'), new moodle_url('/blog/external_blogs.php'), navigation_node::TYPE_SETTING);
                 $blog->add(get_string('addnewexternalblog', 'blog'), new moodle_url('/blog/external_blog_edit.php'), navigation_node::TYPE_SETTING);
+            }
+        }
+
+        // Badges.
+        if ($currentuser && !empty($CFG->enablebadges)) {
+            $badges = $usersetting->add(get_string('badges'), null, navigation_node::TYPE_CONTAINER, null, 'badges');
+            $badges->add(get_string('preferences'), new moodle_url('/badges/preferences.php'), navigation_node::TYPE_SETTING);
+            if (!empty($CFG->badges_allowexternalbackpack)) {
+                $badges->add(get_string('backpackdetails', 'badges'), new moodle_url('/badges/mybackpack.php'), navigation_node::TYPE_SETTING);
             }
         }
 

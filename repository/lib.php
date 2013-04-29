@@ -984,7 +984,8 @@ abstract class repository implements cacheable_object {
      *           onlyvisible : bool (default true)
      *           type : string return instances of this type only
      *           accepted_types : string|array return instances that contain files of those types (*, web_image, .pdf, ...)
-     *           return_types : int combination of FILE_INTERNAL & FILE_EXTERNAL & FILE_REFERENCE
+     *           return_types : int combination of FILE_INTERNAL & FILE_EXTERNAL & FILE_REFERENCE.
+     *                          0 means every type. The default is FILE_INTERNAL | FILE_EXTERNAL.
      *           userid : int if specified, instances belonging to other users will not be returned
      *
      * @return array repository instances
@@ -1010,7 +1011,7 @@ abstract class repository implements cacheable_object {
             $args['onlyvisible'] = true;
         }
         if (!isset($args['return_types'])) {
-            $args['return_types'] = 3;
+            $args['return_types'] = FILE_INTERNAL | FILE_EXTERNAL;
         }
         if (!isset($args['type'])) {
             $args['type'] = null;
@@ -1096,8 +1097,8 @@ abstract class repository implements cacheable_object {
                 $valid_ext = array_intersect($accepted_ext, $supported_ext);
                 $is_supported = !empty($valid_ext);
             }
-            // check return values
-            if (!($repository->supported_returntypes() & $args['return_types'])) {
+            // Check return values.
+            if (!empty($args['return_types']) && !($repository->supported_returntypes() & $args['return_types'])) {
                 $is_supported = false;
             }
 
@@ -1123,7 +1124,7 @@ abstract class repository implements cacheable_object {
      * Do not use this function to access repository contents, because it
      * does not set the current context
      *
-     * @see rpository::get_repository_by_id()
+     * @see repository::get_repository_by_id()
      *
      * @static
      * @param integer $id repository instance id
@@ -1205,11 +1206,17 @@ abstract class repository implements cacheable_object {
             return;
         }
 
-        // do NOT mess with permissions here, the calling party is responsible for making
-        // sure the scanner engine can access the files!
-
+        $clamparam = ' --stdout ';
+        // If we are dealing with clamdscan, clamd is likely run as a different user
+        // that might not have permissions to access your file.
+        // To make clamdscan work, we use --fdpass parameter that passes the file
+        // descriptor permissions to clamd, which allows it to scan given file
+        // irrespective of directory and file permissions.
+        if (basename($CFG->pathtoclam) == 'clamdscan') {
+            $clamparam .= '--fdpass ';
+        }
         // execute test
-        $cmd = escapeshellcmd($CFG->pathtoclam).' --stdout '.escapeshellarg($thefile);
+        $cmd = escapeshellcmd($CFG->pathtoclam).$clamparam.escapeshellarg($thefile);
         exec($cmd, $output, $return);
 
         if ($return == 0) {
@@ -1585,6 +1592,7 @@ abstract class repository implements cacheable_object {
         $params = array();
         $params['context'] = array($context);
         $params['currentcontext'] = $context;
+        $params['return_types'] = 0;
         $params['onlyvisible'] = !$admin;
         $params['type']        = $typename;
         $instances = repository::get_instances($params);
@@ -1877,7 +1885,7 @@ abstract class repository implements cacheable_object {
 
         if ($type->get_visible()) {
             //if the instance is unique so it's visible, otherwise check if the instance has a enabled context
-            if (empty($instanceoptions) || $type->get_contextvisibility($this->context)) {
+            if (empty($instanceoptions) || $type->get_contextvisibility(context::instance_by_id($this->instance->contextid))) {
                 return true;
             }
         }
@@ -2906,12 +2914,14 @@ final class repository_type_form extends moodleform {
                 $component .= ('_' . $this->plugin);
             }
             $mform->addElement('checkbox', 'enablecourseinstances', get_string('enablecourseinstances', $component));
+            $mform->setType('enablecourseinstances', PARAM_BOOL);
 
             $component = 'repository';
             if ($sm->string_exists('enableuserinstances', 'repository_' . $this->plugin)) {
                 $component .= ('_' . $this->plugin);
             }
             $mform->addElement('checkbox', 'enableuserinstances', get_string('enableuserinstances', $component));
+            $mform->setType('enableuserinstances', PARAM_BOOL);
         }
 
         // set the data if we have some.

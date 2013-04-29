@@ -493,7 +493,7 @@ class core_course_renderer extends plugin_renderer_base {
 
         $output = html_writer::start_tag('form', array('id' => $formid, 'action' => $searchurl, 'method' => 'get'));
         $output .= html_writer::start_tag('fieldset', array('class' => 'coursesearchbox invisiblefieldset'));
-        $output .= html_writer::tag('lavel', $strsearchcourses.': ', array('for' => $inputid));
+        $output .= html_writer::tag('label', $strsearchcourses.': ', array('for' => $inputid));
         $output .= html_writer::empty_tag('input', array('type' => 'text', 'id' => $inputid,
             'size' => $inputsize, 'name' => 'search', 'value' => s($value)));
         $output .= html_writer::empty_tag('input', array('type' => 'submit',
@@ -674,8 +674,15 @@ class core_course_renderer extends plugin_renderer_base {
             $altname = get_accesshide(' '.$altname);
         }
 
+        // For items which are hidden but available to current user
+        // ($mod->uservisible), we show those as dimmed only if the user has
+        // viewhiddenactivities, so that teachers see 'items which might not
+        // be available to some students' dimmed but students do not see 'item
+        // which is actually available to current student' dimmed.
         $conditionalhidden = $this->is_cm_conditionally_hidden($mod);
-        $accessiblebutdim = !$mod->visible || $conditionalhidden;
+        $accessiblebutdim = (!$mod->visible || $conditionalhidden) &&
+                (!$mod->uservisible || has_capability('moodle/course:viewhiddenactivities',
+                        context_course::instance($mod->course)));
 
         $linkclasses = '';
         $accesstext = '';
@@ -1127,21 +1134,26 @@ class core_course_renderer extends plugin_renderer_base {
         }
 
         // display course overview files
+        $contentimages = $contentfiles = '';
         foreach ($course->get_course_overviewfiles() as $file) {
             $isimage = $file->is_valid_image();
             $url = file_encode_url("$CFG->wwwroot/pluginfile.php",
                     '/'. $file->get_contextid(). '/'. $file->get_component(). '/'.
                     $file->get_filearea(). $file->get_filepath(). $file->get_filename(), !$isimage);
             if ($isimage) {
-                $content .= html_writer::tag('div',
+                $contentimages .= html_writer::tag('div',
                         html_writer::empty_tag('img', array('src' => $url)),
                         array('class' => 'courseimage'));
             } else {
-                $content .= html_writer::tag('div',
-                        html_writer::link($url, $file->get_filename()),
-                        array('class' => 'coursefile'));
+                $image = $this->output->pix_icon(file_file_icon($file, 24), $file->get_filename(), 'moodle');
+                $filename = html_writer::tag('span', $image, array('class' => 'fp-icon')).
+                        html_writer::tag('span', $file->get_filename(), array('class' => 'fp-filename'));
+                $contentfiles .= html_writer::tag('span',
+                        html_writer::link($url, $filename),
+                        array('class' => 'coursefile fp-filename-icon'));
             }
         }
+        $content .= $contentimages. $contentfiles;
 
         // display course contacts. See course_in_list::get_course_contacts()
         if ($course->has_course_contacts()) {
@@ -1360,7 +1372,10 @@ class core_course_renderer extends plugin_renderer_base {
 
         // Courses
         if ($chelper->get_show_courses() > core_course_renderer::COURSECAT_SHOW_COURSES_COUNT) {
-            $courses = $coursecat->get_courses($chelper->get_courses_display_options());
+            $courses = array();
+            if (!$chelper->get_courses_display_option('nodisplay')) {
+                $courses = $coursecat->get_courses($chelper->get_courses_display_options());
+            }
             if ($viewmoreurl = $chelper->get_courses_display_option('viewmoreurl')) {
                 // the option for 'View more' link was specified, display more link (if it is link to category view page, add category id)
                 if ($viewmoreurl->compare(new moodle_url('/course/index.php'), URL_MATCH_BASE)) {
@@ -1789,13 +1804,24 @@ class core_course_renderer extends plugin_renderer_base {
         if (!empty($courses) || !empty($rcourses) || !empty($rhosts)) {
 
             $chelper = new coursecat_helper();
-            $chelper->set_show_courses(self::COURSECAT_SHOW_COURSES_EXPANDED)->
-                    set_courses_display_options(array(
+            if (count($courses) > $CFG->frontpagecourselimit) {
+                // There are more enrolled courses than we can display, display link to 'My courses'.
+                $totalcount = count($courses);
+                $courses = array_slice($courses, 0, $CFG->frontpagecourselimit, true);
+                $chelper->set_courses_display_options(array(
+                        'viewmoreurl' => new moodle_url('/my/'),
+                        'viewmoretext' => new lang_string('mycourses')
+                    ));
+            } else {
+                // All enrolled courses are displayed, display link to 'All courses' if there are more courses in system.
+                $chelper->set_courses_display_options(array(
                         'viewmoreurl' => new moodle_url('/course/index.php'),
                         'viewmoretext' => new lang_string('fulllistofcourses')
-                    ))->
+                    ));
+                $totalcount = $DB->count_records('course') - 1;
+            }
+            $chelper->set_show_courses(self::COURSECAT_SHOW_COURSES_EXPANDED)->
                     set_attributes(array('class' => 'frontpage-course-list-enrolled'));
-            $totalcount = $DB->count_records('course') - 1;
             $output .= $this->coursecat_courses($chelper, $courses, $totalcount);
 
             // MNET
@@ -1831,13 +1857,21 @@ class core_course_renderer extends plugin_renderer_base {
         $chelper->set_show_courses(self::COURSECAT_SHOW_COURSES_EXPANDED)->
                 set_courses_display_options(array(
                     'recursive' => true,
-                    'limit' => FRONTPAGECOURSELIMIT,
+                    'limit' => $CFG->frontpagecourselimit,
                     'viewmoreurl' => new moodle_url('/course/index.php'),
                     'viewmoretext' => new lang_string('fulllistofcourses')));
 
         $chelper->set_attributes(array('class' => 'frontpage-course-list-all'));
         $courses = coursecat::get(0)->get_courses($chelper->get_courses_display_options());
         $totalcount = coursecat::get(0)->get_courses_count($chelper->get_courses_display_options());
+        if (!$totalcount && has_capability('moodle/course:create', context_system::instance())) {
+            // Print link to create a new course, for the 1st available category.
+            $output = $this->container_start('buttons');
+            $url = new moodle_url('/course/edit.php', array('category' => $CFG->defaultrequestcategory, 'returnto' => 'topcat'));
+            $output .= $this->single_button($url, get_string('addnewcourse'), 'get');
+            $output .= $this->container_end('buttons');
+            return $output;
+        }
         return $this->coursecat_courses($chelper, $courses, $totalcount);
     }
 
