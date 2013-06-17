@@ -2838,24 +2838,10 @@ function show_event($event) {
 }
 
 /**
- * Converts string to lowercase using most compatible function available.
- *
  * @deprecated Use textlib::strtolower($text) instead.
- *
- * @param string $string The string to convert to all lowercase characters.
- * @param string $encoding The encoding on the string.
- * @return string
  */
 function moodle_strtolower($string, $encoding='') {
-
-    debugging('moodle_strtolower() is deprecated. Please use textlib::strtolower() instead.', DEBUG_DEVELOPER);
-
-    //If not specified use utf8
-    if (empty($encoding)) {
-        $encoding = 'UTF-8';
-    }
-    //Use text services
-    return textlib::strtolower($string, $encoding);
+    throw new coding_exception('moodle_strtolower() cannot be used any more. Please use textlib::strtolower() instead.');
 }
 
 /**
@@ -4675,4 +4661,21 @@ function convert_tabrows_to_tree($tabrows, $selected, $inactive, $activated) {
     }
 
     return $subtree;
+}
+
+/**
+ * @deprecated since Moodle 2.3
+ */
+function move_section($course, $section, $move) {
+    throw new coding_exception('move_section() can not be used any more, please see move_section_to().');
+}
+/**
+ * Can handle rotated text. Whether it is safe to use the trickery in textrotate.js.
+ *
+ * @deprecated since 2.5 - do not use, the textrotate.js will work it out automatically
+ * @return bool True for yes, false for no
+ */
+function can_use_rotated_text() {
+    debugging('can_use_rotated_text() is deprecated since Moodle 2.5. JS feature detection is used automatically.', DEBUG_DEVELOPER);
+    return true;
 }
