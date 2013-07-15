@@ -566,7 +566,7 @@ class block_manager {
         $context = $this->page->context;
         $contexttest = 'bi.parentcontextid = :contextid2';
         $parentcontextparams = array();
-        $parentcontextids = get_parent_contexts($context);
+        $parentcontextids = $context->get_parent_context_ids();
         if ($parentcontextids) {
             list($parentcontexttest, $parentcontextparams) =
                     $DB->get_in_or_equal($parentcontextids, SQL_PARAMS_NAMED, 'parentcontext');
@@ -630,7 +630,7 @@ class block_manager {
         $this->birecordsbyregion = $this->prepare_per_region_arrays();
         $unknown = array();
         foreach ($blockinstances as $bi) {
-            context_instance_preload($bi);
+            context_helper::preload_from_record($bi);
             if ($this->is_known_region($bi->region)) {
                 $this->birecordsbyregion[$bi->region][] = $bi;
             } else {

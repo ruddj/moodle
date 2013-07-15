@@ -275,7 +275,7 @@ class course_modinfo extends stdClass {
 
         // Load sectioncache field into memory as PHP object and check it's valid
         $sectioncache = unserialize($course->sectioncache);
-        if (!is_array($sectioncache) || empty($sectioncache)) {
+        if (!is_array($sectioncache)) {
             // hmm, something is wrong - let's fix it
             rebuild_course_cache($course->id);
             $course->sectioncache = $DB->get_field('course', 'sectioncache', array('id'=>$course->id));
@@ -288,7 +288,7 @@ class course_modinfo extends stdClass {
         }
 
         // If we haven't already preloaded contexts for the course, do it now
-        preload_course_contexts($course->id);
+        context_helper::preload_course($course->id);
 
         // Loop through each piece of module data, constructing it
         $modexists = array();

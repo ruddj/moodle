@@ -108,6 +108,8 @@ class cache_config_writer extends cache_config {
             fflush($handle);
             fclose($handle);
             $locking->unlock('configwrite', 'config');
+            // Tell PHP to recompile the script.
+            core_component::invalidate_opcode_php_cache($cachefile);
         } else {
             throw new cache_exception('ex_configcannotsave', 'cache', '', null, 'Unable to open the cache config file.');
         }
@@ -901,7 +903,7 @@ abstract class cache_administration_helper extends cache_helper {
      */
     public static function get_store_instance_actions($name, array $storedetails) {
         $actions = array();
-        if (has_capability('moodle/site:config', get_system_context())) {
+        if (has_capability('moodle/site:config', context_system::instance())) {
             $baseurl = new moodle_url('/cache/admin.php', array('store' => $name, 'sesskey' => sesskey()));
             if (empty($storedetails['default'])) {
                 $actions[] = array(

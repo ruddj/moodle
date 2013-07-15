@@ -159,6 +159,26 @@ EOD;
             $record['lastname'] = 'Lastname'.$i;
         }
 
+        if (!isset($record['firstnamephonetic'])) {
+            $firstnamephonetic = rand(0, 59);
+            $record['firstnamephonetic'] = $this->firstnames[$firstnamephonetic];
+        }
+
+        if (!isset($record['lasttnamephonetic'])) {
+            $lastnamephonetic = rand(0, 59);
+            $record['lastnamephonetic'] = $this->lastnames[$lastnamephonetic];
+        }
+
+        if (!isset($record['middlename'])) {
+            $middlename = rand(0, 59);
+            $record['middlename'] = $this->firstnames[$middlename];
+        }
+
+        if (!isset($record['alternatename'])) {
+            $alternatename = rand(0, 59);
+            $record['alternatename'] = $this->firstnames[$alternatename];
+        }
+
         if (!isset($record['idnumber'])) {
             $record['idnumber'] = '';
         }
@@ -667,9 +687,12 @@ EOD;
      * @param string $enrol name of enrol plugin,
      *     there must be exactly one instance in course,
      *     it must support enrol_user() method.
+     * @param int $timestart (optional) 0 means unknown
+     * @param int $timeend (optional) 0 means forever
+     * @param int $status (optional) default to ENROL_USER_ACTIVE for new enrolments
      * @return bool success
      */
-    public function enrol_user($userid, $courseid, $roleid = null, $enrol = 'manual') {
+    public function enrol_user($userid, $courseid, $roleid = null, $enrol = 'manual', $timestart = 0, $timeend = 0, $status = null) {
         global $DB;
 
         if (!$plugin = enrol_get_plugin($enrol)) {
@@ -686,8 +709,7 @@ EOD;
             $roleid = $instance->roleid;
         }
 
-        $plugin->enrol_user($instance, $userid, $roleid);
-
+        $plugin->enrol_user($instance, $userid, $roleid, $timestart, $timeend, $status);
         return true;
     }
 }

@@ -712,9 +712,10 @@ class coursecat implements renderable, cacheable_object, IteratorAggregate {
         list($sql2, $params2) = $DB->get_in_or_equal($managerroles, SQL_PARAMS_NAMED, 'rid');
         list($sort, $sortparams) = users_order_by_sql('u');
         $notdeleted = array('notdeleted'=>0);
+        $allnames = get_all_user_name_fields(true, 'u');
         $sql = "SELECT ra.contextid, ra.id AS raid,
                        r.id AS roleid, r.name AS rolename, r.shortname AS roleshortname,
-                       rn.name AS rolecoursealias, u.id, u.username, u.firstname, u.lastname
+                       rn.name AS rolecoursealias, u.id, u.username, $allnames
                   FROM {role_assignments} ra
                   JOIN {user} u ON ra.userid = u.id
                   JOIN {role} r ON ra.roleid = r.id
@@ -1919,7 +1920,7 @@ class coursecat implements renderable, cacheable_object, IteratorAggregate {
         } else if ($thislist === false) {
             // We have $baselist cached but not $thislist. Simplier query is used to retrieve.
             $ctxselect = context_helper::get_preload_record_columns_sql('ctx');
-            $sql = "SELECT ctx.instanceid id, $ctxselect
+            $sql = "SELECT ctx.instanceid AS id, $ctxselect
                     FROM {context} ctx WHERE ctx.contextlevel = :contextcoursecat";
             $contexts = $DB->get_records_sql($sql, array('contextcoursecat' => CONTEXT_COURSECAT));
             $thislist = array();
@@ -2033,7 +2034,7 @@ class course_in_list implements IteratorAggregate {
      *     context preloading
      */
     public function __construct(stdClass $record) {
-        context_instance_preload($record);
+        context_helper::preload_from_record($record);
         $this->record = new stdClass();
         foreach ($record as $key => $value) {
             $this->record->$key = $value;
@@ -2109,8 +2110,9 @@ class course_in_list implements IteratorAggregate {
                 $user = new stdClass();
                 $user->id = $ruser->id;
                 $user->username = $ruser->username;
-                $user->firstname = $ruser->firstname;
-                $user->lastname = $ruser->lastname;
+                foreach (get_all_user_name_fields() as $addname) {
+                    $user->$addname = $ruser->$addname;
+                }
                 $role = new stdClass();
                 $role->id = $ruser->roleid;
                 $role->name = $ruser->rolename;

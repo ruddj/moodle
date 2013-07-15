@@ -215,7 +215,7 @@ class required_capability_exception extends moodle_exception {
         $capabilityname = get_capability_string($capability);
         if ($context->contextlevel == CONTEXT_MODULE and preg_match('/:view$/', $capability)) {
             // we can not go to mod/xx/view.php because we most probably do not have cap to view it, let's go to course instead
-            $paranetcontext = context::instance_by_id(get_parent_contextid($context));
+            $paranetcontext = $context->get_parent_context();
             $link = get_context_url($paranetcontext);
         } else {
             $link = get_context_url($context);
@@ -1165,7 +1165,7 @@ function disable_output_buffering() {
  */
 function redirect_if_major_upgrade_required() {
     global $CFG;
-    $lastmajordbchanges = 2013041800.00;
+    $lastmajordbchanges = 2013070400.00;
     if (empty($CFG->version) or (float)$CFG->version < $lastmajordbchanges or
             during_initial_install() or !empty($CFG->adminsetuppending)) {
         try {

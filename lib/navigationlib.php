@@ -1445,7 +1445,7 @@ class global_navigation extends navigation_node {
                     if (!$this->can_add_more_courses_to_category($course->category)) {
                         continue;
                     }
-                    context_instance_preload($course);
+                    context_helper::preload_from_record($course);
                     if (!$course->visible && !is_role_switched($course->id) && !has_capability('moodle/course:viewhiddencourses', context_course::instance($course->id))) {
                         continue;
                     }
@@ -1481,7 +1481,7 @@ class global_navigation extends navigation_node {
                         if (!$this->can_add_more_courses_to_category($course->category)) {
                             break;
                         }
-                        context_instance_preload($course);
+                        context_helper::preload_from_record($course);
                         if (!$course->visible && !is_role_switched($course->id) && !has_capability('moodle/course:viewhiddencourses', context_course::instance($course->id))) {
                             continue;
                         }
@@ -1509,7 +1509,7 @@ class global_navigation extends navigation_node {
                     // Don't include the currentcourse in this nodelist - it's displayed in the Current course node
                     continue;
                 }
-                context_instance_preload($course);
+                context_helper::preload_from_record($course);
                 if (!$course->visible && !is_role_switched($course->id) && !has_capability('moodle/course:viewhiddencourses', context_course::instance($course->id))) {
                     continue;
                 }
@@ -1725,7 +1725,7 @@ class global_navigation extends navigation_node {
         $categoryname = format_string($category->name, true, array('context' => $context));
         $categorynode = $parent->add($categoryname, $url, $nodetype, $categoryname, $category->id);
         if (empty($category->visible)) {
-            if (has_capability('moodle/category:viewhiddencategories', get_system_context())) {
+            if (has_capability('moodle/category:viewhiddencategories', context_system::instance())) {
                 $categorynode->hidden = true;
             } else {
                 $categorynode->display = false;
@@ -2484,7 +2484,7 @@ class global_navigation extends navigation_node {
         $coursenode->add('frontpageloaded', null, self::TYPE_CUSTOM, null, 'frontpageloaded')->display = false;
 
         //Participants
-        if (has_capability('moodle/course:viewparticipants',  get_system_context())) {
+        if (has_capability('moodle/course:viewparticipants',  context_system::instance())) {
             $coursenode->add(get_string('participants'), new moodle_url('/user/index.php?id='.$course->id), self::TYPE_CUSTOM, get_string('participants'), 'participants');
         }
 
@@ -3913,7 +3913,7 @@ class settings_navigation extends navigation_node {
         }
 
         $coursecontext = context_course::instance($course->id);   // Course context
-        $systemcontext   = get_system_context();
+        $systemcontext   = context_system::instance();
         $currentuser = ($USER->id == $userid);
 
         if ($currentuser) {
@@ -4059,7 +4059,7 @@ class settings_navigation extends navigation_node {
             $enablemanagetokens = true;
         } else if (!is_siteadmin($USER->id)
              && !empty($CFG->enablewebservices)
-             && has_capability('moodle/webservice:createtoken', get_system_context()) ) {
+             && has_capability('moodle/webservice:createtoken', context_system::instance()) ) {
             $enablemanagetokens = true;
         }
         // Security keys
@@ -4143,7 +4143,7 @@ class settings_navigation extends navigation_node {
     protected function load_block_settings() {
         global $CFG;
 
-        $blocknode = $this->add(print_context_name($this->context));
+        $blocknode = $this->add($this->context->get_context_name());
         $blocknode->force_open();
 
         // Assign local roles
@@ -4172,7 +4172,7 @@ class settings_navigation extends navigation_node {
     protected function load_category_settings() {
         global $CFG;
 
-        $categorynode = $this->add(print_context_name($this->context), null, null, null, 'categorysettings');
+        $categorynode = $this->add($this->context->get_context_name(), null, null, null, 'categorysettings');
         $categorynode->force_open();
         $onmanagepage = $this->page->url->compare(new moodle_url('/course/manage.php'), URL_MATCH_BASE);
 

@@ -819,7 +819,7 @@ class moodle_page {
         $summary = '';
         $summary .= 'General type: ' . $this->pagelayout . '. ';
         if (!during_initial_install()) {
-            $summary .= 'Context ' . print_context_name($this->_context) . ' (context id ' . $this->_context->id . '). ';
+            $summary .= 'Context ' . $this->context->get_context_name() . ' (context id ' . $this->_context->id . '). ';
         }
         $summary .= 'Page type ' . $this->pagetype .  '. ';
         if ($this->subpage) {
@@ -917,7 +917,8 @@ class moodle_page {
                 // fine - no change needed
             } else if ($this->_context->contextlevel == CONTEXT_SYSTEM or $this->_context->contextlevel == CONTEXT_COURSE) {
                 // hmm - not ideal, but it might produce too many warnings due to the design of require_login
-            } else if ($this->_context->contextlevel == CONTEXT_MODULE and $this->_context->id == get_parent_contextid($context)) {
+            } else if ($this->_context->contextlevel == CONTEXT_MODULE and ($parentcontext = $context->get_parent_context()) and
+                    $this->_context->id == $parentcontext->id) {
                 // hmm - most probably somebody did require_login() and after that set the block context
             } else {
                 // we do not want devs to do weird switching of context levels on the fly,

@@ -3964,7 +3964,8 @@ function get_role_users($roleid, context $context, $parent = false, $fields = ''
     global $DB;
 
     if (empty($fields)) {
-        $fields = 'u.id, u.confirmed, u.username, u.firstname, u.lastname, '.
+        $allnames = get_all_user_name_fields(true, 'u');
+        $fields = 'u.id, u.confirmed, u.username, '. $allnames . ', ' .
                   'u.maildisplay, u.mailformat, u.maildigest, u.email, u.emailstop, u.city, '.
                   'u.country, u.picture, u.idnumber, u.department, u.institution, '.
                   'u.lang, u.timezone, u.lastaccess, u.mnethostid, r.name AS rolename, r.sortorder, '.
@@ -5357,6 +5358,10 @@ abstract class context extends stdClass implements IteratorAggregate {
         $fs = get_file_storage();
         $fs->delete_area_files($this->_id);
 
+        // Delete all repository instances attached to this context.
+        require_once($CFG->dirroot . '/repository/lib.php');
+        repository::delete_all_for_context($this->_id);
+
         // delete all advanced grading data attached to this context
         require_once($CFG->dirroot.'/grade/grading/lib.php');
         grading_manager::delete_all_for_context($this->_id);
@@ -6001,7 +6006,7 @@ class context_system extends context {
 
 
         try {
-            // we ignore the strictness completely because system context must except except during install
+            // We ignore the strictness completely because system context must exist except during install.
             $record = $DB->get_record('context', array('contextlevel'=>CONTEXT_SYSTEM), '*', MUST_EXIST);
         } catch (dml_exception $e) {
             //table or record does not exist
@@ -7225,161 +7230,9 @@ class context_block extends context {
 // before removing devs will be warned with a debugging message first,
 // then we will add error message and only after that we can remove the functions
 // completely.
-
-
-/**
- * Not available any more, use load_temp_course_role() instead.
- *
- * @deprecated since 2.2
- * @param stdClass $context
- * @param int $roleid
- * @param array $accessdata
- * @return array
- */
-function load_temp_role($context, $roleid, array $accessdata) {
-    debugging('load_temp_role() is deprecated, please use load_temp_course_role() instead, temp role not loaded.');
-    return $accessdata;
-}
-
-/**
- * Not available any more, use remove_temp_course_roles() instead.
- *
- * @deprecated since 2.2
- * @param stdClass $context
- * @param array $accessdata
- * @return array access data
- */
-function remove_temp_roles($context, array $accessdata) {
-    debugging('remove_temp_role() is deprecated, please use remove_temp_course_roles() instead.');
-    return $accessdata;
-}
-
-/**
- * Returns system context or null if can not be created yet.
- *
- * @deprecated since 2.2, use context_system::instance()
- * @param bool $cache use caching
- * @return context system context (null if context table not created yet)
- */
-function get_system_context($cache = true) {
-    return context_system::instance(0, IGNORE_MISSING, $cache);
-}
-
-/**
- * Recursive function which, given a context, find all parent context ids,
- * and return the array in reverse order, i.e. parent first, then grand
- * parent, etc.
- *
- * @deprecated since 2.2, use $context->get_parent_context_ids() instead
- * @param context $context
- * @param bool $includeself optional, defaults to false
- * @return array
- */
-function get_parent_contexts(context $context, $includeself = false) {
-    return $context->get_parent_context_ids($includeself);
-}
-
-/**
- * Return the id of the parent of this context, or false if there is no parent (only happens if this
- * is the site context.)
- *
- * @deprecated since 2.2, use $context->get_parent_context() instead
- * @param context $context
- * @return integer the id of the parent context.
- */
-function get_parent_contextid(context $context) {
-    if ($parent = $context->get_parent_context()) {
-        return $parent->id;
-    } else {
-        return false;
-    }
-}
-
-/**
- * Recursive function which, given a context, find all its children context ids.
- *
- * For course category contexts it will return immediate children only categories and courses.
- * It will NOT recurse into courses or child categories.
- * If you want to do that, call it on the returned courses/categories.
- *
- * When called for a course context, it will return the modules and blocks
- * displayed in the course page.
- *
- * If called on a user/course/module context it _will_ populate the cache with the appropriate
- * contexts ;-)
- *
- * @deprecated since 2.2, use $context->get_child_contexts() instead
- * @param context $context
- * @return array Array of child records
- */
-function get_child_contexts(context $context) {
-    return $context->get_child_contexts();
-}
-
-/**
- * Precreates all contexts including all parents
- *
- * @deprecated since 2.2
- * @param int $contextlevel empty means all
- * @param bool $buildpaths update paths and depths
- * @return void
- */
-function create_contexts($contextlevel = null, $buildpaths = true) {
-    context_helper::create_instances($contextlevel, $buildpaths);
-}
-
-/**
- * Remove stale context records
- *
- * @deprecated since 2.2, use context_helper::cleanup_instances() instead
- * @return bool
- */
-function cleanup_contexts() {
-    context_helper::cleanup_instances();
-    return true;
-}
-
-/**
- * Populate context.path and context.depth where missing.
- *
- * @deprecated since 2.2, use context_helper::build_all_paths() instead
- * @param bool $force force a complete rebuild of the path and depth fields, defaults to false
- * @return void
- */
-function build_context_path($force = false) {
-    context_helper::build_all_paths($force);
-}
-
-/**
- * Rebuild all related context depth and path caches
- *
- * @deprecated since 2.2
- * @param array $fixcontexts array of contexts, strongtyped
- * @return void
- */
-function rebuild_contexts(array $fixcontexts) {
-    foreach ($fixcontexts as $fixcontext) {
-        $fixcontext->reset_paths(false);
-    }
-    context_helper::build_all_paths(false);
-}
-
-/**
- * Preloads all contexts relating to a course: course, modules. Block contexts
- * are no longer loaded here. The contexts for all the blocks on the current
- * page are now efficiently loaded by {@link block_manager::load_blocks()}.
- *
- * @deprecated since 2.2
- * @param int $courseid Course ID
- * @return void
- */
-function preload_course_contexts($courseid) {
-    context_helper::preload_course($courseid);
-}
-
 /**
  * Preloads context information together with instances.
- * Use context_instance_preload() to strip the context info from the record and cache the context instance.
+ * Use context_helper::preload_from_record() to strip the context info from the record and cache the context instance.
  *
  * @deprecated since 2.2
  * @param string $joinon for example 'u.id'
@@ -7391,18 +7244,6 @@ function context_instance_preload_sql($joinon, $contextlevel, $tablealias) {
     $select = ", ".context_helper::get_preload_record_columns_sql($tablealias);
     $join = "LEFT JOIN {context} $tablealias ON ($tablealias.instanceid = $joinon AND $tablealias.contextlevel = $contextlevel)";
     return array($select, $join);
-}
-
-/**
- * Preloads context information from db record and strips the cached info.
- * The db request has to contain both the $join and $select from context_instance_preload_sql()
- *
- * @deprecated since 2.2
- * @param stdClass $rec
- * @return void (modifies $rec)
- */
-function context_instance_preload(stdClass $rec) {
-    context_helper::preload_from_record($rec);
 }
 
 /**
@@ -7439,26 +7280,6 @@ function mark_context_dirty($path) {
 }
 
 /**
- * Update the path field of the context and all dep. subcontexts that follow
- *
- * Update the path field of the context and
- * all the dependent subcontexts that follow
- * the move.
- *
- * The most important thing here is to be as
- * DB efficient as possible. This op can have a
- * massive impact in the DB.
- *
- * @deprecated since 2.2
- * @param context $context context obj
- * @param context $newparent new parent obj
- * @return void
- */
-function context_moved(context $context, context $newparent) {
-    $context->update_moved($newparent);
-}
-
-/**
  * Remove a context record and any dependent entries,
  * removes context from static context cache too
  *
@@ -7479,32 +7300,6 @@ function delete_context($contextlevel, $instanceid, $deleterecord = true) {
     }
 
     return true;
-}
-
-/**
- * Returns context level name
- *
- * @deprecated since 2.2
- * @param integer $contextlevel $context->context level. One of the CONTEXT_... constants.
- * @return string the name for this type of context.
- */
-function get_contextlevel_name($contextlevel) {
-    return context_helper::get_level_name($contextlevel);
-}
-
-/**
- * Prints human readable context identifier.
- *
- * @deprecated since 2.2
- * @param context $context the context.
- * @param boolean $withprefix whether to prefix the name of the context with the
- *      type of context, e.g. User, Course, Forum, etc.
- * @param boolean $short whether to user the short name of the thing. Only applies
- *      to course contexts
- * @return string the human readable context name.
- */
-function print_context_name(context $context, $withprefix = true, $short = false) {
-    return $context->get_context_name($withprefix, $short);
 }
 
 /**
@@ -7601,7 +7396,6 @@ function fetch_context_capabilities(context $context) {
  * for the purpose of $select, you need to know that the context table has been
  * aliased to ctx, so for example, you can call get_sorted_contexts('ctx.depth = 3');
  *
- * @deprecated since 2.2
  * @param string $select the contents of the WHERE clause. Remember to do ctx.fieldname.
  * @param array $params any parameters required by $select.
  * @return array the requested context records.

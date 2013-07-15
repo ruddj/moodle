@@ -2,10 +2,26 @@ This files describes API changes in core libraries and APIs,
 information provided here is intended especially for developers.
 
 === 2.6 ===
+
 * Use new core_component::* plugin listing and component normalisation methods.
 * Use core_text::* instead of textlib:: and also core_collator::* instead of collatorlib::*.
+* Use new function moodleform::mock_submit() to simulate form submission in unit tests (backported).
 * get_context_instance() is deprecated, please use use context_xxxx::instance().
 * get_context_instance_by_id() is deprecated, please use context::instance_by_id($id).
+* load_temp_role() and remove_temp_roles() can not be used any more.
+* get_system_context() is deprecated, please use context_system::instance().
+* get_parent_contexts() is deprecated, please use $context->get_parent_context_ids().
+* get_parent_contextid() is deprecated, please use $context->get_parent_context().
+* get_child_contexts() is deprecated, please use $context->get_child_contexts().
+* create_contexts() is deprecated, please use context_helper::create_instances().
+* cleanup_contexts() is deprecated, please use context_helper::cleanup_instances().
+* build_context_path() is deprecated, please use context_helper::build_all_paths().
+* rebuild_contexts() is deprecated, please use $context->reset_paths().
+* preload_course_contexts() is deprecated, please use context_helper::preload_course().
+* context_moved() is deprecated, please use context::update_moved().
+* context_instance_preload() is deprecated, please use context_helper::preload_from_record().
+* get_contextlevel_name() is deprecated, please use context_helper::get_level_name().
+* print_context_name() is deprecated, please use $context->get_context_name().
 
 === 2.5.1 ===
 
