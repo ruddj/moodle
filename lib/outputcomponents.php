@@ -1347,15 +1347,12 @@ class html_writer {
      * @return string
      */
     public static function alist(array $items, array $attributes = null, $tag = 'ul') {
-        $output = '';
-
+        $output = html_writer::start_tag($tag, $attributes)."\n";
         foreach ($items as $item) {
-            $output .= html_writer::start_tag('li') . "\n";
-            $output .= $item . "\n";
-            $output .= html_writer::end_tag('li') . "\n";
+            $output .= html_writer::tag('li', $item)."\n";
         }
-
-        return html_writer::tag($tag, $output, $attributes);
+        $output .= html_writer::end_tag($tag);
+        return $output;
     }
 
     /**
@@ -2437,6 +2434,12 @@ class block_contents {
      * the user can toggle whether this block is visible.
      */
     public $collapsible = self::NOT_HIDEABLE;
+
+    /**
+     * Set this to true if the block is dockable.
+     * @var bool
+     */
+    public $dockable = false;
 
     /**
      * @var array A (possibly empty) array of editing controls. Each element of

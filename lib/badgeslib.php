@@ -108,7 +108,6 @@ class badge {
     public $timemodified;
     public $usercreated;
     public $usermodified;
-    public $image;
     public $issuername;
     public $issuerurl;
     public $issuercontact;
@@ -241,7 +240,6 @@ class badge {
 
         $fordb->name = get_string('copyof', 'badges', $this->name);
         $fordb->status = BADGE_STATUS_INACTIVE;
-        $fordb->image = 0;
         $fordb->usercreated = $USER->id;
         $fordb->usermodified = $USER->id;
         $fordb->timecreated = time();
@@ -1083,10 +1081,7 @@ function badges_process_badge_image(badge $badge, $iconfile) {
     require_once($CFG->libdir. '/gdlib.php');
 
     if (!empty($CFG->gdversion)) {
-        if ($fileid = (int)process_new_icon($badge->get_context(), 'badges', 'badgeimage', $badge->id, $iconfile)) {
-            $badge->image = $fileid;
-            $badge->save();
-        }
+        process_new_icon($badge->get_context(), 'badges', 'badgeimage', $badge->id, $iconfile);
         @unlink($iconfile);
 
         // Clean up file draft area after badge image has been saved.
@@ -1348,5 +1343,21 @@ function badges_handle_course_deletion($courseid) {
         $toupdate->courseid = null;
         $toupdate->status = BADGE_STATUS_ARCHIVED;
         $DB->update_record('badge', $toupdate);
+    }
+}
+
+/**
+ * Loads JS files required for backpack support.
+ *
+ * @uses   $CFG, $PAGE
+ * @return void
+ */
+function badges_setup_backpack_js() {
+    global $CFG, $PAGE;
+    if (!empty($CFG->badges_allowexternalbackpack)) {
+        $PAGE->requires->string_for_js('error:backpackproblem', 'badges');
+        $protocol = (strpos($CFG->wwwroot, 'https://') === 0) ? 'https://' : 'http://';
+        $PAGE->requires->js(new moodle_url($protocol . 'backpack.openbadges.org/issuer.js'), true);
+        $PAGE->requires->js('/badges/backpack.js', true);
     }
 }

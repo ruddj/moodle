@@ -1266,7 +1266,8 @@ class global_navigation extends navigation_node {
         // Remove any empty root nodes
         foreach ($this->rootnodes as $node) {
             // Dont remove the home node
-            if ($node->key !== 'home' && !$node->has_children()) {
+            /** @var navigation_node $node */
+            if ($node->key !== 'home' && !$node->has_children() && !$node->isactive) {
                 $node->remove();
             }
         }
@@ -1423,8 +1424,10 @@ class global_navigation extends navigation_node {
             if (count($fullfetch)) {
                 // First up fetch all of the courses in categories where we know that we are going to
                 // need the majority of courses.
-                list($ccselect, $ccjoin) = context_instance_preload_sql('c.id', CONTEXT_COURSE, 'ctx');
                 list($categoryids, $categoryparams) = $DB->get_in_or_equal($fullfetch, SQL_PARAMS_NAMED, 'lcategory');
+                $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+                $ccjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
+                $categoryparams['contextlevel'] = CONTEXT_COURSE;
                 $sql = "SELECT c.id, c.sortorder, c.visible, c.fullname, c.shortname, c.category $ccselect
                             FROM {course} c
                                 $ccjoin
@@ -1458,13 +1461,14 @@ class global_navigation extends navigation_node {
                 // Next we will work our way through the categories where we will likely only need a small
                 // proportion of the courses.
                 foreach ($partfetch as $categoryid) {
-                    list($ccselect, $ccjoin) = context_instance_preload_sql('c.id', CONTEXT_COURSE, 'ctx');
+                    $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+                    $ccjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
                     $sql = "SELECT c.id, c.sortorder, c.visible, c.fullname, c.shortname, c.category $ccselect
                                 FROM {course} c
                                     $ccjoin
                                 WHERE c.category = :categoryid
                             ORDER BY c.sortorder ASC";
-                    $courseparams = array('categoryid' => $categoryid);
+                    $courseparams = array('categoryid' => $categoryid, 'contextlevel' => CONTEXT_COURSE);
                     $coursesrs = $DB->get_recordset_sql($sql, $courseparams, 0, $limit * 5);
                     foreach ($coursesrs as $course) {
                         if ($course->id == $SITE->id) {
@@ -1492,8 +1496,10 @@ class global_navigation extends navigation_node {
             }
         } else {
             // Prepare the SQL to load the courses and their contexts
-            list($ccselect, $ccjoin) = context_instance_preload_sql('c.id', CONTEXT_COURSE, 'ctx');
             list($courseids, $courseparams) = $DB->get_in_or_equal(array_keys($this->addedcourses), SQL_PARAMS_NAMED, 'lc', false);
+            $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+            $ccjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
+            $courseparams['contextlevel'] = CONTEXT_COURSE;
             $sql = "SELECT c.id, c.sortorder, c.visible, c.fullname, c.shortname, c.category $ccselect
                         FROM {course} c
                             $ccjoin
@@ -2222,7 +2228,7 @@ class global_navigation extends navigation_node {
         } else if ($course->id == $SITE->id && has_capability('moodle/user:viewdetails', $usercontext) && (!in_array('mycourses', $hiddenfields) || has_capability('moodle/user:viewhiddendetails', $coursecontext))) {
 
             // Add view grade report is permitted
-            $reports = get_plugin_list('gradereport');
+            $reports = core_component::get_plugin_list('gradereport');
             arsort($reports); // user is last, we want to test it first
 
             $userscourses = enrol_get_users_courses($user->id);
@@ -3572,7 +3578,7 @@ class settings_navigation extends navigation_node {
         if (has_capability('moodle/site:viewreports', $coursecontext)) { // Basic capability for listing of reports.
             $reportnav = $coursenode->add(get_string('reports'), null, self::TYPE_CONTAINER, null, null,
                     new pix_icon('i/stats', ''));
-            $coursereports = get_plugin_list('coursereport');
+            $coursereports = core_component::get_plugin_list('coursereport');
             foreach ($coursereports as $report => $dir) {
                 $libfile = $CFG->dirroot.'/course/report/'.$report.'/lib.php';
                 if (file_exists($libfile)) {
@@ -3595,7 +3601,7 @@ class settings_navigation extends navigation_node {
         if (has_capability('moodle/grade:viewall', $coursecontext)) {
             $reportavailable = true;
         } else if (!empty($course->showgrades)) {
-            $reports = get_plugin_list('gradereport');
+            $reports = core_component::get_plugin_list('gradereport');
             if (is_array($reports) && count($reports)>0) {     // Get all installed reports
                 arsort($reports); // user is last, we want to test it first
                 foreach ($reports as $plugin => $plugindir) {
@@ -4297,7 +4303,7 @@ class settings_navigation extends navigation_node {
         if (has_capability('moodle/site:viewreports', $coursecontext)) { // Basic capability for listing of reports.
             $frontpagenav = $frontpage->add(get_string('reports'), null, self::TYPE_CONTAINER, null, null,
                     new pix_icon('i/stats', ''));
-            $coursereports = get_plugin_list('coursereport');
+            $coursereports = core_component::get_plugin_list('coursereport');
             foreach ($coursereports as $report=>$dir) {
                 $libfile = $CFG->dirroot.'/course/report/'.$report.'/lib.php';
                 if (file_exists($libfile)) {

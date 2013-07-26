@@ -177,14 +177,17 @@ function search_users($courseid, $groupid, $searchtext, $sort='', array $excepti
 
         } else {
             $context = context_course::instance($courseid);
-            $contextlists = get_related_contexts_string($context);
+
+            // We want to query both the current context and parent contexts.
+            list($relatedctxsql, $relatedctxparams) = $DB->get_in_or_equal($context->get_parent_context_ids(true), SQL_PARAMS_NAMED, 'relatedctx');
 
             $sql = "SELECT u.id, u.firstname, u.lastname, u.email
                       FROM {user} u
                       JOIN {role_assignments} ra ON ra.userid = u.id
-                     WHERE $select AND ra.contextid $contextlists
+                     WHERE $select AND ra.contextid $relatedctxsql
                            $except
                     $order";
+            $params = array_merge($params, $relatedctxparams);
             return $DB->get_records_sql($sql, $params);
         }
     }
@@ -619,7 +622,9 @@ function get_courses($categoryid="all", $sort="c.sortorder ASC", $fields="c.*") 
 
     $visiblecourses = array();
 
-    list($ccselect, $ccjoin) = context_instance_preload_sql('c.id', CONTEXT_COURSE, 'ctx');
+    $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+    $ccjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
+    $params['contextlevel'] = CONTEXT_COURSE;
 
     $sql = "SELECT $fields $ccselect
               FROM {course} c
@@ -681,7 +686,9 @@ function get_courses_page($categoryid="all", $sort="c.sortorder ASC", $fields="c
         $categoryselect = "";
     }
 
-    list($ccselect, $ccjoin) = context_instance_preload_sql('c.id', CONTEXT_COURSE, 'ctx');
+    $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+    $ccjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
+    $params['contextlevel'] = CONTEXT_COURSE;
 
     $totalcount = 0;
     if (!$limitfrom) {
@@ -799,7 +806,10 @@ function get_courses_search($searchterms, $sort, $page, $recordsperpage, &$total
     $limitfrom = $page * $recordsperpage;
     $limitto   = $limitfrom + $recordsperpage;
 
-    list($ccselect, $ccjoin) = context_instance_preload_sql('c.id', CONTEXT_COURSE, 'ctx');
+    $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+    $ccjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
+    $params['contextlevel'] = CONTEXT_COURSE;
+
     $fields = array_diff(array_keys($DB->get_columns('course')), array('modinfo', 'sectioncache'));
     $sql = "SELECT c.".join(',c.',$fields)." $ccselect
               FROM {course} c

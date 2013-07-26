@@ -34,7 +34,7 @@ class core_component_testcase extends advanced_testcase {
     // To be changed if number of subsystems increases/decreases,
     // this is defined here to annoy devs that try to add more without any thinking,
     // always verify that it does not collide with any existing add-on modules and subplugins!!!
-    const SUBSYSTEMCOUNT = 63;
+    const SUBSYSTEMCOUNT = 62;
 
     public function test_get_core_subsystems() {
         global $CFG;
@@ -47,7 +47,7 @@ class core_component_testcase extends advanced_testcase {
         foreach($subsystems as $subsystem => $fulldir) {
             $this->assertFalse(strpos($subsystem, '_'), 'Core subsystems must be one work without underscores');
             if ($fulldir === null) {
-                if ($subsystem === 'dock' or $subsystem === 'filepicker' or $subsystem === 'help') {
+                if ($subsystem === 'filepicker' or $subsystem === 'help') {
                     // Arrgghh, let's not introduce more subsystems for no real reason...
                 } else {
                     // Lang strings.

@@ -2544,6 +2544,7 @@ function put_records_csv($file, $records, $table = NULL) {
     }
 
     fclose($fp);
+    @chmod($CFG->tempdir.'/'.$file, $CFG->filepermissions);
     return true;
 }
 
@@ -3714,6 +3715,7 @@ class curl_cache {
         $fp = fopen($this->dir.$filename, 'w');
         fwrite($fp, serialize($val));
         fclose($fp);
+        @chmod($this->dir.$filename, $CFG->filepermissions);
     }
 
     /**
@@ -4543,7 +4545,7 @@ function file_pluginfile($relativepath, $forcedownload, $preview = null) {
 
     } else {
         // try to serve general plugin file in arbitrary context
-        $dir = get_component_directory($component);
+        $dir = core_component::get_component_directory($component);
         if (!file_exists("$dir/lib.php")) {
             send_file_not_found();
         }

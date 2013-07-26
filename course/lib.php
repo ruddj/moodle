@@ -1404,6 +1404,7 @@ function set_coursemodule_idnumber($id, $idnumber) {
 function set_coursemodule_visible($id, $visible) {
     global $DB, $CFG;
     require_once($CFG->libdir.'/gradelib.php');
+    require_once($CFG->dirroot.'/calendar/lib.php');
 
     // Trigger developer's attention when using the previously removed argument.
     if (func_num_args() > 2) {
@@ -1427,9 +1428,11 @@ function set_coursemodule_visible($id, $visible) {
     if ($events = $DB->get_records('event', array('instance'=>$cm->instance, 'modulename'=>$modulename))) {
         foreach($events as $event) {
             if ($visible) {
-                show_event($event);
+                $event = new calendar_event($event);
+                $event->toggle_visibility(true);
             } else {
-                hide_event($event);
+                $event = new calendar_event($event);
+                $event->toggle_visibility(false);
             }
         }
     }
@@ -1468,6 +1471,7 @@ function course_delete_module($cmid) {
 
     require_once($CFG->libdir.'/gradelib.php');
     require_once($CFG->dirroot.'/blog/lib.php');
+    require_once($CFG->dirroot.'/calendar/lib.php');
 
     // Get the course module.
     if (!$cm = $DB->get_record('course_modules', array('id' => $cmid))) {
@@ -1512,7 +1516,8 @@ function course_delete_module($cmid) {
     // Delete events from calendar.
     if ($events = $DB->get_records('event', array('instance' => $cm->instance, 'modulename' => $modulename))) {
         foreach($events as $event) {
-            delete_event($event->id);
+            $calendarevent = calendar_event::load($event->id);
+            $calendarevent->delete();
         }
     }
 
@@ -1534,7 +1539,7 @@ function course_delete_module($cmid) {
                                                             'criteriatype' => COMPLETION_CRITERIA_TYPE_ACTIVITY));
 
     // Delete the context.
-    delete_context(CONTEXT_MODULE, $cm->id);
+    context_helper::delete_instance(CONTEXT_MODULE, $cm->id);
 
     // Delete the module from the course_modules table.
     $DB->delete_records('course_modules', array('id' => $cm->id));
@@ -2275,7 +2280,7 @@ function create_course($data, $editoroptions = NULL) {
     cache_helper::purge_by_event('changesincourse');
 
     // new context created - better mark it as dirty
-    mark_context_dirty($context->path);
+    $context->mark_dirty();
 
     // Save any custom role names.
     save_local_role_names($course->id, (array)$data);
@@ -2985,7 +2990,7 @@ function include_course_ajax($course, $usedmodules = array(), $enabledmodules = 
  */
 function get_sorted_course_formats($enabledonly = false) {
     global $CFG;
-    $formats = get_plugin_list('format');
+    $formats = core_component::get_plugin_list('format');
 
     if (!empty($CFG->format_plugins_sortorder)) {
         $order = explode(',', $CFG->format_plugins_sortorder);

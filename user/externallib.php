@@ -112,11 +112,11 @@ class core_user_external extends external_api {
         // If any problems are found then exceptions are thrown with helpful error messages
         $params = self::validate_parameters(self::create_users_parameters(), array('users'=>$users));
 
-        $availableauths  = get_plugin_list('auth');
+        $availableauths  = core_component::get_plugin_list('auth');
         unset($availableauths['mnet']);       // these would need mnethostid too
         unset($availableauths['webservice']); // we do not want new webservice users for now
 
-        $availablethemes = get_plugin_list('theme');
+        $availablethemes = core_component::get_plugin_list('theme');
         $availablelangs  = get_string_manager()->get_list_of_translations();
 
         $transaction = $DB->start_delegated_transaction();
@@ -678,8 +678,10 @@ class core_user_external extends external_api {
         $params = self::validate_parameters(self::get_users_by_id_parameters(),
                 array('userids'=>$userids));
 
-        list($uselect, $ujoin) = context_instance_preload_sql('u.id', CONTEXT_USER, 'ctx');
-        list($sqluserids, $params) = $DB->get_in_or_equal($userids);
+        list($sqluserids, $params) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        $uselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+        $ujoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = u.id AND ctx.contextlevel = :contextlevel)";
+        $params['contextlevel'] = CONTEXT_USER;
         $usersql = "SELECT u.* $uselect
                       FROM {user} u $ujoin
                      WHERE u.id $sqluserids";
@@ -778,8 +780,10 @@ class core_user_external extends external_api {
 
         // cache all courses
         $courses = array();
-        list($cselect, $cjoin) = context_instance_preload_sql('c.id', CONTEXT_COURSE, 'ctx');
-        list($sqlcourseids, $params) = $DB->get_in_or_equal(array_unique($courseids));
+        list($sqlcourseids, $params) = $DB->get_in_or_equal(array_unique($courseids), SQL_PARAMS_NAMED);
+        $cselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+        $cjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
+        $params['contextlevel'] = CONTEXT_COURSE;
         $coursesql = "SELECT c.* $cselect
                         FROM {course} c $cjoin
                        WHERE c.id $sqlcourseids";
@@ -792,8 +796,10 @@ class core_user_external extends external_api {
         }
         $rs->close();
 
-        list($uselect, $ujoin) = context_instance_preload_sql('u.id', CONTEXT_USER, 'ctx');
-        list($sqluserids, $params) = $DB->get_in_or_equal($userids);
+        list($sqluserids, $params) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        $uselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+        $ujoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = u.id AND ctx.contextlevel = :contextlevel)";
+        $params['contextlevel'] = CONTEXT_USER;
         $usersql = "SELECT u.* $uselect
                       FROM {user} u $ujoin
                      WHERE u.id $sqluserids";

@@ -95,7 +95,7 @@ EOD;
      * @return component_generator_base or rather an instance of the appropriate subclass.
      */
     public function get_plugin_generator($component) {
-        list($type, $plugin) = normalize_component($component);
+        list($type, $plugin) = core_component::normalize_component($component);
         $cleancomponent = $type . '_' . $plugin;
         if ($cleancomponent != $component) {
             debugging("Please specify the component you want a generator for as " .
@@ -107,7 +107,7 @@ EOD;
             return $this->generators[$component];
         }
 
-        $dir = get_component_directory($component);
+        $dir = core_component::get_component_directory($component);
         $lib = $dir . '/tests/generator/lib.php';
         if (!$dir || !is_readable($lib)) {
             throw new coding_exception("Component {$component} does not support " .
@@ -712,6 +712,34 @@ EOD;
         $plugin->enrol_user($instance, $userid, $roleid, $timestart, $timeend, $status);
         return true;
     }
+
+    /**
+     * Assigns the specified role to a user in the context.
+     *
+     * @param int $roleid
+     * @param int $userid
+     * @param int $contextid Defaults to the system context
+     * @return int new/existing id of the assignment
+     */
+    public function role_assign($roleid, $userid, $contextid = false) {
+
+        // Default to the system context.
+        if (!$contextid) {
+            $context = context_system::instance();
+            $contextid = $context->id;
+        }
+
+        if (empty($roleid)) {
+            throw new coding_exception('roleid must be present in testing_data_generator::role_assign() arguments');
+        }
+
+        if (empty($userid)) {
+            throw new coding_exception('userid must be present in testing_data_generator::role_assign() arguments');
+        }
+
+        return role_assign($roleid, $userid, $contextid);
+    }
+
 }
 
 /**
