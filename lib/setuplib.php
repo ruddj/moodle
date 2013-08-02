@@ -665,7 +665,7 @@ function format_backtrace($callers, $plaintext = false) {
         return '';
     }
 
-    $from = $plaintext ? '' : '<ul style="text-align: left">';
+    $from = $plaintext ? '' : '<ul style="text-align: left" data-rel="backtrace">';
     foreach ($callers as $caller) {
         if (!isset($caller['line'])) {
             $caller['line'] = '?'; // probably call_user_func()
@@ -1260,10 +1260,15 @@ function make_writable_directory($dir, $exceptiononerror = true) {
 
     if (!file_exists($dir)) {
         if (!mkdir($dir, $CFG->directorypermissions, true)) {
-            if ($exceptiononerror) {
-                throw new invalid_dataroot_permissions($dir.' can not be created, check permissions.');
-            } else {
-                return false;
+            clearstatcache();
+            // There might be a race condition when creating directory.
+            if (!is_dir($dir)) {
+                if ($exceptiononerror) {
+                    throw new invalid_dataroot_permissions($dir.' can not be created, check permissions.');
+                } else {
+                    debugging('Can not create directory: '.$dir, DEBUG_DEVELOPER);
+                    return false;
+                }
             }
         }
     }
