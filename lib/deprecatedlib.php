@@ -31,6 +31,47 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
+ * Minify JavaScript files.
+ *
+ * @deprecated since 2.6
+ *
+ * @param array $files
+ * @return string
+ */
+function js_minify($files) {
+    debugging('js_minify() is deprecated, use core_minify::js_files() or core_minify::js() instead.');
+    return core_minify::js_files($files);
+}
+
+/**
+ * Minify CSS files.
+ *
+ * @deprecated since 2.6
+ *
+ * @param array $files
+ * @return string
+ */
+function css_minify_css($files) {
+    debugging('css_minify_css() is deprecated, use core_minify::css_files() or core_minify::css() instead.');
+    return core_minify::css_files($files);
+}
+
+/**
+ * Function to call all event handlers when triggering an event
+ *
+ * @deprecated since 2.6
+ *
+ * @param string $eventname name of the event
+ * @param mixed $eventdata event data object
+ * @return int number of failed events
+ */
+function events_trigger($eventname, $eventdata) {
+    // TODO: uncomment after conversion of all events in standard distribution
+    // debugging('events_trigger() is deprecated, please use new events instead', DEBUG_DEVELOPER);
+    return events_trigger_legacy($eventname, $eventdata);
+}
+
+/**
  * List all core subsystems and their location
  *
  * This is a whitelist of components that are part of the core and their
@@ -1987,23 +2028,23 @@ function show_event($event) {
 }
 
 /**
- * @deprecated Use textlib::strtolower($text) instead.
+ * @deprecated Use core_text::strtolower($text) instead.
  */
 function moodle_strtolower($string, $encoding='') {
-    throw new coding_exception('moodle_strtolower() cannot be used any more. Please use textlib::strtolower() instead.');
+    throw new coding_exception('moodle_strtolower() cannot be used any more. Please use core_text::strtolower() instead.');
 }
 
 /**
  * Original singleton helper function, please use static methods instead,
- * ex: textlib::convert()
+ * ex: core_text::convert()
  *
- * @deprecated since Moodle 2.2 use textlib::xxxx() instead
+ * @deprecated since Moodle 2.2 use core_text::xxxx() instead
  * @see textlib
  * @return textlib instance
  */
 function textlib_get_instance() {
 
-    debugging('textlib_get_instance() is deprecated. Please use static calling textlib::functioname() instead.', DEBUG_DEVELOPER);
+    debugging('textlib_get_instance() is deprecated. Please use static calling core_text::functioname() instead.', DEBUG_DEVELOPER);
 
     return new textlib();
 }
@@ -4351,4 +4392,12 @@ function get_related_contexts_string(context $context) {
     } else {
         return (' ='.$context->id);
     }
+}
+
+/**
+ * @deprecated since Moodle 2.0 - use $PAGE->user_is_editing() instead.
+ * @see moodle_page->user_is_editing()
+ */
+function isediting() {
+    throw new coding_exception('isediting() can not be used any more, please use $PAGE->user_is_editing() instead.');
 }

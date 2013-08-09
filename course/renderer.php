@@ -708,8 +708,8 @@ class core_course_renderer extends plugin_renderer_base {
         // Avoid unnecessary duplication: if e.g. a forum name already
         // includes the word forum (or Forum, etc) then it is unhelpful
         // to include that in the accessible description that is added.
-        if (false !== strpos(textlib::strtolower($instancename),
-                textlib::strtolower($altname))) {
+        if (false !== strpos(core_text::strtolower($instancename),
+                core_text::strtolower($altname))) {
             $altname = '';
         }
         // File type after name, for alphabetic lists (screen reader).
@@ -785,11 +785,20 @@ class core_course_renderer extends plugin_renderer_base {
             return $output;
         }
         $content = $mod->get_formatted_content(array('overflowdiv' => true, 'noclean' => true));
-        $conditionalhidden = $this->is_cm_conditionally_hidden($mod);
-        $accessiblebutdim = !$mod->visible || $conditionalhidden;
+        if ($this->page->user_is_editing()) {
+            // In editing mode, when an item is conditionally hidden from some users
+            // we show it as greyed out.
+            $conditionalhidden = $this->is_cm_conditionally_hidden($mod);
+            $dim = !$mod->visible || $conditionalhidden;
+        } else {
+            // When not in editing mode, we only show item as hidden if it is
+            // actually not available to the user
+            $conditionalhidden = false;
+            $dim = !$mod->uservisible;
+        }
         $textclasses = '';
         $accesstext = '';
-        if ($accessiblebutdim) {
+        if ($dim) {
             $textclasses .= ' dimmed_text';
             if ($conditionalhidden) {
                 $textclasses .= ' conditionalhidden';
@@ -852,6 +861,28 @@ class core_course_renderer extends plugin_renderer_base {
             }
         }
         return '';
+    }
+
+    /**
+     * Renders HTML to display one course module for display within a section.
+     *
+     * This function calls:
+     * {@link core_course_renderer::course_section_cm()}
+     *
+     * @param stdClass $course
+     * @param completion_info $completioninfo
+     * @param cm_info $mod
+     * @param int|null $sectionreturn
+     * @param array $displayoptions
+     * @return String
+     */
+    public function course_section_cm_list_item($course, &$completioninfo, cm_info $mod, $sectionreturn, $displayoptions = array()) {
+        $output = '';
+        if ($modulehtml = $this->course_section_cm($course, $completioninfo, $mod, $sectionreturn, $displayoptions)) {
+            $modclasses = 'activity ' . $mod->modname . ' modtype_' . $mod->modname . ' ' . $mod->get_extra_classes();
+            $output .= html_writer::tag('li', $modulehtml, array('class' => $modclasses, 'id' => 'module-' . $mod->id));
+        }
+        return $output;
     }
 
     /**
@@ -990,39 +1021,34 @@ class core_course_renderer extends plugin_renderer_base {
                     continue;
                 }
 
-                if ($modulehtml = $this->course_section_cm($course,
+                if ($modulehtml = $this->course_section_cm_list_item($course,
                         $completioninfo, $mod, $sectionreturn, $displayoptions)) {
                     $moduleshtml[$modnumber] = $modulehtml;
                 }
             }
         }
 
+        $sectionoutput = '';
         if (!empty($moduleshtml) || $ismoving) {
-
-            $output .= html_writer::start_tag('ul', array('class' => 'section img-text'));
-
             foreach ($moduleshtml as $modnumber => $modulehtml) {
                 if ($ismoving) {
                     $movingurl = new moodle_url('/course/mod.php', array('moveto' => $modnumber, 'sesskey' => sesskey()));
-                    $output .= html_writer::tag('li', html_writer::link($movingurl, $this->output->render($movingpix)),
+                    $sectionoutput .= html_writer::tag('li', html_writer::link($movingurl, $this->output->render($movingpix)),
                             array('class' => 'movehere', 'title' => $strmovefull));
                 }
 
-                $mod = $modinfo->cms[$modnumber];
-                $modclasses = 'activity '. $mod->modname. ' modtype_'.$mod->modname. ' '. $mod->get_extra_classes();
-                $output .= html_writer::start_tag('li', array('class' => $modclasses, 'id' => 'module-'. $mod->id));
-                $output .= $modulehtml;
-                $output .= html_writer::end_tag('li');
+                $sectionoutput .= $modulehtml;
             }
 
             if ($ismoving) {
                 $movingurl = new moodle_url('/course/mod.php', array('movetosection' => $section->id, 'sesskey' => sesskey()));
-                $output .= html_writer::tag('li', html_writer::link($movingurl, $this->output->render($movingpix)),
+                $sectionoutput .= html_writer::tag('li', html_writer::link($movingurl, $this->output->render($movingpix)),
                         array('class' => 'movehere', 'title' => $strmovefull));
             }
-
-            $output .= html_writer::end_tag('ul'); // .section
         }
+
+        // Always output the section module list.
+        $output .= html_writer::tag('ul', $sectionoutput, array('class' => 'section img-text'));
 
         return $output;
     }

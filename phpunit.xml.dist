@@ -31,11 +31,13 @@
         <testsuite name="core_test">
             <directory suffix="_test.php">lib/testing/tests</directory>
         </testsuite>
-        <testsuite name="core_db">
+        <testsuite name="core_ddl">
             <directory suffix="_test.php">lib/ddl/tests</directory>
+        </testsuite>
+        <testsuite name="core_dml">
             <directory suffix="_test.php">lib/dml/tests</directory>
         </testsuite>
-        <testsuite name="core_lib">
+        <testsuite name="core">
             <directory suffix="_test.php">lib/tests</directory>
             <directory suffix="_test.php">lib/ajax/tests</directory>
             <directory suffix="_test.php">lib/form/tests</directory>
@@ -55,9 +57,6 @@
             <directory suffix="_test.php">lib/grade/tests</directory>
             <directory suffix="_test.php">grade/tests</directory>
             <directory suffix="_test.php">grade/grading/tests</directory>
-        </testsuite>
-        <testsuite name="core_auth">
-            <directory suffix="_test.php">auth/tests</directory>
         </testsuite>
         <testsuite name="core_backup">
             <directory suffix="_test.php">backup/controller/tests</directory>

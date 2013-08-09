@@ -82,6 +82,8 @@ Misc:
     * httpsrequired()               -> $PAGE->https_required()
     * detect_munged_arguments()     -> clean_param([...], PARAM_FILE)
     * mygroupid()                   -> groups_get_all_groups()
+    * js_minify()                   -> core_minify::js_files()
+    * css_minify_css()              -> core_minify::css_files()
 
 YUI:
     * moodle-core-notification has been deprecated with a recommendation of
@@ -92,6 +94,11 @@ YUI:
       * confirm
       * exception
       * ajaxexception
+
+Event triggering and event handlers:
+    * All existing events and event handlers should be replaced by new
+      event classes and matching new event observers.
+    * See http://docs.moodle.org/dev/Event_2 for more information.
 
 === 2.5.1 ===
 

@@ -89,9 +89,46 @@ class core_event_testcase extends advanced_testcase {
         $this->assertEquals($event->get_context(), $event2->get_context());
     }
 
+    public function test_event_properties_guessing() {
+        global $USER;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $forum = $this->getDataGenerator()->create_module('forum', array('course' => $course->id));
+        $context = context_module::instance($forum->cmid);
+        $event = \core_tests\event\unittest_executed::create(array('context' => $context, 'objectid' => 5));
+
+        // Check guessed course ID, and default properties.
+        $this->assertSame('\core_tests\event\unittest_executed', $event->eventname);
+        $this->assertSame('core_tests', $event->component);
+        $this->assertSame('executed', $event->action);
+        $this->assertSame('unittest', $event->target);
+        $this->assertSame(5, $event->objectid);
+        $this->assertEquals($context, $event->get_context());
+        $this->assertEquals($course->id, $event->courseid);
+        $this->assertSame($USER->id, $event->userid);
+        $this->assertNull($event->relateduserid);
+
+        $user = $this->getDataGenerator()->create_user();
+        $context = context_user::instance($user->id);
+        $event = \core_tests\event\unittest_executed::create(array('contextid' => $context->id, 'objectid' => 5));
+
+        // Check guessing on contextid, and user context level.
+        $this->assertEquals($context, $event->get_context());
+        $this->assertEquals($context->id, $event->contextid);
+        $this->assertEquals($context->contextlevel, $event->contextlevel);
+        $this->assertSame(0, $event->courseid);
+        $this->assertSame($USER->id, $event->userid);
+        $this->assertSame($user->id, $event->relateduserid);
+    }
+
     public function test_observers_parsing() {
 
         $observers = array(
+            array(
+                'eventname'   => '*',
+                'callback'    => array('\core_tests\event\unittest_observer', 'observe_all_alt'),
+            ),
             array(
                 'eventname'   => '\core_tests\event\unittest_executed',
                 'callback'    => '\core_tests\event\unittest_observer::observe_one',
@@ -102,7 +139,7 @@ class core_event_testcase extends advanced_testcase {
                 'callback'    => array('\core_tests\event\unittest_observer', 'observe_all'),
                 'includefile' => null,
                 'internal'    => 1,
-                'priority'    => 9999,
+                'priority'    => 10,
             ),
             array(
                 'eventname'   => '\core\event\unknown_executed',
@@ -118,58 +155,49 @@ class core_event_testcase extends advanced_testcase {
         );
 
         $result = \core\event\manager::phpunit_replace_observers($observers);
-
         $this->assertCount(3, $result);
-        end($result);
-        $this->assertSame('*', key($result));
 
         $expected = array();
-        $observer = new stdClass();
-        $observer->callable = array('\core_tests\event\unittest_observer', 'observe_all');
-        $observer->priority = 9999;
-        $observer->internal = true;
-        $observer->includefile = null;
-        $expected[0] = $observer;
         $observer = new stdClass();
         $observer->callable = '\core_tests\event\unittest_observer::external_observer';
         $observer->priority = 200;
         $observer->internal = false;
         $observer->includefile = null;
-        $expected[1] = $observer;
+        $expected[0] = $observer;
         $observer = new stdClass();
         $observer->callable = '\core_tests\event\unittest_observer::observe_one';
         $observer->priority = 0;
         $observer->internal = true;
         $observer->includefile = 'lib/tests/fixtures/event_fixtures.php';
-        $expected[2] = $observer;
+        $expected[1] = $observer;
 
         $this->assertEquals($expected, $result['\core_tests\event\unittest_executed']);
 
         $expected = array();
         $observer = new stdClass();
-        $observer->callable = array('\core_tests\event\unittest_observer', 'observe_all');
-        $observer->priority = 9999;
-        $observer->internal = true;
-        $observer->includefile = null;
-        $expected[0] = $observer;
-        $observer = new stdClass();
         $observer->callable = '\core_tests\event\unittest_observer::broken_observer';
         $observer->priority = 100;
         $observer->internal = true;
         $observer->includefile = null;
-        $expected[1] = $observer;
+        $expected[0] = $observer;
 
         $this->assertEquals($expected, $result['\core\event\unknown_executed']);
 
         $expected = array();
         $observer = new stdClass();
         $observer->callable = array('\core_tests\event\unittest_observer', 'observe_all');
-        $observer->priority = 9999;
+        $observer->priority = 10;
         $observer->internal = true;
         $observer->includefile = null;
         $expected[0] = $observer;
+        $observer = new stdClass();
+        $observer->callable = array('\core_tests\event\unittest_observer', 'observe_all_alt');
+        $observer->priority = 0;
+        $observer->internal = true;
+        $observer->includefile = null;
+        $expected[1] = $observer;
 
-        $this->assertEquals($expected, $result['*']);
+        $this->assertEquals($expected, $result['\core\event\base']);
 
         // Now test broken stuff...
 
@@ -672,6 +700,11 @@ class core_event_testcase extends advanced_testcase {
         } catch (\moodle_exception $e) {
             $this->assertInstanceOf('\coding_exception', $e);
         }
+    }
+
+    public function test_get_name() {
+        $event = \core_tests\event\noname_event::create(array('courseid' => 1, 'other' => array('sample' => 1, 'xx' => 10)));
+        $this->assertEquals("core_tests: noname event", $event->get_name());
     }
 
     public function test_iteration() {

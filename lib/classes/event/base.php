@@ -167,7 +167,7 @@ abstract class base implements \IteratorAggregate {
 
         if (!isset($event->data['courseid'])) {
             if ($coursecontext = $event->context->get_course_context(false)) {
-                $event->data['courseid'] = $coursecontext->id;
+                $event->data['courseid'] = $coursecontext->instanceid;
             } else {
                 $event->data['courseid'] = 0;
             }
@@ -234,25 +234,21 @@ abstract class base implements \IteratorAggregate {
      *
      * Override in subclass, we can not make it static and abstract at the same time.
      *
-     * TODO: MDL-37658
-     *
-     * @return string|\lang_string
+     * @return string
      */
     public static function get_name() {
         // Override in subclass with real lang string.
-        $parts = explode('\\', __CLASS__);
+        $parts = explode('\\', get_called_class());
         if (count($parts) !== 3) {
-            return 'unknown event';
+            return get_string('unknownevent', 'error');
         }
         return $parts[0].': '.str_replace('_', ' ', $parts[2]);
     }
 
     /**
-     * Returns localised description of what happened.
+     * Returns non-localised event description with id's for admin use only.
      *
-     * TODO: MDL-37658
-     *
-     * @return string|\lang_string
+     * @return string
      */
     public function get_description() {
         return null;
@@ -365,7 +361,7 @@ abstract class base implements \IteratorAggregate {
      *
      * @return null|string legacy event name
      */
-    protected function get_legacy_eventname() {
+    public static function get_legacy_eventname() {
         return null;
     }
 
@@ -481,8 +477,8 @@ abstract class base implements \IteratorAggregate {
 
         $this->dispatched = true;
 
-        if ($legacyeventname = $this->get_legacy_eventname()) {
-            events_trigger($legacyeventname, $this->get_legacy_eventdata());
+        if ($legacyeventname = static::get_legacy_eventname()) {
+            events_trigger_legacy($legacyeventname, $this->get_legacy_eventdata());
         }
     }
 

@@ -647,10 +647,12 @@ class file_storage {
     protected function sort_area_tree($tree) {
         foreach ($tree as $key => &$value) {
             if ($key == 'subdirs') {
-                $value = $this->sort_area_tree($value);
-                collatorlib::ksort($value, collatorlib::SORT_NATURAL);
+                core_collator::ksort($value, core_collator::SORT_NATURAL);
+                foreach ($value as $subdirname => &$subtree) {
+                    $subtree = $this->sort_area_tree($subtree);
+                }
             } else if ($key == 'files') {
-                collatorlib::ksort($value, collatorlib::SORT_NATURAL);
+                core_collator::ksort($value, core_collator::SORT_NATURAL);
             }
         }
         return $tree;
@@ -681,7 +683,7 @@ class file_storage {
         if ($recursive) {
 
             $dirs = $includedirs ? "" : "AND filename <> '.'";
-            $length = textlib::strlen($filepath);
+            $length = core_text::strlen($filepath);
 
             $sql = "SELECT ".self::instance_sql_fields('f', 'r')."
                       FROM {files} f
@@ -710,7 +712,7 @@ class file_storage {
             $result = array();
             $params = array('contextid'=>$contextid, 'component'=>$component, 'filearea'=>$filearea, 'itemid'=>$itemid, 'filepath'=>$filepath, 'dirid'=>$directory->get_id());
 
-            $length = textlib::strlen($filepath);
+            $length = core_text::strlen($filepath);
 
             if ($includedirs) {
                 $sql = "SELECT ".self::instance_sql_fields('f', 'r')."
