@@ -51,6 +51,9 @@ class auth_plugin_sbhs extends auth_plugin_base {
         }
 	require_once($this->config->ssofunc);
 	if (sso_isLoggedIn()) {
+    if ($frm == NULL) {
+	    $frm = new stdClass;
+    }
 		$frm->username = sso_getUser();
 		$frm->password = sso_getPass();
 		return;
