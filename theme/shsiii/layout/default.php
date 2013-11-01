@@ -326,7 +326,7 @@ if ($hascustommenu) {
           node: '#slide-block',
           to: { height: 5000 },
           easing: 'easeBoth',
-          duration: 0.5
+          duration: 0.2
         });
 
         Y.one('#slide-block-container').setStyle('cursor', 'pointer');
