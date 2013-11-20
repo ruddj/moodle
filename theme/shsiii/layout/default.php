@@ -93,8 +93,10 @@ if ($hascustommenu) {
     <div class="container">
       <!--<div class="search">
       </div>-->
+      <!-- <?php echo "Heading: $hasheading & Navbar:$hasnavbar"; ?> -->
     </div>
   </div>
+  
 
   <div id="topnav">
     <div class="container">
@@ -177,6 +179,7 @@ if ($hascustommenu) {
     </div>
   </div>
 
+  <?php if ($hasnavbar): ?>
   <section id="fullnavblock">
     <div class="container" id="page-header"><? /* page-header is a critical Moodle element */ ?>
       <div class="helpresponse-block">
@@ -216,6 +219,7 @@ if ($hascustommenu) {
       <div class="clr"></div>
     </div>
   </section>
+  <?php endif; /* has (navbar) */ ?>
 </header>
 
 <?php endif; /* has (header || navbar) */ ?>
@@ -294,19 +298,21 @@ if ($hascustommenu) {
     <div class="clearfix"></div>
   </div>
 </div>
+<?php if ($hasfooter) { ?>
+  <footer id="footer">
+    <div class="container" id="page-footer"><? /* page-footer is a critical Moodle element */ ?>
+      <?php if ($haslogininfo): ?>
+        <?php echo $OUTPUT->login_info(); ?>
+      <?php endif; ?>
+      <p>
+        &copy; <?php echo date('Y');?> <a href="http://www.sydneyboyshigh.com">Sydney Boys High School</a>
+      </p>
+      <?php echo $OUTPUT->standard_footer_html(); ?>
+    </div>
+  </footer>
+<?php } ?>
 
-
-<footer id="footer">
-  <div class="container" id="page-footer"><? /* page-footer is a critical Moodle element */ ?>
-    <?php if ($haslogininfo): ?>
-      <?php echo $OUTPUT->login_info(); ?>
-    <?php endif; ?>
-
-    <p>
-      &copy; <?php echo date('Y');?> <a href="http://www.sydneyboyshigh.com">Sydney Boys High School</a>
-    </p>
-  </div>
-</footer>
+<?php if ($hasnavbar): ?>
 
 <script type="text/javascript">
   YUI().use('node', 'event', 'anim', function (Y) {
@@ -326,7 +332,7 @@ if ($hascustommenu) {
           node: '#slide-block',
           to: { height: 5000 },
           easing: 'easeBoth',
-          duration: 0.5
+          duration: 0.2
         });
 
         Y.one('#slide-block-container').setStyle('cursor', 'pointer');
@@ -349,9 +355,8 @@ if ($hascustommenu) {
     });
   });
 </script>
+<?php endif; /* has (navbar) */ ?>
 
 <?php echo $OUTPUT->standard_end_of_body_html() ?>
-
-
 </body>
 </html>

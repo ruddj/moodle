@@ -9,6 +9,7 @@ if ($ADMIN->fulltree) {
     $description = 'URL to password reset placed in the salutation menu';
     $default = '';
     $setting = new admin_setting_configtext($name, $title, $description, $default);
+    $setting->set_updatedcallback('theme_reset_all_caches');
     $settings->add($setting);
 
     // Logo file setting
@@ -33,6 +34,7 @@ if ($ADMIN->fulltree) {
     $description = get_string('customcssdesc', 'theme_shsiii');
     $default = '';
     $setting = new admin_setting_configtextarea($name, $title, $description, $default);
+    $setting->set_updatedcallback('theme_reset_all_caches');
     $settings->add($setting);
 
 }

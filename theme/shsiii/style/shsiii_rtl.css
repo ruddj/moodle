@@ -14,6 +14,8 @@
 .dir-rtl .coursebox .summary {
     text-align: right;
 }
+.dir-rtl .coursebox .summary {float:right;}
+
 .dir-rtl a.logo {
     float: right;
 }

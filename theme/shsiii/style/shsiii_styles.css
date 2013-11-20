@@ -1,4 +1,6 @@
-/* General Styles */
+/*
+General Styles
+-----------------------*/
 
 @font-face {
     font-family: 'Droid Sans';
@@ -85,7 +87,9 @@ p {
   margin: 8px 0;
 }
 
-/* Page */
+/*
+Page
+-----------------------*/
 
 #page {
     font-family: Arial, Helvetica, sans-serif
@@ -93,7 +97,9 @@ p {
 #page-content {
 }
 
-/* Header and Logo */
+/*
+Header and Logo
+---------------------------*/
 
 /*#page-header {
     height: 105px;
@@ -135,7 +141,9 @@ h1#sitelogo.moodle a.logo img {
     right: 10px;
 }
 
-/* Page Footer */
+/*
+Page Footer
+-----------------------*/
 /*
 #page-footer {
     background-color: #4d4d4d;
@@ -172,7 +180,9 @@ h1#sitelogo.moodle a.logo img {
     float: right;
     text-align: right;
 }*/
-/* Navbar & Breadcrumb */
+/*
+Navbar & Breadcrumb
+-----------------------*/
 /*.navbar {
     background-image: url([[pix:theme|images/baroque]]);
     background-color: #194F73;
@@ -240,8 +250,9 @@ h1#sitelogo.moodle a.logo img {
     padding-left: 20px;
 }
 
-/* Collapse All - Expand All */
-
+/*
+Collapse All - Expand All
+-------------------------*/
 div.controls .expandall,
 div.controls .collapseall {
     font-size: .8em;
@@ -261,21 +272,21 @@ div.controls .collapseall {
     color: #444;
     padding-bottom: 10px;
 }
-
-/* General Box */
-
+/*
+General Box
+-----------------------*/
 .generalbox {
-    border:0 none;
+    border: 0 none;
 }
-
-/* Font Size */
-
+/*
+Font Size
+-----------------------*/
 table {
     font-size: 85%;
 }
-
-/* Button */
-
+/*
+Button
+-----------------------*/
 select, input, button {
     color: black;
 }
@@ -300,7 +311,9 @@ input[type="submit"], input[type="cancel"], button {
   padding: 3px 10px;
 }
 
-/* Coursebox Info & Summary */
+/*
+Courses and categories lists
+----------------------------*/
 
 .coursebox h3,
 .coursebox .info,
@@ -322,9 +335,9 @@ input[type="submit"], input[type="cancel"], button {
     padding: 0;
     margin: 5px 0 0;
 }
-
-/* Course Section Topic & Weekly */
-
+/*
+Course Section Topic & Weekly
+-----------------------------*/
 .course-content ul.topics li.section,
 .course-content ul.weeks li.section {
     /*border: 1px solid transparent;*/
@@ -350,15 +363,14 @@ input[type="submit"], input[type="cancel"], button {
     width:53%;
 }
 
-/* Login (Front Page) */
-
-.block_login
-{
+/*
+Login (Front Page)
+-----------------------*/
+.block_login {
     margin: 0;
     padding: 0;
 }
-.block_login .footer
-{
+.block_login .footer {
     text-align: right;
     clear: both
 }
@@ -366,9 +378,8 @@ input[type="submit"], input[type="cancel"], button {
     margin: 0.3em 15px;
     text-align: left;
 }
-
-/* Theme Selector */
-
+/* Theme Selector
+----------------------------*/
 #page-admin-theme-index .generalbox {
     border: none;
 }
@@ -396,7 +407,9 @@ input[type="submit"], input[type="cancel"], button {
 .theme_description h2 {
     padding-top: 0.5em;
 }
-/* Tabs */
+/*
+Tabs
+-----------------------*/
 .tabtree ul {
     text-align:center;
 }
@@ -426,10 +439,10 @@ input[type="submit"], input[type="cancel"], button {
 .tabtree .tabrow0 li a span {
     background-image:url([[pix:theme|tab/right]]);
     background-repeat:no-repeat;
-    background-position:100% 0%;
-    padding-right:14px;
-    padding-top:10px;
-    padding-bottom:3px;
+    background-position: 100% 0;
+    padding-right: 14px;
+    padding-top: 10px;
+    padding-bottom: 3px;
 }
 .tabtree .tabrow0 li a:hover span {
     background-image:url([[pix:theme|tab/right_hover]]);
@@ -437,7 +450,7 @@ input[type="submit"], input[type="cancel"], button {
 .tabtree .tabrow0 ul,
 .tabtree .tabrow0 div {
     font-weight: normal;
-    background-image:url([[pix:theme|tab    abrow1]]);
+    background-image:url([[pix:theme|tab/tabrow1]]);
     background-position:0% 50%;
     border-top: 1px dotted #eee;
     padding:0.25em 0px;
@@ -456,7 +469,7 @@ input[type="submit"], input[type="cancel"], button {
 .tabtree .tabrow1 li a:hover,
 .tabtree .tabrow1 li a span,
 .tabtree .tabrow1 li a:hover span {
-    background-image:none !important;
+    background-image: none !important;
 }
 .tabtree a.nolink,
 .tabtree .here ul a.nolink,
@@ -469,7 +482,8 @@ input[type="submit"], input[type="cancel"], button {
 .tabtree .here ul .here a.nolink,
 .tabtree .here a.nolink:hover,
 .tabtree .here ul .here a.nolink:hover {
-    color: black;text-decoration: none;
+    color: black;
+    text-decoration: none;
 }
 /*
 tab styles for ie6 & ie7
@@ -819,3 +833,15 @@ div.forumpost div.header a:hover {
 #page-calendar-event .felement {
   margin-left: 50px;
 }*/
+
+/* Moodle forms
+----------------*/
+
+.mform .btn-cancel {
+    color: #007EBA;
+    text-decoration: none;
+}
+.mform .btn-cancel:hover, .mform .btn-cancel:focus {
+    color: #cc3300;
+    text-decoration: underline;
+}

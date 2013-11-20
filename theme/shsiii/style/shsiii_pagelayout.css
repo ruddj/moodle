@@ -98,7 +98,11 @@ body {
     background-color: #fff;
 }*/
 
-
+#page-footer {
+    clear: both;
+    float: left;
+    width: 100%;
+}
 
 /** SIDE-PRE-ONLY **/
 
