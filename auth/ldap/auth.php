@@ -945,6 +945,9 @@ class auth_plugin_ldap extends auth_plugin_base {
                 if (empty($user->lang)) {
                     $user->lang = $CFG->lang;
                 }
+                if (empty($user->calendartype)) {
+                    $user->calendartype = $CFG->calendartype;
+                }
 
                 $id = user_create_user($user, false);
                 echo "\t"; print_string('auth_dbinsertuser', 'auth_db', array('name'=>$user->username, 'id'=>$id)); echo "\n";
@@ -1603,7 +1606,11 @@ class auth_plugin_ldap extends auth_plugin_base {
      */
     function change_password_url() {
         if (empty($this->config->stdchangepassword)) {
-            return new moodle_url($this->config->changepasswordurl);
+            if (!empty($this->config->changepasswordurl)) {
+                return new moodle_url($this->config->changepasswordurl);
+            } else {
+                return null;
+            }
         } else {
             return null;
         }

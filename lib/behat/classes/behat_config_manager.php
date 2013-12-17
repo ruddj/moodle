@@ -82,6 +82,11 @@ class behat_config_manager {
             $features = array_values($featurespaths);
         }
 
+        // Optionally include features from additional directories.
+        if (!empty($CFG->behat_additionalfeatures)) {
+            $features = array_merge($features, array_map("realpath", $CFG->behat_additionalfeatures));
+        }
+
         // Gets all the components with steps definitions.
         $stepsdefinitions = array();
         $steps = self::get_components_steps_definitions();
@@ -91,6 +96,11 @@ class behat_config_manager {
                     $stepsdefinitions[$key] = $filepath;
                 }
             }
+        }
+
+        // We don't want the deprecated steps definitions here.
+        if (!$testsrunner) {
+            unset($stepsdefinitions['behat_deprecated']);
         }
 
         // Behat config file specifing the main context class,

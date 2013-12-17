@@ -1043,14 +1043,18 @@ class page_requirements_manager {
     public function js_init_code($jscode, $ondomready = false, array $module = null) {
         $jscode = trim($jscode, " ;\n"). ';';
 
+        $uniqid = html_writer::random_id();
+        $startjs = " M.util.js_pending('" . $uniqid . "');";
+        $endjs = " M.util.js_complete('" . $uniqid . "');";
+
         if ($module) {
             $this->js_module($module);
             $modulename = $module['name'];
-            $jscode = "Y.use('$modulename', function(Y) { $jscode });";
+            $jscode = "$startjs Y.use('$modulename', function(Y) { $jscode $endjs });";
         }
 
         if ($ondomready) {
-            $jscode = "Y.on('domready', function() { $jscode });";
+            $jscode = "$startjs Y.on('domready', function() { $jscode $endjs });";
         }
 
         $this->jsinitcode[] = $jscode;
@@ -1216,7 +1220,7 @@ class page_requirements_manager {
                 $output .= js_writer::function_call($data[0], $data[1], $data[2]);
             }
             if (!empty($ondomready)) {
-                $output = "    Y.on('domready', function() {\n$output\n    });";
+                $output = "    Y.on('domready', function() {\n$output\n});";
             }
         }
         return $output;
@@ -1249,14 +1253,20 @@ class page_requirements_manager {
         $code = '';
 
         $jsrev = $this->get_jsrev();
+
+        $yuiformat = '-min';
+        if ($this->yui3loader->filter === 'RAW') {
+            $yuiformat = '';
+        }
+
+        $format = '-min';
+        if ($this->YUI_config->groups['moodle']['filter'] === 'DEBUG') {
+            $format = '-debug';
+        }
+
         $baserollups = array(
-            'rollup/' . $CFG->yui3version . '/yui-moodlesimple-min.js',
-        );
-        // The reason for separate rollups is that the Y = YUI().use('*') call is run async and
-        // it gets it's knickers in a twist. Putting it in a separate <script>
-        // to the moodle rollup means that it's completed before the moodle one starts.
-        $moodlerollups = array(
-            'rollup/' . $jsrev . '/mcore-min.js',
+            'rollup/' . $CFG->yui3version . "/yui-moodlesimple{$yuiformat}.js",
+            'rollup/' . $jsrev . "/mcore{$format}.js",
         );
 
         if ($this->yui3loader->combine) {
@@ -1267,11 +1277,9 @@ class page_requirements_manager {
                 }
                 $code .= '<link rel="stylesheet" type="text/css" href="'.$this->yui3loader->comboBase.implode('&amp;', $modules).'" />';
             }
-            $code .= '<link rel="stylesheet" type="text/css" href="'.$this->yui3loader->local_comboBase.'rollup/'.$CFG->yui3version.'/yui-moodlesimple-min.css" />';
+            $code .= '<link rel="stylesheet" type="text/css" href="'.$this->yui3loader->local_comboBase.'rollup/'.$CFG->yui3version.'/yui-moodlesimple' . $yuiformat . '.css" />';
             $code .= '<script type="text/javascript" src="'.$this->yui3loader->local_comboBase
                     . implode('&amp;', $baserollups) . '"></script>';
-            $code .= '<script type="text/javascript" src="'.$this->yui3loader->local_comboBase
-                    . implode('&amp;', $moodlerollups) . '"></script>';
 
         } else {
             if (!empty($page->theme->yuicssmodules)) {
@@ -1279,21 +1287,16 @@ class page_requirements_manager {
                     $code .= '<link rel="stylesheet" type="text/css" href="'.$this->yui3loader->base.$module.'/'.$module.'-min.css" />';
                 }
             }
-            $code .= '<link rel="stylesheet" type="text/css" href="'.$this->yui3loader->local_comboBase.'rollup/'.$CFG->yui3version.'/yui-moodlesimple-min.css" />';
+            $code .= '<link rel="stylesheet" type="text/css" href="'.$this->yui3loader->local_comboBase.'rollup/'.$CFG->yui3version.'/yui-moodlesimple' . $yuiformat . '.css" />';
             foreach ($baserollups as $rollup) {
-                $code .= '<script type="text/javascript" src="'.$this->yui3loader->local_comboBase.$rollup.'"></script>';
-            }
-            foreach ($moodlerollups as $rollup) {
                 $code .= '<script type="text/javascript" src="'.$this->yui3loader->local_comboBase.$rollup.'"></script>';
             }
         }
 
         if ($this->yui3loader->filter === 'RAW') {
             $code = str_replace('-min.css', '.css', $code);
-            $code = str_replace('-min.js', '.js', $code);
         } else if ($this->yui3loader->filter === 'DEBUG') {
             $code = str_replace('-min.css', '.css', $code);
-            $code = str_replace('-min.js', '-debug.js', $code);
         }
         return $code;
     }
@@ -1453,6 +1456,8 @@ class page_requirements_manager {
 
         // Add other requested modules.
         $output = $this->get_extra_modules_code();
+
+        $this->js_init_code('M.util.js_complete("init");', true);
 
         // All the other linked scripts - there should be as few as possible.
         if ($this->jsincludes['footer']) {

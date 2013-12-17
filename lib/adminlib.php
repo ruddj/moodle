@@ -126,7 +126,7 @@ function uninstall_plugin($type, $name) {
     global $CFG, $DB, $OUTPUT;
 
     // This may take a long time.
-    @set_time_limit(0);
+    core_php_time_limit::raise();
 
     // Recursively uninstall all subplugins first.
     $subplugintypes = core_component::get_plugin_types_with_subplugins();
@@ -6728,7 +6728,7 @@ function db_replace($search, $replace) {
                         'block_instances', '');
 
     // Turn off time limits, sometimes upgrades can be slow.
-    @set_time_limit(0);
+    core_php_time_limit::raise();
 
     if (!$tables = $DB->get_tables() ) {    // No tables yet at all.
         return false;
@@ -6741,11 +6741,8 @@ function db_replace($search, $replace) {
 
         if ($columns = $DB->get_columns($table)) {
             $DB->set_debug(true);
-            foreach ($columns as $column => $data) {
-                if (in_array($data->meta_type, array('C', 'X'))) {  // Text stuff only
-                    //TODO: this should be definitively moved to DML driver to do the actual replace, this is not going to work for MSSQL and Oracle...
-                    $DB->execute("UPDATE {".$table."} SET $column = REPLACE($column, ?, ?)", array($search, $replace));
-                }
+            foreach ($columns as $column) {
+                $DB->replace_all_text($table, $column, $search, $replace);
             }
             $DB->set_debug(false);
         }
@@ -6775,6 +6772,8 @@ function db_replace($search, $replace) {
         $function($search, $replace);
         echo $OUTPUT->notification("...finished", 'notifysuccess');
     }
+
+    purge_all_caches();
 
     return true;
 }
