@@ -28,6 +28,12 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Event for when a choice activity report is viewed.
  *
+ * @property-read array $other {
+ *      Extra information about event.
+ *
+ *      @type string content viewed content identifier.
+ * }
+ *
  * @package mod_choice
  * @copyright 2013 Adrian Greeve
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -39,7 +45,7 @@ class report_viewed extends \core\event\content_viewed {
      */
     protected function init() {
         $this->data['crud'] = 'r';
-        $this->data['level'] = self::LEVEL_TEACHING;
+        $this->data['edulevel'] = self::LEVEL_TEACHING;
         $this->data['objecttable'] = 'choice';
     }
 

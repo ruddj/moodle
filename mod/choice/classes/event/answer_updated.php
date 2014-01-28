@@ -29,6 +29,13 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * mod_choice answer updated event class.
  *
+ * @property-read array $other {
+ *      Extra information about event.
+ *
+ *      @type int choiceid id of choice.
+ *      @type int optionid id of option
+ * }
+ *
  * @package    mod_choice
  * @copyright  2013 Adrian Greeve <adrian@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -85,7 +92,7 @@ class answer_updated extends \core\event\base {
      */
     protected function init() {
         $this->data['crud'] = 'u';
-        $this->data['level'] = self::LEVEL_PARTICIPATING;
+        $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
         $this->data['objecttable'] = 'choice_answers';
     }
 

@@ -17,6 +17,13 @@
 /**
  * User enrolment deleted event.
  *
+ * @property-read array $other {
+ *      Extra information about event.
+ *
+ *      @type string enrol name of enrolment instance.
+ *      @type array userenrolment user_enrolment record.
+ * }
+ *
  * @package    core
  * @copyright  2013 Rajesh Taneja <rajesh@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -40,7 +47,7 @@ class user_enrolment_deleted extends base {
     protected function init() {
         $this->data['objecttable'] = 'user_enrolments';
         $this->data['crud'] = 'd';
-        $this->data['level'] = self::LEVEL_OTHER;
+        $this->data['edulevel'] = self::LEVEL_OTHER;
     }
 
     /**

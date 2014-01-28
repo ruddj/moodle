@@ -43,15 +43,12 @@ define('COURSE_MAX_COURSES_PER_DROPDOWN', 1000);
 // Max users in log dropdown before switching to optional.
 define('COURSE_MAX_USERS_PER_DROPDOWN', 1000);
 define('FRONTPAGENEWS', '0');
-define('FRONTPAGECOURSELIST', '1'); // Not used. TODO MDL-38832 remove.
 define('FRONTPAGECATEGORYNAMES', '2');
-define('FRONTPAGETOPICONLY', '3'); // Not used. TODO MDL-38832 remove.
 define('FRONTPAGECATEGORYCOMBO', '4');
 define('FRONTPAGEENROLLEDCOURSELIST', '5');
 define('FRONTPAGEALLCOURSELIST', '6');
 define('FRONTPAGECOURSESEARCH', '7');
 // Important! Replaced with $CFG->frontpagecourselimit - maximum number of courses displayed on the frontpage.
-define('FRONTPAGECOURSELIMIT',    200); // TODO MDL-38832 remove.
 define('EXCELROWS', 65535);
 define('FIRSTUSEDEXCELROW', 3);
 
@@ -1982,7 +1979,7 @@ function course_get_cm_edit_actions(cm_info $mod, $indent = -1, $sr = null) {
     }
 
     // Indent.
-    if ($hasmanageactivities) {
+    if ($hasmanageactivities && $indent >= 0) {
         $indentlimits = new stdClass();
         $indentlimits->min = 0;
         $indentlimits->max = 16;
@@ -3210,7 +3207,7 @@ function include_course_ajax($course, $usedmodules = array(), $enabledmodules = 
     );
 
     // Include course dragdrop
-    if ($course->id != $SITE->id) {
+    if (course_format_uses_sections($course->format)) {
         $PAGE->requires->yui_module('moodle-course-dragdrop', 'M.course.init_section_dragdrop',
             array(array(
                 'courseid' => $course->id,
@@ -3248,8 +3245,8 @@ function include_course_ajax($course, $usedmodules = array(), $enabledmodules = 
             'emptydragdropregion'
         ), 'moodle');
 
-    // Include format-specific strings
-    if ($course->id != $SITE->id) {
+    // Include section-specific strings for formats which support sections.
+    if (course_format_uses_sections($course->format)) {
         $PAGE->requires->strings_for_js(array(
                 'showfromothers',
                 'hidefromothers',

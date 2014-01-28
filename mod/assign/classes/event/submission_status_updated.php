@@ -29,6 +29,12 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * mod_assign submission status updated event class.
  *
+ * @property-read array $other {
+ *      Extra information about event.
+ *
+ *      @type string newstatus status of submission.
+ * }
+ *
  * @package    mod_assign
  * @copyright  2013 Frédéric Massart
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -85,7 +91,7 @@ class submission_status_updated extends \core\event\base {
      */
     protected function init() {
         $this->data['crud'] = 'u';
-        $this->data['level'] = self::LEVEL_TEACHING;
+        $this->data['edulevel'] = self::LEVEL_TEACHING;
         $this->data['objecttable'] = 'assign_submission';
     }
 

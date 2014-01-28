@@ -3628,7 +3628,7 @@ function fullname($user, $override=false) {
     // The special characters are Japanese brackets that are common enough to make allowances for them (not covered by :punct:).
     $patterns[] = '/[[:punct:]「」]*EMPTY[[:punct:]「」]*/u';
     // This regular expression is to remove any double spaces in the display name.
-    $patterns[] = '/\s{2,}/';
+    $patterns[] = '/\s{2,}/u';
     foreach ($patterns as $pattern) {
         $displayname = preg_replace($pattern, ' ', $displayname);
     }
@@ -4533,38 +4533,6 @@ function password_is_legacy_hash($password) {
 }
 
 /**
- * Checks whether the password compatibility library will work with the current
- * version of PHP. This cannot be done using PHP version numbers since the fix
- * has been backported to earlier versions in some distributions.
- *
- * See https://github.com/ircmaxell/password_compat/issues/10 for more details.
- *
- * @return bool True if the library is NOT supported.
- */
-function password_compat_not_supported() {
-
-    $hash = '$2y$04$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG';
-
-    // Create a one off application cache to store bcrypt support status as
-    // the support status doesn't change and crypt() is slow.
-    $cache = cache::make_from_params(cache_store::MODE_APPLICATION, 'core', 'password_compat');
-
-    if (!$bcryptsupport = $cache->get('bcryptsupport')) {
-        $test = crypt('password', $hash);
-        // Cache string instead of boolean to avoid MDL-37472.
-        if ($test == $hash) {
-            $bcryptsupport = 'supported';
-        } else {
-            $bcryptsupport = 'not supported';
-        }
-        $cache->set('bcryptsupport', $bcryptsupport);
-    }
-
-    // Return true if bcrypt *not* supported.
-    return ($bcryptsupport !== 'supported');
-}
-
-/**
  * Compare password against hash stored in user object to determine if it is valid.
  *
  * If necessary it also updates the stored hash to the current format.
@@ -4638,15 +4606,6 @@ function hash_internal_user_password($password, $fasthash = false) {
     global $CFG;
     require_once($CFG->libdir.'/password_compat/lib/password.php');
 
-    // Use the legacy hashing algorithm (md5) if PHP is not new enough to support bcrypt properly.
-    if (password_compat_not_supported()) {
-        if (isset($CFG->passwordsaltmain)) {
-            return md5($password.$CFG->passwordsaltmain);
-        } else {
-            return md5($password);
-        }
-    }
-
     // Set the cost factor to 4 for fast hashing, otherwise use default cost.
     $options = ($fasthash) ? array('cost' => 4) : array();
 
@@ -4679,9 +4638,6 @@ function update_internal_user_password($user, $password) {
     global $CFG, $DB;
     require_once($CFG->libdir.'/password_compat/lib/password.php');
 
-    // Use the legacy hashing algorithm (md5) if PHP doesn't support bcrypt properly.
-    $legacyhash = password_compat_not_supported();
-
     // Figure out what the hashed password should be.
     $authplugin = get_auth_plugin($user->auth);
     if ($authplugin->prevent_local_passwords()) {
@@ -4690,14 +4646,9 @@ function update_internal_user_password($user, $password) {
         $hashedpassword = hash_internal_user_password($password);
     }
 
-    if ($legacyhash) {
-        $passwordchanged = ($user->password !== $hashedpassword);
-        $algorithmchanged = false;
-    } else {
-        // If verification fails then it means the password has changed.
-        $passwordchanged = !password_verify($password, $user->password);
-        $algorithmchanged = password_needs_rehash($user->password, PASSWORD_DEFAULT);
-    }
+    // If verification fails then it means the password has changed.
+    $passwordchanged = !password_verify($password, $user->password);
+    $algorithmchanged = password_needs_rehash($user->password, PASSWORD_DEFAULT);
 
     if ($passwordchanged || $algorithmchanged) {
         $DB->set_field('user', 'password',  $hashedpassword, array('id' => $user->id));
@@ -5696,6 +5647,11 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml = '', 
         return false;
     }
 
+    if (defined('BEHAT_SITE_RUNNING')) {
+        // Fake email sending in behat.
+        return true;
+    }
+
     if (!empty($CFG->noemailever)) {
         // Hidden setting for development sites, set in config.php if needed.
         debugging('Not sending email due to $CFG->noemailever config setting', DEBUG_NORMAL);
@@ -5874,7 +5830,18 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml = '', 
         }
         return true;
     } else {
-        add_to_log(SITEID, 'library', 'mailer', qualified_me(), 'ERROR: '. $mail->ErrorInfo);
+        // Trigger event for failing to send email.
+        $event = \core\event\email_failed::create(array(
+            'context' => context_system::instance(),
+            'userid' => $from->id,
+            'relateduserid' => $user->id,
+            'other' => array(
+                'subject' => $subject,
+                'message' => $messagetext,
+                'errorinfo' => $mail->ErrorInfo
+            )
+        ));
+        $event->trigger();
         if (CLI_SCRIPT) {
             mtrace('Error: lib/moodlelib.php email_to_user(): '.$mail->ErrorInfo);
         }
@@ -7650,7 +7617,6 @@ function random_string ($length=15) {
     $pool .= 'abcdefghijklmnopqrstuvwxyz';
     $pool .= '0123456789';
     $poollen = strlen($pool);
-    mt_srand ((double) microtime() * 1000000);
     $string = '';
     for ($i = 0; $i < $length; $i++) {
         $string .= substr($pool, (mt_rand()%($poollen)), 1);
@@ -7671,7 +7637,6 @@ function complex_random_string($length=null) {
     $pool  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     $pool .= '`~!@#%^&*()_+-=[];,./<>?:{} ';
     $poollen = strlen($pool);
-    mt_srand ((double) microtime() * 1000000);
     if ($length===null) {
         $length = floor(rand(24, 32));
     }
@@ -7971,7 +7936,6 @@ function unformat_float($localefloat, $strict = false) {
  */
 function swapshuffle($array) {
 
-    srand ((double) microtime() * 10000000);
     $last = count($array) - 1;
     for ($i = 0; $i <= $last; $i++) {
         $from = rand(0, $last);
@@ -8011,7 +7975,6 @@ function swapshuffle_assoc($array) {
  * @return array
  */
 function draw_rand_array($array, $draws) {
-    srand ((double) microtime() * 10000000);
 
     $return = array();
 
