@@ -8227,14 +8227,9 @@ function get_plugin_types($fullpaths=true) {
     $cache = cache::make('core', 'plugintypes');
 
     if ($fullpaths) {
-        // First confirm that dirroot and the stored dirroot match.
-        if ($CFG->dirroot === $cache->get('dirroot')) {
-            // They match we can use it.
-            $cached = $cache->get(1);
-        } else {
-            // Oops they didn't match. The moodle directory has been moved on us.
-            $cached = false;
-        }
+        // Cache each dirroot separately in case cluster nodes happen to be deployed to
+        // different locations.
+        $cached = $cache->get(sha1($CFG->dirroot));
     } else {
         $cached = $cache->get(0);
     }
@@ -8293,10 +8288,7 @@ function get_plugin_types($fullpaths=true) {
         }
 
         $cache->set(0, $info);
-        $cache->set(1, $fullinfo);
-        // We cache the dirroot as well so that we can compare it when we
-        // retrieve full info from the cache.
-        $cache->set('dirroot', $CFG->dirroot);
+        $cache->set(sha1($CFG->dirroot), $fullinfo);
 
         return ($fullpaths ? $fullinfo : $info);
     }
@@ -9393,7 +9385,6 @@ function random_string ($length=15) {
     $pool .= 'abcdefghijklmnopqrstuvwxyz';
     $pool .= '0123456789';
     $poollen = strlen($pool);
-    mt_srand ((double) microtime() * 1000000);
     $string = '';
     for ($i = 0; $i < $length; $i++) {
         $string .= substr($pool, (mt_rand()%($poollen)), 1);
@@ -9414,7 +9405,6 @@ function complex_random_string($length=null) {
     $pool  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     $pool .= '`~!@#%^&*()_+-=[];,./<>?:{} ';
     $poollen = strlen($pool);
-    mt_srand ((double) microtime() * 1000000);
     if ($length===null) {
         $length = floor(rand(24,32));
     }
@@ -9722,7 +9712,6 @@ function unformat_float($locale_float, $strict = false) {
  */
 function swapshuffle($array) {
 
-    srand ((double) microtime() * 10000000);
     $last = count($array) - 1;
     for ($i=0;$i<=$last;$i++) {
         $from = rand(0,$last);
@@ -9762,7 +9751,6 @@ function swapshuffle_assoc($array) {
  * @return array
  */
 function draw_rand_array($array, $draws) {
-    srand ((double) microtime() * 10000000);
 
     $return = array();
 
@@ -10538,15 +10526,28 @@ function message_popup_window() {
         $strgomessage = get_string('gotomessages', 'message');
         $strstaymessage = get_string('ignore','admin');
 
+        $notificationsound = null;
+        $beep = get_user_preferences('message_beepnewmessage', '');
+        if (!empty($beep)) {
+            // Browsers will work down this list until they find something they support.
+            $sourcetags =  html_writer::empty_tag('source', array('src' => $CFG->wwwroot.'/message/bell.wav', 'type' => 'audio/wav'));
+            $sourcetags .= html_writer::empty_tag('source', array('src' => $CFG->wwwroot.'/message/bell.ogg', 'type' => 'audio/ogg'));
+            $sourcetags .= html_writer::empty_tag('source', array('src' => $CFG->wwwroot.'/message/bell.mp3', 'type' => 'audio/mpeg'));
+            $sourcetags .= html_writer::empty_tag('embed',  array('src' => $CFG->wwwroot.'/message/bell.wav', 'autostart' => 'true', 'hidden' => 'true'));
+
+            $notificationsound = html_writer::tag('audio', $sourcetags, array('preload' => 'auto', 'autoplay' => 'autoplay'));
+        }
+
         $url = $CFG->wwwroot.'/message/index.php';
         $content =  html_writer::start_tag('div', array('id'=>'newmessageoverlay','class'=>'mdl-align')).
                         html_writer::start_tag('div', array('id'=>'newmessagetext')).
                             $strmessages.
                         html_writer::end_tag('div').
 
-                        html_writer::start_tag('div', array('id'=>'newmessagelinks')).
-                            html_writer::link($url, $strgomessage, array('id'=>'notificationyes')).'&nbsp;&nbsp;&nbsp;'.
-                            html_writer::link('', $strstaymessage, array('id'=>'notificationno')).
+                        $notificationsound.
+                        html_writer::start_tag('div', array('id' => 'newmessagelinks')).
+                            html_writer::link($url, $strgomessage, array('id' => 'notificationyes')).'&nbsp;&nbsp;&nbsp;'.
+                            html_writer::link('', $strstaymessage, array('id' => 'notificationno')).
                         html_writer::end_tag('div');
                     html_writer::end_tag('div');
 
