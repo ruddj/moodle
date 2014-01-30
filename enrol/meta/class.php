@@ -8,7 +8,7 @@ require('../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
 
 require_login();
-require_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM, SITEID));
+require_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM));
 
 // First get a list of meta courses matching "M-"
 $searchparam = 'M-%';
@@ -39,7 +39,7 @@ foreach ($rs as $c) {
         continue;
       }
       //print ("\t&nbsp;&nbsp;&nbsp;" . format_string($m->fullname) . ' ['.$m->shortname.']' . ' ['.$m->idnumber.']' ."<br>\n");
-      print ("add, " .$c->idnumber . ", " . $m->idnumber."<br>\n"); // Use idnumber
+      print ("add," .$c->idnumber . "," . $m->idnumber."<br>\n"); // Use idnumber
     }
     $cs->close();
 
@@ -52,7 +52,7 @@ foreach ($rs as $c) {
       if (substr($course->idnumber, 0, 4)==$currentyear){
 	continue;
       }
-      print ("del, " .$c->idnumber . ", " . $course->idnumber."<br>\n"); // Use idnumber
+      print ("del," .$c->idnumber . "," . $course->idnumber."<br>\n"); // Use idnumber
     }
 
 }
