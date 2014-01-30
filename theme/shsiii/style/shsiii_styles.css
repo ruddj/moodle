@@ -819,7 +819,8 @@ div.forumpost div.header a:hover {
 }
 
 #page-calendar-event #region-main {
-  width: 75%;
+  /*width: 75%;*/
+  width: 80%;
 }
 
 #page-calendar-event #region-pre {
@@ -845,3 +846,98 @@ div.forumpost div.header a:hover {
     color: #cc3300;
     text-decoration: underline;
 }
+
+div#tablecontainer {
+  background-color: white;
+}
+
+div#tablecontainer th,
+div#tablecontainer td {
+  border-width: 1px;
+}
+
+div.gradeparent th,
+div.gradeparent td {
+  border-width: 1px;
+}
+
+
+div.tabtree ul li a:hover {
+  background-color: transparent;
+}
+
+div.tabtree ul.tabrow0 li a:hover,
+div.tabtree ul.tabrow1 li a:hover {
+  background-color: transparent;
+  color: #095197;
+  text-decoration: underline;
+}
+
+fieldset > legend > a.fheader:hover,
+div.collapsible-actions > a:hover {
+  background-color: transparent;
+  color: #095197;
+  text-decoration: underline;
+  
+}
+
+
+/* ----- 20/11/13 ----- */
+
+div#tablecontainer, table#attempts {
+  background-color: white;
+}
+
+div#tablecontainer th,
+div#tablecontainer td {
+  border-width: 1px;
+}
+
+div.gradeparent th,
+div.gradeparent td {
+  border-width: 1px;
+}
+
+
+div.tabtree ul li a:hover {
+  background-color: transparent;
+}
+
+div.tabtree ul.tabrow0 li a:hover,
+div.tabtree ul.tabrow1 li a:hover {
+  background-color: transparent;
+  color: #095197;
+  text-decoration: underline;
+}
+
+fieldset > legend > a.fheader:hover,
+div.collapsible-actions > a:hover {
+  background-color: transparent;
+  color: #095197;
+  text-decoration: underline;
+  
+}
+
+
+ul.ctopics > li#toggle-all a:hover {
+  background-color: transparent;
+  color: #095197;
+  text-decoration: underline;
+}
+
+#page-content .course-content ul.ctopics li.section .content .toggle {
+  background-color: #8F9680;
+  border-radius: 4px;
+}
+
+#page-content .course-content ul.ctopics li.section .content .toggle a {
+  color: white;
+}
+
+
+#page-content ul.ctopics div.left,
+#page-content ul.ctopics div.right {
+  color: white;
+}
+
+

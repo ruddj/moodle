@@ -33,7 +33,7 @@ body {
 #page-content {
     clear: both;
     float: left;
-    overflow: hidden;
+    /*overflow: hidden;*/
     position: relative;
     width: 100%;
     /*background-color: #dddfd9;  */    /* Right column background colour */
@@ -43,7 +43,7 @@ body {
     right: 20%;
     position: relative;
     width: 100%;
-    background-color: #fff;      /* Center column background colour */
+    /*background-color: #fff; */     /* Center column background colour */
 }
 #region-pre-box {
     float: left;
@@ -54,7 +54,7 @@ body {
 }
 #region-main {
     float: left;
-    overflow: hidden;
+    /*overflow: hidden;*/
     position: relative;
     width: 60%;
     left: 100%;
@@ -130,7 +130,7 @@ body {
 .content-only #region-pre {width: 0;}
 .content-only #region-post {width: 0;}
 
-.pagelayout-report #page-content #region-main {overflow:auto;}
+/*.pagelayout-report #page-content #region-main {overflow:auto;}*/
 .pagelayout-report #page-content #region-main .region-content {overflow: visible;}
 
 
@@ -648,3 +648,58 @@ table.category_subcategories tr.r1,
 .mform .fitem .felement select {
   margin-left: 0;
 }
+
+/* ----- 20/11/13 ----- */
+
+.loginbox.twocolumns .loginpanel {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+}
+
+.block_navigation .block_tree .type_activity > p.branch.hasicon {
+  padding-left: 21px;
+}
+
+#page-content .course-content ul.ctopics li.section.main .content, 
+#page-content .course-content ul.ctopics li.tcsection .content {
+  margin: 0;
+}
+
+#page-content .course-content ul.ctopics li.section.main .content .sectionbody, 
+#page-content .course-content ul.ctopics li.tcsection .content .sectionbody {
+  margin: 10px;
+}
+
+
+.course-content .section .activity .activityinstance {
+  padding-right: 1.2em;
+}
+
+.course-content ul.ctopics li.section.main .content, 
+.course-content ul.ctopics li.tcsection .content {
+  margin: 0;
+  clear: none;
+}
+
+.course-content ul.ctopics li .content .sectionhead h3 {
+  border-top: 0;
+}
+
+#page-calendar-event .mform .fitem .fitemtitle {
+  width: 15%;
+}
+
+#page-calendar-event .mform .fitem .felement {
+  margin-left: 16%;
+}
+
+.maincalendar table.calendartable,
+.maincalendar table.calendartable th,
+.maincalendar table.calendartable td {
+  border: 1px dotted gray;
+}
+
+.maincalendar table.calendartable td div.day a {
+  font-weight: bold;
+}
+
