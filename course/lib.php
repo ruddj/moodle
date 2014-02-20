@@ -2333,7 +2333,6 @@ function course_format_uses_sections($format) {
  *
  * The returned object's property (boolean)capable indicates that
  * the course format supports Moodle course ajax features.
- * The property (array)testedbrowsers can be used as a parameter for {@see ajaxenabled()}.
  *
  * @param string $format
  * @return stdClass
@@ -3119,11 +3118,6 @@ function course_page_type_list($pagetype, $parentcontext, $currentcontext) {
 function course_ajax_enabled($course) {
     global $CFG, $PAGE, $SITE;
 
-    // Ajax must be enabled globally
-    if (!$CFG->enableajax) {
-        return false;
-    }
-
     // The user must be editing for AJAX to be included
     if (!$PAGE->user_is_editing()) {
         return false;
@@ -3238,11 +3232,15 @@ function include_course_ajax($course, $usedmodules = array(), $enabledmodules = 
             'clicktochangeinbrackets',
             'markthistopic',
             'markedthistopic',
-            'move',
             'movesection',
+            'movecoursemodule',
+            'movecoursesection',
             'movecontent',
             'tocontent',
-            'emptydragdropregion'
+            'emptydragdropregion',
+            'afterresource',
+            'aftersection',
+            'totopofsection',
         ), 'moodle');
 
     // Include section-specific strings for formats which support sections.
