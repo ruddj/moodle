@@ -47,10 +47,15 @@ foreach ($rs as $c) {
 
     foreach ($existing as $m) {
       // Lookup customint1 to get course details
-      $course = $DB->get_record('course', array('id'=>$m->customint1), 'id, fullname, shortname, idnumber, visible', MUST_EXIST);
+      //$course = $DB->get_record('course', array('id'=>$m->customint1), 'id, fullname, shortname, idnumber, visible', MUST_EXIST);
+      if ($m->customint1 == 0) {
+        print ("# Failed," .$c->idnumber . "," . $m->idnumber."<br>\n"); // Use idnumber
+        continue;
+      }
+      $course = get_course($m->customint1);
       // Skip current year entries
       if (substr($course->idnumber, 0, 4)==$currentyear){
-	continue;
+	      continue;
       }
       print ("del," .$c->idnumber . "," . $course->idnumber."<br>\n"); // Use idnumber
     }
