@@ -2934,7 +2934,7 @@ class curl {
             if (!empty($CFG->proxyuser) and !empty($CFG->proxypassword)) {
                 $this->proxy_auth = $CFG->proxyuser.':'.$CFG->proxypassword;
                 $this->setopt(array(
-                            'proxyauth'=> CURLAUTH_BASIC | CURLAUTH_NTLM,
+            //                'proxyauth'=> CURLAUTH_BASIC | CURLAUTH_NTLM,
                             'proxyuserpwd'=>$this->proxy_auth));
             }
             if (!empty($CFG->proxytype)) {
