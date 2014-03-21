@@ -199,6 +199,20 @@ class Google_CurlIO implements Google_IO {
    * @return array
    */
   public static function parseHttpResponse($respData, $headerSize) {
+    // SHS Hack
+    $cv = curl_version();
+    if (version_compare($cv['version'], '7.30.0') < 0) {
+      // if this is defined then there's a curl bug that doesn't handle proxy responses correctly
+      // see  https://bugs.php.net/bug.php?id=63894 and http://sourceforge.net/p/curl/bugs/1204/
+      // work around this by removing the first line of the response which is actually from the proxy
+      $oneline = strpos("\r\n\r\n", $respData);
+      if ($oneline-2 < $headerSize) { // -2 for the delimiting CRLF that is probably chopped from the sizing
+        list($null, $respData) = explode("\r\n\r\n", $respData, 2);
+      }
+    }
+    //die ($respData);
+    // END SHS Hack
+
     if (stripos($respData, self::CONNECTION_ESTABLISHED) !== false) {
       $respData = str_ireplace(self::CONNECTION_ESTABLISHED, '', $respData);
     }
