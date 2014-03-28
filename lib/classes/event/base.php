@@ -47,6 +47,8 @@ defined('MOODLE_INTERNAL') || die();
  * @property-read int $userid who did this?
  * @property-read int $courseid
  * @property-read int $relateduserid
+ * @property-read int $anonymous 1 means event should not be visible in reports, 0 means normal event,
+ *                    create() argument may be also true/false.
  * @property-read mixed $other array or scalar, can not contain objects
  * @property-read int $timecreated
  */
@@ -102,7 +104,7 @@ abstract class base implements \IteratorAggregate {
     /** @var array list of event properties */
     private static $fields = array(
         'eventname', 'component', 'action', 'target', 'objecttable', 'objectid', 'crud', 'edulevel', 'contextid',
-        'contextlevel', 'contextinstanceid', 'userid', 'courseid', 'relateduserid', 'other',
+        'contextlevel', 'contextinstanceid', 'userid', 'courseid', 'relateduserid', 'anonymous', 'other',
         'timecreated');
 
     /** @var array simple record cache */
@@ -158,6 +160,9 @@ abstract class base implements \IteratorAggregate {
         $event->restored = false;
         $event->dispatched = false;
 
+        // By default all events are visible in logs.
+        $event->data['anonymous'] = 0;
+
         // Set static event data specific for child class.
         $event->init();
 
@@ -178,6 +183,10 @@ abstract class base implements \IteratorAggregate {
         $event->data['userid'] = isset($data['userid']) ? $data['userid'] : $USER->id;
         $event->data['other'] = isset($data['other']) ? $data['other'] : null;
         $event->data['relateduserid'] = isset($data['relateduserid']) ? $data['relateduserid'] : null;
+        if (isset($data['anonymous'])) {
+            $event->data['anonymous'] = $data['anonymous'];
+        }
+        $event->data['anonymous'] = (int)(bool)$event->data['anonymous'];
 
         if (isset($event->context)) {
             if (isset($data['context'])) {
@@ -295,12 +304,18 @@ abstract class base implements \IteratorAggregate {
     }
 
     /**
-     * Define whether a user can view the event or not.
+     * This method was originally intended for granular
+     * access control on the event level, unfortunately
+     * the proper implementation would be too expensive
+     * in many cases.
+     *
+     * @deprecated since 2.7
      *
      * @param int|\stdClass $user_or_id ID of the user.
      * @return bool True if the user can view the event, false otherwise.
      */
     public function can_view($user_or_id = null) {
+        debugging('can_view() method is deprecated, use anonymous flag instead if necessary.', DEBUG_DEVELOPER);
         return is_siteadmin($user_or_id);
     }
 
