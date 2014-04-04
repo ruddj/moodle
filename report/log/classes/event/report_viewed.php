@@ -82,7 +82,7 @@ class report_viewed extends \core\event\base {
      * @return \moodle_url
      */
     public function get_url() {
-        return new \moodle_url('report/log/index.php', array('id' => $this->courseid));
+        return new \moodle_url('/report/log/index.php', array('id' => $this->courseid));
     }
 
     /**
@@ -92,6 +92,7 @@ class report_viewed extends \core\event\base {
      * @return void
      */
     protected function validate_data() {
+        parent::validate_data();
         if (!isset($this->data['other']['groupid'])) {
             throw new \coding_exception('The property groupid must be set in other.');
         }

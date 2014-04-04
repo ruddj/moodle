@@ -80,7 +80,7 @@ class outline_viewed extends \core\event\base {
      * @return \moodle_url
      */
     public function get_url() {
-        return new \moodle_url('report/outline/user.php', array('course' => $this->courseid, 'id' => $this->relateduserid,
+        return new \moodle_url('/report/outline/user.php', array('course' => $this->courseid, 'id' => $this->relateduserid,
                 'mode' => $this->other['mode']));
     }
 
@@ -91,6 +91,7 @@ class outline_viewed extends \core\event\base {
      * @return void
      */
     protected function validate_data() {
+        parent::validate_data();
         if (empty($this->data['other']['mode'])) {
             throw new \coding_exception('The property mode must be set in other.');
         }

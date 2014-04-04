@@ -22,7 +22,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['accessibilityhint'] = '<h3>Accessible tables recommendation</h3><p>An accessible HTML table should have :<ul><li>a caption describing the content of the table</li><li>row and/or column headers</li><li>no empty table headers</li><li>no merged table cells</li></ul>.</p>';
 $string['createtable'] = 'Create table';
 $string['pluginname'] = 'Table';
 $string['numberofcolumns'] = 'Number of columns';
@@ -33,8 +32,8 @@ $string['columns'] = 'Columns';
 $string['rows'] = 'Rows';
 $string['both'] = 'Both';
 $string['edittable'] = 'Edit table';
-$string['addrowafter'] = 'Add row after';
-$string['addcolumnafter'] = 'Add column after';
+$string['addrowafter'] = 'Insert row after current cell';
+$string['addcolumnafter'] = 'Insert column after current cell';
 $string['moverowup'] = 'Move row up';
 $string['moverowdown'] = 'Move row down';
 $string['movecolumnleft'] = 'Move column left';
