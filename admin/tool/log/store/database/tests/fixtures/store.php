@@ -15,24 +15,26 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Defines the capabilities used by standard log store.
+ * Fixtures for database log storage testing.
  *
- * @package    logstore_legacy
- * @copyright  2013 Petr Skoda {@link http://skodak.org}
+ * @package    logstore_database
+ * @copyright  2014 onwards Ankit Agarwal
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace logstore_database\test;
+
 defined('MOODLE_INTERNAL') || die();
 
-$capabilities = array(
-    'logstore/legacy:read' => array(
-        'riskbitmask'  => RISK_PERSONAL,
-        'captype'      => 'read',
-        'contextlevel' => CONTEXT_MODULE,
-        'archetypes'   => array(
-            'manager'        => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'teacher'        => CAP_ALLOW,
-        ),
-    ),
-);
+class store extends \logstore_database\log\store {
+    /**
+     * Public wrapper for testing.
+     *
+     * @param \core\event\base $event
+     *
+     * @return bool
+     */
+    public function is_event_ignored(\core\event\base $event) {
+        return parent::is_event_ignored($event);
+    }
+}

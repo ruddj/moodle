@@ -191,6 +191,11 @@ function quiz_delete_instance($id) {
 function quiz_delete_override($quiz, $overrideid) {
     global $DB;
 
+    if (!isset($quiz->cmid)) {
+        $cm = get_coursemodule_from_instance('quiz', $quiz->id, $quiz->course);
+        $quiz->cmid = $cm->id;
+    }
+
     $override = $DB->get_record('quiz_overrides', array('id' => $overrideid), '*', MUST_EXIST);
 
     // Delete the events.
@@ -203,6 +208,28 @@ function quiz_delete_override($quiz, $overrideid) {
     }
 
     $DB->delete_records('quiz_overrides', array('id' => $overrideid));
+
+    // Set the common parameters for one of the events we will be triggering.
+    $params = array(
+        'objectid' => $override->id,
+        'context' => context_module::instance($quiz->cmid),
+        'other' => array(
+            'quizid' => $override->quiz
+        )
+    );
+    // Determine which override deleted event to fire.
+    if (!empty($override->userid)) {
+        $params['relateduserid'] = $override->userid;
+        $event = \mod_quiz\event\user_override_deleted::create($params);
+    } else {
+        $params['other']['groupid'] = $override->groupid;
+        $event = \mod_quiz\event\group_override_deleted::create($params);
+    }
+
+    // Trigger the override deleted event.
+    $event->add_record_snapshot('quiz_overrides', $override);
+    $event->trigger();
+
     return true;
 }
 
@@ -1245,6 +1272,13 @@ function quiz_update_events($quiz, $override = null) {
 }
 
 /**
+ * List the actions that correspond to a view of this module.
+ * This is used by the participation report.
+ *
+ * Note: This is not used by new logging system. Event with
+ *       crud = 'r' and edulevel = LEVEL_PARTICIPATING will
+ *       be considered as view action.
+ *
  * @return array
  */
 function quiz_get_view_actions() {
@@ -1252,6 +1286,13 @@ function quiz_get_view_actions() {
 }
 
 /**
+ * List the actions that correspond to a post of this module.
+ * This is used by the participation report.
+ *
+ * Note: This is not used by new logging system. Event with
+ *       crud = ('c' || 'u' || 'd') and edulevel = LEVEL_PARTICIPATING
+ *       will be considered as post action.
+ *
  * @return array
  */
 function quiz_get_post_actions() {

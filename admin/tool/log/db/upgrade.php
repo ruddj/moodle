@@ -15,24 +15,33 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Defines the capabilities used by standard log store.
+ * Logging support.
  *
- * @package    logstore_standard
- * @copyright  2013 Petr Skoda {@link http://skodak.org}
+ * @package    tool_log
+ * @copyright  2014 Petr Skoda {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$capabilities = array(
-    'logstore/standard:read' => array(
-        'riskbitmask'  => RISK_PERSONAL,
-        'captype'      => 'read',
-        'contextlevel' => CONTEXT_MODULE,
-        'archetypes'   => array(
-            'manager'        => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'teacher'        => CAP_ALLOW,
-        ),
-    ),
-);
+/**
+ * Upgrade the plugin.
+ *
+ * @param int $oldversion
+ * @return bool always true
+ */
+function xmldb_tool_log_upgrade($oldversion) {
+    global $CFG, $DB, $OUTPUT;
+
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2014040600) {
+        // Reset logging defaults in dev branches,
+        // in production upgrade the install.php is executed instead.
+        require_once(__DIR__ . '/install.php');
+        xmldb_tool_log_install();
+        upgrade_plugin_savepoint(true, 2014040600, 'tool', 'log');
+    }
+
+    return true;
+}

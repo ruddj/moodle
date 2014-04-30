@@ -4138,9 +4138,9 @@ function truncate_userinfo(array $info) {
         'icq'         =>  15,
         'phone1'      =>  20,
         'phone2'      =>  20,
-        'institution' =>  40,
-        'department'  =>  30,
-        'address'     =>  70,
+        'institution' => 255,
+        'department'  => 255,
+        'address'     => 255,
         'city'        => 120,
         'country'     =>   2,
         'url'         => 255,
@@ -4932,6 +4932,11 @@ function delete_course($courseorid, $showfeedback = true) {
 
     $DB->delete_records("course", array("id" => $courseid));
     $DB->delete_records("course_format_options", array("courseid" => $courseid));
+
+    // Reset all course related caches here.
+    if (class_exists('format_base', false)) {
+        format_base::reset_course_cache($courseid);
+    }
 
     // Trigger a course deleted event.
     $event = \core\event\course_deleted::create(array(
@@ -7688,7 +7693,16 @@ function moodle_setlocale($locale='') {
  */
 function count_words($string) {
     $string = strip_tags($string);
-    return count(preg_split("/\w\b/", $string)) - 1;
+    // Decode HTML entities.
+    $string = html_entity_decode($string);
+    // Replace underscores (which are classed as word characters) with spaces.
+    $string = preg_replace('/_/u', ' ', $string);
+    // Remove any characters that shouldn't be treated as word boundaries.
+    $string = preg_replace('/[\'’-]/u', '', $string);
+    // Remove dots and commas from within numbers only.
+    $string = preg_replace('/([0-9])[.,]([0-9])/u', '$1$2', $string);
+
+    return count(preg_split('/\w\b/u', $string)) - 1;
 }
 
 /**

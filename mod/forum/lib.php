@@ -126,18 +126,27 @@ function forum_add_instance($forum, $mform = null) {
         }
     }
 
-    if ($forum->forcesubscribe == FORUM_INITIALSUBSCRIBE) {
-        $users = forum_get_potential_subscribers($modcontext, 0, 'u.id, u.email');
-        foreach ($users as $user) {
-            forum_subscribe($user->id, $forum->id);
-        }
-    }
-
     forum_grade_item_update($forum);
 
     return $forum->id;
 }
 
+/**
+ * Handle changes following the creation of a forum instance.
+ * This function is typically called by the course_module_created observer.
+ *
+ * @param object $context the forum context
+ * @param stdClass $forum The forum object
+ * @return void
+ */
+function forum_instance_created($context, $forum) {
+    if ($forum->forcesubscribe == FORUM_INITIALSUBSCRIBE) {
+        $users = forum_get_potential_subscribers($context, 0, 'u.id, u.email');
+        foreach ($users as $user) {
+            forum_subscribe($user->id, $forum->id);
+        }
+    }
+}
 
 /**
  * Given an object containing all the necessary data,
@@ -7073,6 +7082,13 @@ function forum_discussion_update_last_post($discussionid) {
 
 
 /**
+ * List the actions that correspond to a view of this module.
+ * This is used by the participation report.
+ *
+ * Note: This is not used by new logging system. Event with
+ *       crud = 'r' and edulevel = LEVEL_PARTICIPATING will
+ *       be considered as view action.
+ *
  * @return array
  */
 function forum_get_view_actions() {
@@ -7080,6 +7096,13 @@ function forum_get_view_actions() {
 }
 
 /**
+ * List the actions that correspond to a post of this module.
+ * This is used by the participation report.
+ *
+ * Note: This is not used by new logging system. Event with
+ *       crud = ('c' || 'u' || 'd') and edulevel = LEVEL_PARTICIPATING
+ *       will be considered as post action.
+ *
  * @return array
  */
 function forum_get_post_actions() {

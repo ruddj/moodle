@@ -319,7 +319,7 @@ class report_loglive_table_log extends table_sql {
             $params['date'] = $this->filterparams->date;
         }
 
-        if (!empty($this->filterparams->date)) {
+        if (isset($this->filterparams->anonymous)) {
             $joins[] = "anonymous = :anon";
             $params['anon'] = $this->filterparams->anonymous;
         }
@@ -387,7 +387,7 @@ class report_loglive_table_log extends table_sql {
             $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
             $ccjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
             $courseparams['contextlevel'] = CONTEXT_COURSE;
-            $sql = "SELECT c.id,c.shortname $ccselect FROM {course} as c
+            $sql = "SELECT c.id,c.shortname $ccselect FROM {course} c
                    $ccjoin
                      WHERE c.id " . $coursesql;
 
