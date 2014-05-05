@@ -144,7 +144,8 @@ class core_course_courselib_testcase extends advanced_testcase {
         // The goal not being to fully test assign_add_instance() we'll stop here for the assign tests - to avoid too many DB queries.
 
         // Advanced grading.
-        $contextmodule = context_module::instance($dbmodinstance->id);
+        $cm = get_coursemodule_from_instance('assign', $dbmodinstance->id);
+        $contextmodule = context_module::instance($cm->id);
         $advancedgradingmethod = $DB->get_record('grading_areas',
             array('contextid' => $contextmodule->id,
                 'activemethod' => $moduleinfo->advancedgradingmethod_submissions));
@@ -1813,7 +1814,7 @@ class core_course_courselib_testcase extends advanced_testcase {
         $this->assertEquals($course->id, $event->courseid);
         $this->assertEquals($coursecontext->id, $event->contextid);
         $this->assertEquals($section->section, $event->other['sectionnum']);
-        $expecteddesc = 'Course ' . $event->courseid . ' section ' . $event->other['sectionnum'] . ' updated by user ' . $event->userid;
+        $expecteddesc = "The user with the id '{$event->userid}' updated the section with the number '{$event->other['sectionnum']}' for the course with the id '{$event->courseid}'";
         $this->assertEquals($expecteddesc, $event->get_description());
         $url = new moodle_url('/course/editsection.php', array('id' => $event->objectid));
         $this->assertEquals($url, $event->get_url());
@@ -2014,7 +2015,7 @@ class core_course_courselib_testcase extends advanced_testcase {
             $this->fail("Event validation should not allow \\core\\event\\course_module_created to be triggered without
                     other['instanceid']");
         } catch (coding_exception $e) {
-            $this->assertContains("Field other['instanceid'] cannot be empty", $e->getMessage());
+            $this->assertContains("The 'instanceid' value must be set in other.", $e->getMessage());
         }
 
         // Test not setting modulename.
@@ -2031,7 +2032,7 @@ class core_course_courselib_testcase extends advanced_testcase {
             $this->fail("Event validation should not allow \\core\\event\\course_module_created to be triggered without
                     other['modulename']");
         } catch (coding_exception $e) {
-            $this->assertContains("Field other['modulename'] cannot be empty", $e->getMessage());
+            $this->assertContains("The 'modulename' value must be set in other.", $e->getMessage());
         }
 
         // Test not setting name.
@@ -2049,7 +2050,7 @@ class core_course_courselib_testcase extends advanced_testcase {
             $this->fail("Event validation should not allow \\core\\event\\course_module_created to be triggered without
                     other['name']");
         } catch (coding_exception $e) {
-            $this->assertContains("Field other['name'] cannot be empty", $e->getMessage());
+            $this->assertContains("The 'name' value must be set in other.", $e->getMessage());
         }
 
     }
@@ -2166,7 +2167,7 @@ class core_course_courselib_testcase extends advanced_testcase {
             $this->fail("Event validation should not allow \\core\\event\\course_module_updated to be triggered without
                     other['instanceid']");
         } catch (coding_exception $e) {
-            $this->assertContains("Field other['instanceid'] cannot be empty", $e->getMessage());
+            $this->assertContains("The 'instanceid' value must be set in other.", $e->getMessage());
         }
 
         // Test not setting modulename.
@@ -2183,7 +2184,7 @@ class core_course_courselib_testcase extends advanced_testcase {
             $this->fail("Event validation should not allow \\core\\event\\course_module_updated to be triggered without
                     other['modulename']");
         } catch (coding_exception $e) {
-            $this->assertContains("Field other['modulename'] cannot be empty", $e->getMessage());
+            $this->assertContains("The 'modulename' value must be set in other.", $e->getMessage());
         }
 
         // Test not setting name.
@@ -2201,7 +2202,7 @@ class core_course_courselib_testcase extends advanced_testcase {
             $this->fail("Event validation should not allow \\core\\event\\course_module_updated to be triggered without
                     other['name']");
         } catch (coding_exception $e) {
-            $this->assertContains("Field other['name'] cannot be empty", $e->getMessage());
+            $this->assertContains("The 'name' value must be set in other.", $e->getMessage());
         }
 
     }
@@ -2269,7 +2270,7 @@ class core_course_courselib_testcase extends advanced_testcase {
             $this->fail("Event validation should not allow \\core\\event\\course_module_deleted to be triggered without
                     other['instanceid']");
         } catch (coding_exception $e) {
-            $this->assertContains("Field other['instanceid'] cannot be empty", $e->getMessage());
+            $this->assertContains("The 'instanceid' value must be set in other.", $e->getMessage());
         }
 
         // Test not setting modulename.
@@ -2286,7 +2287,7 @@ class core_course_courselib_testcase extends advanced_testcase {
             $this->fail("Event validation should not allow \\core\\event\\course_module_deleted to be triggered without
                     other['modulename']");
         } catch (coding_exception $e) {
-            $this->assertContains("Field other['modulename'] cannot be empty", $e->getMessage());
+            $this->assertContains("The 'modulename' value must be set in other.", $e->getMessage());
         }
     }
 
@@ -2468,8 +2469,6 @@ class core_course_courselib_testcase extends advanced_testcase {
         $this->assertEquals(null, $event->objectid);
         $this->assertEquals($course->id, $event->courseid);
         $this->assertEquals($coursecontext->id, $event->contextid);
-        $expecteddesc = "User with id '$event->userid' viewed list of resources in course with id '$event->courseid'";
-        $this->assertEquals($expecteddesc, $event->get_description());
         $expectedlegacydata = array(
             array($course->id, "book", "view all", 'index.php?id=' . $course->id, ''),
             array($course->id, "page", "view all", 'index.php?id=' . $course->id, ''),
