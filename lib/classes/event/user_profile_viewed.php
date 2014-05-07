@@ -68,8 +68,8 @@ class user_profile_viewed extends base {
      * @return string
      */
     public function get_description() {
-        return 'The user ' . $this->userid . ' viewed the profile for user ' . $this->relateduserid . ' in the course ' .
-            $this->other['courseid'];
+        return "The user with id '$this->userid' viewed the profile for the user with id '$this->relateduserid' in the course " .
+            "with id '{$this->other['courseid']}'.";
     }
 
     /**

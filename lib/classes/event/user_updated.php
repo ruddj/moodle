@@ -60,7 +60,7 @@ class user_updated extends base {
      * @return string
      */
     public function get_description() {
-        return 'User profile updated for userid '.$this->objectid;
+        return "The user with id '$this->userid' updated the profile for the user with id '$this->objectid'.";
     }
 
     /**
