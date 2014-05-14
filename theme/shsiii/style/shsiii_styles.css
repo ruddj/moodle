@@ -4,10 +4,10 @@ General Styles
 
 @font-face {
     font-family: 'Droid Sans';
-    src: url('[[font:droidsans.eot]]');
+    src: url('[[font:theme|droidsans.eot]]');
     src: local('DroidSans'), local('Droid Sans'), local('DroidSansRegular'), local('Droid Sans Regular'),
-         url('[[font:droidsans.woff]]') format('woff'),
-         url('[[font:droidsans.ttf]]') format('truetype');
+         url('[[font:theme|droidsans.woff]]') format('woff'),
+         url('[[font:theme|droidsans.ttf]]') format('truetype');
     font-weight: normal;
     font-style: normal;
 }

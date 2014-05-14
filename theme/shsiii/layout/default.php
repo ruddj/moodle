@@ -115,48 +115,58 @@ if ($hascustommenu) {
             <span class="userblock-name">
               <?php echo $USER->firstname; ?>
             </span>
-            <? if (session_is_loggedinas()) : ?>
-              <? $realuser = session_get_realuser(); ?>
+            <? if (\core\session\manager::is_loggedinas()) : ?>
+              <? $realuser = \core\session\manager::get_realuser(); ?>
               (really <?php echo $realuser->firstname; ?>)
             <? endif; ?>
           </p>
 
           <ul class="menu">
             <? $rolename = ''; ?>
-            <? $context = get_context_instance(CONTEXT_COURSE, $COURSE->id); ?>
+            <? /*$context = get_context_instance(CONTEXT_COURSE, $COURSE->id);*/ ?>
+            <? $context = context_course::instance($COURSE->id); ?>
             <? if ($role = @$DB->get_record('role', array('id'=>$USER->access['rsw'][$context->path]))) $rolename = format_string($role->name); ?>
+
+
             <?php if (is_role_switched($COURSE->id)): ?>
-            <li>
+              <li>            
               <a href="<?php echo $CFG->wwwroot . '/course/view.php?id='.$COURSE->id.'&amp;switchrole=0&amp;sesskey='.sesskey(); ?>">
                 <b><?php echo get_string('switchrolereturn'); ?></b>
               </a>
+              </li>
             <?php endif; ?>
 
-            <? if (session_is_loggedinas()) : ?>
-              <? $realuser = session_get_realuser(); ?>
+            <? if (\core\session\manager::is_loggedinas()) : ?>
+              <? $realuser = \core\session\manager::get_realuser(); ?>
+              <li>              
               <a href="<?php echo $CFG->wwwroot . '/course/loginas.php?id='.$COURSE->id.'&amp;sesskey='.sesskey(); ?>">
-                <b>Stop impersonating <?php echo $USER->firstname; ?>
+                <b>Stop impersonating <?php echo $USER->firstname; ?></b>
               </a>
-            <? endif; ?>
-
+              </li>
+            <? endif; ?>              
+            
+            
 
             <li>
               <a href="<?php echo $CFG->wwwroot . '/user/profile.php?id='.$USER->id; ?>">
                 Update your profile
               </a>
             </li>
-            <?php if ($PAGE->theme->settings->password_reset): ?>
+            
+            <? if (!\core\session\manager::is_loggedinas()) : ?>
+              <?php if ($PAGE->theme->settings->password_reset): ?>
+                <li>
+                  <a href="<?php echo $PAGE->theme->settings->password_reset; ?>">
+                    Change password
+                  </a>
+                </li>
+              <?php endif; ?>
               <li>
-                <a href="<?php echo $PAGE->theme->settings->password_reset; ?>">
-                  Change password
+                <a href="<?php echo $CFG->wwwroot . '/login/logout.php?sesskey='.sesskey(); ?>">
+                  <?php echo get_string('logout'); ?>
                 </a>
               </li>
-            <?php endif; ?>
-            <li>
-              <a href="<?php echo $CFG->wwwroot . '/login/logout.php?sesskey='.sesskey(); ?>">
-                <?php echo get_string('logout'); ?>
-              </a>
-            </li>
+            <? endif; ?>
           </ul>
         <?php else: ?>
           <p class="userblock-salutation">
