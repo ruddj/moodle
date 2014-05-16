@@ -13,6 +13,7 @@ $THEME->sheets = array(
     'shsiii_calendar',
     'shsiii_dock',
     'shsiii_rtl',
+    'shsiii_responsive',
     'shsiii_settings',
 
 );
