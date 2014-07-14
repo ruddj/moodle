@@ -156,7 +156,7 @@ if ($PAGE->user_allowed_editing()) {
             // If we are viewing a system page as ordinary user, and the user turns
             // editing on, copy the system pages as new user pages, and get the
             // new page record
-            if (!$currentpage = my_copy_page($USER->id, MY_PAGE_PUBLIC, 'user-profile')) {
+            if (!$currentpage = my_copy_page($userid, MY_PAGE_PUBLIC, 'user-profile')) {
                 print_error('mymoodlesetup');
             }
             $PAGE->set_context($usercontext);
@@ -175,7 +175,7 @@ if ($PAGE->user_allowed_editing()) {
     }
 
     // Add button for editing page
-    $params = array('edit' => !$edit);
+    $params = array('edit' => !$edit, 'id' => $userid);
 
     if (!$currentpage->userid) {
         // viewing a system page -- let the user customise it
@@ -324,7 +324,7 @@ if ($user->icq && !isset($hiddenfields['icqnumber'])) {
 
 if ($user->skype && !isset($hiddenfields['skypeid'])) {
     $imurl = 'skype:'.urlencode($user->skype).'?call';
-    $iconurl = new moodle_url('http://mystatus.skype.com/smallicon/'.$user->skype);
+    $iconurl = new moodle_url('http://mystatus.skype.com/smallicon/'.urlencode($user->skype));
     if (strpos($CFG->httpswwwroot, 'https:') === 0) {
         // Bad luck, skype devs are lazy to set up SSL on their servers - see MDL-37233.
         $statusicon = '';
