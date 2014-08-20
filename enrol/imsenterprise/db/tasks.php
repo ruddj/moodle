@@ -15,16 +15,24 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * scorm version information.
+ * Definition of IMS Enterprise enrolment scheduled tasks.
  *
- * @package    mod_scorm
- * @copyright  1999 onwards Martin Dougiamas  {@link http://moodle.com}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   enrol_imsenterprise
+ * @category  task
+ * @copyright 2014 Universite de Montreal
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2014072500;    // The current module version (Date: YYYYMMDDXX).
-$plugin->requires  = 2014050800;    // Requires this Moodle version.
-$plugin->component = 'mod_scorm';   // Full name of the plugin (used for diagnostics).
-$plugin->cron      = 300;
+$tasks = array(
+    array(
+        'classname' => 'enrol_imsenterprise\task\cron_task',
+        'blocking' => 0,
+        'minute' => '10',
+        'hour' => '*',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*'
+    )
+);

@@ -15,16 +15,33 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * scorm version information.
+ * Grader report viewed event.
  *
- * @package    mod_scorm
- * @copyright  1999 onwards Martin Dougiamas  {@link http://moodle.com}
+ * @package    gradereport_grader
+ * @copyright  2014 Adrian Greeve <adrian@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace gradereport_grader\event;
+
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2014072500;    // The current module version (Date: YYYYMMDDXX).
-$plugin->requires  = 2014050800;    // Requires this Moodle version.
-$plugin->component = 'mod_scorm';   // Full name of the plugin (used for diagnostics).
-$plugin->cron      = 300;
+/**
+ * Grader report viewed event class.
+ *
+ * @package    gradereport_grader
+ * @since      Moodle 2.8
+ * @copyright  2014 Adrian Greeve <adrian@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class grade_report_viewed extends \core\event\grade_report_viewed {
+
+    /**
+     * Returns localised general event name.
+     *
+     * @return string
+     */
+    public static function get_name() {
+        return get_string('eventgradereportviewed', 'gradereport_grader');
+    }
+}
