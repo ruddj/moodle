@@ -333,7 +333,6 @@ $string['generalfeedback'] = 'General feedback';
 $string['generalfeedback_help'] = 'General feedback is shown to the student after they have completed the question. Unlike specific feedback, which depends on the question type and what response the student gave, the same general feedback text is shown to all students.
 
 You can use the general feedback to give students a fully worked answer and perhaps a link to more information they can use if they did not understand the questions.';
-$string['hidden'] = 'Hidden';
 $string['hintn'] = 'Hint {no}';
 $string['hintnoptions'] = 'Hint {no} options';
 $string['hinttext'] = 'Hint text';
@@ -343,6 +342,7 @@ $string['howquestionsbehave_help'] = 'Students can interact with the questions i
 Alternatively, you may wish for students to submit each question as they go along to get immediate feedback, and if they do not get it right immediately, have another try for fewer marks. That would be \'Interactive with multiple tries\' mode.
 
 Those are probably the two most commonly used modes of behaviour. ';
+$string['howquestionsbehave_link'] = 'question/behaviour';
 $string['importfromcoursefiles'] = '... or choose a course file to import.';
 $string['importfromupload'] = 'Select a file to upload ...';
 $string['includesubcategories'] = 'Also show questions from subcategories';
@@ -435,3 +435,7 @@ $string['whichtries'] = 'Which tries';
 $string['withselected'] = 'With selected';
 $string['xoutofmax'] = '{$a->mark} out of {$a->max}';
 $string['yougotnright'] = 'You have correctly selected {$a->num}.';
+
+// Deprecated since Moodle 2.8.
+
+$string['hidden'] = 'Hidden';
