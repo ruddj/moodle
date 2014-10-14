@@ -15,16 +15,27 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Defines the version of workshop
+ * mod_workshop fixtures
  *
  * @package    mod_workshop
- * @copyright  2009 David Mudrak <david.mudrak@gmail.com>
+ * @category   phpunit
+ * @copyright  2014 Petr Skoda
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$module->version   = 2013110501;        // the current module version (YYYYMMDDXX)
-$module->requires  = 2013110500;        // requires this Moodle version
-$module->component = 'mod_workshop';    // full name of the plugin (used for diagnostics)
-$module->cron      = 60;                // give as a chance every minute
+/**
+ * Test subclass that makes all the protected methods we want to test public.
+ */
+class testable_workshop extends workshop {
+
+    public function aggregate_submission_grades_process(array $assessments) {
+        parent::aggregate_submission_grades_process($assessments);
+    }
+
+    public function aggregate_grading_grades_process(array $assessments, $timegraded = null) {
+        parent::aggregate_grading_grades_process($assessments, $timegraded);
+    }
+
+}
