@@ -100,9 +100,10 @@
         }
         // For each subscribed user in this forum and discussion, copy over per-discussion subscriptions if required.
         $discussiongroup = $discussion->groupid == -1 ? 0 : $discussion->groupid;
-        $potentialsubscribers = \mod_forum\subscriptions::get_potential_subscribers(
-            $modcontext,
+        $potentialsubscribers = \mod_forum\subscriptions::fetch_subscribed_users(
+            $forum,
             $discussiongroup,
+            $modcontext,
             'u.id'
         );
 
@@ -230,7 +231,7 @@
     echo $OUTPUT->header();
 
     $headingvalue = format_string($forum->name);
-    if (has_capability('mod/forum:viewdiscussion', $modcontext)) {
+    if ((!isguestuser() && isloggedin()) && has_capability('mod/forum:viewdiscussion', $modcontext)) {
         // Discussion subscription.
         if (\mod_forum\subscriptions::is_subscribable($forum)) {
             $headingvalue .= '&nbsp;';

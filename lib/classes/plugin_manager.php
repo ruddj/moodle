@@ -654,6 +654,10 @@ class core_plugin_manager {
             return 'git';
         }
 
+        if (is_file($pluginroot.'/.git')) {
+            return 'git-submodule';
+        }
+
         if (is_dir($pluginroot.'/CVS')) {
             return 'cvs';
         }
@@ -906,7 +910,7 @@ class core_plugin_manager {
         // branch, listed should be no plugins that were removed at 1.9.x - 2.1.x versions as
         // Moodle 2.3 supports upgrades from 2.2.x only.
         $plugins = array(
-            'qformat' => array('blackboard'),
+            'qformat' => array('blackboard', 'learnwise'),
             'enrol' => array('authorize'),
             'tinymce' => array('dragmath'),
             'tool' => array('bloglevelupgrade', 'qeupgradehelper'),
@@ -1030,7 +1034,7 @@ class core_plugin_manager {
             ),
 
             'gradeimport' => array(
-                'csv', 'xml'
+                'csv', 'direct', 'xml'
             ),
 
             'gradereport' => array(
@@ -1082,7 +1086,7 @@ class core_plugin_manager {
 
             'qformat' => array(
                 'aiken', 'blackboard_six', 'examview', 'gift',
-                'learnwise', 'missingword', 'multianswer', 'webct',
+                'missingword', 'multianswer', 'webct',
                 'xhtml', 'xml'
             ),
 
@@ -1133,7 +1137,7 @@ class core_plugin_manager {
             'tool' => array(
                 'assignmentupgrade', 'availabilityconditions', 'behat', 'capability', 'customlang',
                 'dbtransfer', 'generator', 'health', 'innodb', 'installaddon',
-                'langimport', 'log', 'multilangupgrade', 'phpunit', 'profiling',
+                'langimport', 'log', 'messageinbound', 'multilangupgrade', 'phpunit', 'profiling',
                 'replace', 'spamcleaner', 'task', 'timezoneimport',
                 'unittest', 'uploadcourse', 'uploaduser', 'unsuproles', 'xmldb'
             ),

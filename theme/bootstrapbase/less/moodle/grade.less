@@ -230,3 +230,36 @@
         }
     }
 }
+
+.path-grade-edit-tree table.setup-grades .column-select {
+    text-align: center;
+}
+
+.path-grade-edit-tree table.setup-grades .column-weight {
+    white-space: nowrap;
+}
+
+.path-grade-edit-tree table.setup-grades .gradeitemdescription {
+    font-weight: normal;
+    font-style: italic;
+}
+
+/**
+ * Grader report.
+ */
+.path-grade-report {
+    .gradeparent {
+        table {
+            .border-radius(@baseBorderRadius);
+        }
+        table,
+        .cell {
+            border-color: @tableBorder;
+        }
+        tr:nth-of-type(even) .cell,
+        .floater .cell,
+        .avg {
+            background-color: @tableBackgroundAccent;
+        }
+    }
+ }

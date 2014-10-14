@@ -52,7 +52,7 @@ if (isset($graderreportsilast)) {
 }
 
 $PAGE->set_url(new moodle_url('/grade/report/grader/index.php', array('id'=>$courseid)));
-$PAGE->requires->yui_module('moodle-gradereport_grader-scrollview', 'M.gradereport_grader.scrollview.init');
+$PAGE->requires->yui_module('moodle-gradereport_grader-gradereporttable', 'Y.M.gradereport_grader.init', null, null, true);
 
 // basic access checks
 if (!$course = $DB->get_record('course', array('id' => $courseid))) {
@@ -127,6 +127,13 @@ $reportname = get_string('pluginname', 'gradereport_grader');
 
 // Print header
 print_grade_page_head($COURSE->id, 'report', 'grader', $reportname, false, $buttons);
+
+// Hide the following warning if the user told it to go away.
+if (optional_param('seensumofgradesupgradedgrades', false, PARAM_BOOL) && confirm_sesskey()) {
+    hide_natural_aggregation_upgrade_notice($courseid);
+}
+// This shows a notice about the upgrade to Natural aggregation.
+print_natural_aggregation_upgrade_notice($COURSE->id, $context);
 
 //Initialise the grader report object that produces the table
 //the class grade_report_grader_ajax was removed as part of MDL-21562
