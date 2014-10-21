@@ -628,6 +628,7 @@ class grade_category extends grade_object {
             $grade->finalgrade = null;
 
             if (!is_null($oldfinalgrade)) {
+                $grade->timemodified = time();
                 $success = $grade->update('aggregation');
 
                 // If successful trigger a user_graded event.
@@ -712,6 +713,7 @@ class grade_category extends grade_object {
             $grade->finalgrade = null;
 
             if (!is_null($oldfinalgrade)) {
+                $grade->timemodified = time();
                 $success = $grade->update('aggregation');
 
                 // If successful trigger a user_graded event.
@@ -754,6 +756,7 @@ class grade_category extends grade_object {
         if (grade_floats_different($grade->finalgrade, $oldfinalgrade) ||
                 grade_floats_different($grade->rawgrademax, $oldrawgrademax) ||
                 grade_floats_different($grade->rawgrademin, $oldrawgrademin)) {
+            $grade->timemodified = time();
             $success = $grade->update('aggregation');
 
             // If successful trigger a user_graded event.
@@ -966,15 +969,14 @@ class grade_category extends grade_object {
                 $sum       = 0;
 
                 foreach ($grade_values as $itemid=>$grade_value) {
-
+                    if ($weights !== null) {
+                        $weights[$itemid] = $items[$itemid]->aggregationcoef;
+                    }
                     if ($items[$itemid]->aggregationcoef <= 0) {
                         continue;
                     }
                     $weightsum += $items[$itemid]->aggregationcoef;
                     $sum       += $items[$itemid]->aggregationcoef * $grade_value;
-                    if ($weights !== null) {
-                        $weights[$itemid] = $items[$itemid]->aggregationcoef;
-                    }
                 }
                 if ($weightsum == 0) {
                     $agg_grade = null;
@@ -1297,6 +1299,11 @@ class grade_category extends grade_object {
                 $gradeitem = $child['object']->load_grade_item();
             }
 
+            if ($gradeitem->gradetype == GRADE_TYPE_NONE || $gradeitem->gradetype == GRADE_TYPE_TEXT) {
+                // Text items and none items do not have a weight.
+                continue;
+            }
+
             // Record the ID and the weight for this grade item.
             $overridearray[$gradeitem->id] = array();
             $overridearray[$gradeitem->id]['extracredit'] = intval($gradeitem->aggregationcoef);
@@ -1361,6 +1368,12 @@ class grade_category extends grade_object {
                 $gradeitem = $child['object']->load_grade_item();
             }
 
+            if ($gradeitem->gradetype == GRADE_TYPE_NONE || $gradeitem->gradetype == GRADE_TYPE_TEXT) {
+                // Text items and none items do not have a weight, no need to set their weight to
+                // zero as they must never be used during aggregation.
+                continue;
+            }
+
             if (!$gradeitem->weightoverride) {
                 // Calculations with a grade maximum of zero will cause problems. Just set the weight to zero.
                 if ($totaloverriddenweight >= 1 || $totalnonoverriddengrademax == 0 || $gradeitem->grademax == 0) {
@@ -1373,10 +1386,13 @@ class grade_category extends grade_object {
                             (1 - $totaloverriddenweight);
                 }
                 $gradeitem->update();
-            } else if ((!$automaticgradeitemspresent && $normalisetotal != 1) || ($requiresnormalising)) {
+            } else if ((!$automaticgradeitemspresent && $normalisetotal != 1) || ($requiresnormalising)
+                    || $overridearray[$gradeitem->id]['weight'] < 0) {
                 // Just divide the overriden weight for this item against the total weight override of all
                 // items in this category.
-                if ($normalisetotal == 0) {
+                if ($normalisetotal == 0 || $overridearray[$gradeitem->id]['weight'] < 0) {
+                    // If the normalised total equals zero, or the weight value is less than zero,
+                    // set the weight for the grade item to zero.
                     $gradeitem->aggregationcoef2 = 0;
                 } else {
                     $gradeitem->aggregationcoef2 = $overridearray[$gradeitem->id]['weight'] / $normalisetotal;

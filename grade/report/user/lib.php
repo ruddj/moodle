@@ -118,10 +118,10 @@ class grade_report_user extends grade_report {
     public $showfeedback = true;
 
     /**
-     * Show grade weighting in the report, default false
+     * Show grade weighting in the report, default true.
      * @var bool
      */
-    public $showweight = false;
+    public $showweight = true;
 
     /**
      * Show letter grades in the report, default false
@@ -133,7 +133,7 @@ class grade_report_user extends grade_report {
      * Show the calculated contribution to the course total column.
      * @var bool
      */
-    public $showcontributiontocoursetotal = false;
+    public $showcontributiontocoursetotal = true;
 
     /**
      * Show average grades in the report, default false.
@@ -205,8 +205,13 @@ class grade_report_user extends grade_report {
         $this->showgrade       = grade_get_setting($this->courseid, 'report_user_showgrade',       !empty($CFG->grade_report_user_showgrade));
         $this->showrange       = grade_get_setting($this->courseid, 'report_user_showrange',       !empty($CFG->grade_report_user_showrange));
         $this->showfeedback    = grade_get_setting($this->courseid, 'report_user_showfeedback',    !empty($CFG->grade_report_user_showfeedback));
-        $this->showweight      = grade_get_setting($this->courseid, 'report_user_showweight',      !empty($CFG->grade_report_user_showweight));
-        $this->showcontributiontocoursetotal      = grade_get_setting($this->courseid, 'report_user_showcontributiontocoursetotal',      !empty($CFG->grade_report_user_showcontributiontocoursetotal));
+
+        $this->showweight = grade_get_setting($this->courseid, 'report_user_showweight',
+            !empty($CFG->grade_report_user_showweight));
+
+        $this->showcontributiontocoursetotal = grade_get_setting($this->courseid, 'report_user_showcontributiontocoursetotal',
+            !empty($CFG->grade_report_user_showcontributiontocoursetotal));
+
         $this->showlettergrade = grade_get_setting($this->courseid, 'report_user_showlettergrade', !empty($CFG->grade_report_user_showlettergrade));
         $this->showaverage     = grade_get_setting($this->courseid, 'report_user_showaverage',     !empty($CFG->grade_report_user_showaverage));
 
@@ -712,12 +717,12 @@ class grade_report_user extends grade_report {
                 // Normalise the gradeval.
                 $gradecat = $grade_object->load_parent_category();
                 if ($gradecat->aggregation == GRADE_AGGREGATE_SUM) {
-                    // Natural aggregation/Sum of grades does not consider the mingrade.
+                    // Natural aggregation/Sum of grades does not consider the mingrade, cannot traditionnally normalise it.
                     $graderange = $this->aggregationhints[$itemid]['grademax'];
                     $gradeval = $this->aggregationhints[$itemid]['grade'] / $graderange;
                 } else {
-                    $graderange = $this->aggregationhints[$itemid]['grademax'] - $this->aggregationhints[$itemid]['grademin'];
-                    $gradeval = ($this->aggregationhints[$itemid]['grade'] - $this->aggregationhints[$itemid]['grademin']) / $graderange;
+                    $gradeval = grade_grade::standardise_score($this->aggregationhints[$itemid]['grade'],
+                        $this->aggregationhints[$itemid]['grademin'], $this->aggregationhints[$itemid]['grademax'], 0, 1);
                 }
 
                 // Multiply the normalised value by the weight

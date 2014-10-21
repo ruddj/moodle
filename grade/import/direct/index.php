@@ -24,6 +24,7 @@ $id            = required_param('id', PARAM_INT); // Course id.
 $verbosescales = optional_param('verbosescales', 1, PARAM_BOOL);
 $iid           = optional_param('iid', null, PARAM_INT);
 $importcode    = optional_param('importcode', '', PARAM_FILE);
+$forceimport   = optional_param('forceimport', false, PARAM_BOOL);
 
 $url = new moodle_url('/grade/import/direct/index.php', array('id' => $id));
 
@@ -69,7 +70,7 @@ if (!$iid) {
         $csvimport->load_csv_content($text, $formdata->encoding, 'tab', $formdata->previewrows);
         $csvimporterror = $csvimport->get_error();
         if (!empty($csvimporterror)) {
-            echo $renderer->errors($csvimport->get_error());
+            echo $renderer->errors(array($csvimport->get_error()));
             echo $OUTPUT->footer();
             die();
         }
@@ -96,6 +97,7 @@ $mappingformdata = array(
     'header' => $header,
     'iid' => $iid,
     'id' => $id,
+    'forceimport' => $forceimport,
     'importcode' => $importcode,
     'verbosescales' => $verbosescales
 );
