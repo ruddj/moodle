@@ -33,6 +33,7 @@ use gradereport_singleview\local\ui\range;
 use gradereport_singleview\local\ui\bulk_insert;
 use grade_item;
 use grade_grade;
+use stdClass;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -122,8 +123,6 @@ class user extends tablelike implements selectable_items {
 
         $this->requirespaging = count($this->items) > $this->perpage;
 
-        unset($seq);
-
         $this->setup_structure();
 
         $this->definition = array(
@@ -179,16 +178,26 @@ class user extends tablelike implements selectable_items {
         if (isset($item->cmid)) {
             $realmodid = $item->cmid;
         }
-        $url = new moodle_url('/mod/' . $item->itemmodule . '/view.php', array('id' => $realmodid));
+
         $iconstring = get_string('filtergrades', 'gradereport_singleview', $item->get_name());
+
+        // Create a fake gradetreeitem so we can call get_element_header().
+        // The type logic below is from grade_category->_get_children_recursion().
+        $gradetreeitem = array();
+        if (in_array($item->itemtype, array('course', 'category'))) {
+            $gradetreeitem['type'] = $item->itemtype.'item';
+        } else {
+            $gradetreeitem['type'] = 'item';
+        }
+        $gradetreeitem['object'] = $item;
+        $gradetreeitem['userid'] = $this->item->id;
+
+        $itemlabel = $this->structure->get_element_header($gradetreeitem, true, false);
         $grade->label = $item->get_name();
 
         $line = array(
             $OUTPUT->action_icon($this->format_link('grade', $item->id), new pix_icon('t/editstring', $iconstring)),
-            $this->format_icon($item) . $lockicon,
-            html_writer::link($url, $item->get_name()),
-            $this->category($item),
-            (new range($item))
+            $this->format_icon($item) . $lockicon, $itemlabel, $this->category($item), (new range($item))
         );
         return $this->format_definition($line, $grade);
     }
