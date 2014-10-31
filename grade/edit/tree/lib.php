@@ -188,7 +188,7 @@ class grade_edit_tree {
             $item = $category->get_grade_item();
 
             // Add aggregation coef input if not a course item and if parent category has correct aggregation type
-            $dimmed = ($item->is_hidden()) ? 'dimmed' : '';
+            $dimmed = ($item->is_hidden()) ? 'dimmed_text' : '';
 
             // Before we print the category's row, we must find out how many rows will appear below it (for the filler cell's rowspan)
             $aggregation_position = grade_get_setting($COURSE->id, 'aggregationposition', $CFG->grade_aggregationposition);
@@ -706,6 +706,7 @@ class grade_edit_tree_column_weight extends grade_edit_tree_column {
     }
 
     public function get_item_cell($item, $params) {
+        global $CFG;
         if (empty($params['element'])) {
             throw new Exception('Array key (element) missing from 2nd param of grade_edit_tree_column_weightorextracredit::get_item_cell($item, $params)');
         }
@@ -715,7 +716,8 @@ class grade_edit_tree_column_weight extends grade_edit_tree_column {
 
         if (!in_array($object->itemtype, array('courseitem', 'categoryitem', 'category'))
                 && !in_array($object->gradetype, array(GRADE_TYPE_NONE, GRADE_TYPE_TEXT))
-                && (!$object->is_outcome_item() || $object->load_parent_category()->aggregateoutcomes)) {
+                && (!$object->is_outcome_item() || $object->load_parent_category()->aggregateoutcomes)
+                && ($object->gradetype != GRADE_TYPE_SCALE || !empty($CFG->grade_includescalesinaggregation))) {
             $itemcell->text = grade_edit_tree::get_weight_input($item);
         }
 
@@ -837,7 +839,7 @@ class grade_edit_tree_column_select extends grade_edit_tree_column {
         $selectnone = new action_link(new moodle_url('#'), get_string('none'), new component_action('click', 'togglecheckboxes', array('eid' => $params['eid'], 'check' => false)));
 
         $categorycell = parent::get_category_cell($category, $levelclass, $params);
-        $categorycell->text = $OUTPUT->render($selectall) . '<br />' . $OUTPUT->render($selectnone);
+        $categorycell->text = $OUTPUT->render($selectall) . ' / ' . $OUTPUT->render($selectnone);
         return $categorycell;
     }
 
