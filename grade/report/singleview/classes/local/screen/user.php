@@ -139,7 +139,6 @@ class user extends tablelike implements selectable_items {
     public function original_headers() {
         return array(
             '', // For filter icon.
-            '', // For activity icon.
             get_string('assessmentname', 'gradereport_singleview'),
             get_string('gradecategory', 'grades'),
             get_string('range', 'grades'),
@@ -192,14 +191,44 @@ class user extends tablelike implements selectable_items {
         $gradetreeitem['object'] = $item;
         $gradetreeitem['userid'] = $this->item->id;
 
-        $itemlabel = $this->structure->get_element_header($gradetreeitem, true, false);
+        $itemlabel = $this->structure->get_element_header($gradetreeitem, true, false, false, false, true);
         $grade->label = $item->get_name();
+
+        $itemlabel = $item->get_name();
+        if (!empty($realmodid)) {
+            $url = new moodle_url('/mod/' . $item->itemmodule . '/view.php', array('id' => $realmodid));
+            $itemlabel = html_writer::link($url, $item->get_name());
+        }
 
         $line = array(
             $OUTPUT->action_icon($this->format_link('grade', $item->id), new pix_icon('t/editstring', $iconstring)),
-            $this->format_icon($item) . $lockicon, $itemlabel, $this->category($item), (new range($item))
+            $this->format_icon($item) . $lockicon . $itemlabel,
+            $this->category($item),
+            new range($item)
         );
-        return $this->format_definition($line, $grade);
+        $lineclasses = array(
+            "action",
+            "gradeitem",
+            "category",
+            "range"
+        );
+
+        $outputline = array();
+        $i = 0;
+        foreach ($line as $key => $value) {
+            $cell = new \html_table_cell($value);
+            if ($isheader = $i == 1) {
+                $cell->header = $isheader;
+                $cell->scope = "row";
+            }
+            if (array_key_exists($key, $lineclasses)) {
+                $cell->attributes['class'] = $lineclasses[$key];
+            }
+            $outputline[] = $cell;
+            $i++;
+        }
+
+        return $this->format_definition($outputline, $grade);
     }
 
     /**
@@ -250,6 +279,15 @@ class user extends tablelike implements selectable_items {
      */
     public function heading() {
         return fullname($this->item);
+    }
+
+    /**
+     * Get the summary for this table.
+     *
+     * @return string
+     */
+    public function summary() {
+        return get_string('summaryuser', 'gradereport_singleview');
     }
 
     /**

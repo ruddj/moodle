@@ -44,8 +44,8 @@ Feature: tool_monitor_subscriptions
     Given I log in as "teacher1"
     And   I follow "Course 1"
     And   I navigate to "Event monitoring" node in "My profile settings"
-    And   I set the field "courseid" to "Course 1"
-    When  I set the field "cmid" to "All events"
+    And   I set the field "Select a course" to "Course 1"
+    When  I set the field "Subscribe to rule \"New rule course level\"" to "All events"
     Then  I should see "Subscription successfully created"
     And   "#toolmonitorsubs_r0" "css_element" should exist
 
@@ -53,10 +53,10 @@ Feature: tool_monitor_subscriptions
     Given I log in as "teacher1"
     And   I follow "Course 1"
     And   I navigate to "Event monitoring" node in "My profile settings"
-    And   I set the field "courseid" to "Course 1"
-    And   I set the field "cmid" to "All events"
+    And   I set the field "Select a course" to "Course 1"
+    And   I set the field "Subscribe to rule \"New rule course level\"" to "All events"
     And   I should see "Subscription successfully created"
-    When  I click on "Delete subscription" "link"
+    When  I click on "Delete subscription" "link" in the "New rule course level" "table_row"
     And   I should see "Are you sure you want to delete this subscription for the rule \"New rule course level\"?"
     And   I press "Yes"
     Then  I should see "Subscription successfully removed"
@@ -65,19 +65,19 @@ Feature: tool_monitor_subscriptions
   Scenario: Subscribe to a rule on site level
     Given I log in as "admin"
     And   I navigate to "Event monitoring" node in "My profile settings"
-    And   I set the field "courseid" to "Site"
-    When  I set the field "cmid" to "All events"
+    And   I set the field "Select a course" to "Site"
+    When  I set the field "Subscribe to rule \"New rule site level\"" to "All events"
     Then  I should see "Subscription successfully created"
     And   "#toolmonitorsubs_r0" "css_element" should exist
 
   Scenario: Delete a subscription on site level
     Given I log in as "admin"
     And   I navigate to "Event monitoring" node in "My profile settings"
-    And   I set the field "courseid" to "Site"
-    And   I set the field "cmid" to "All events"
+    And   I set the field "Select a course" to "Site"
+    And   I set the field "Subscribe to rule \"New rule site level\"" to "All events"
     And   I should see "Subscription successfully created"
     And   "#toolmonitorsubs_r0" "css_element" should exist
-    When  I click on "Delete subscription" "link"
+    When  I click on "Delete subscription" "link" in the "New rule site level" "table_row"
     And   I should see "Are you sure you want to delete this subscription for the rule \"New rule site level\"?"
     And   I press "Yes"
     Then  I should see "Subscription successfully removed"
@@ -91,15 +91,14 @@ Feature: tool_monitor_subscriptions
     And   I am on homepage
     And   I follow "Course 1"
     And   I navigate to "Event monitoring" node in "My profile settings"
-    And   I set the field "courseid" to "Site"
-    And   I set the field "cmid" to "All events"
+    And   I set the field "Select a course" to "Site"
+    And   I set the field "Subscribe to rule \"New rule site level\"" to "All events"
     And   I should see "Subscription successfully created"
     And   "#toolmonitorsubs_r0" "css_element" should exist
     And   I am on homepage
     And   I trigger cron
     And   I am on homepage
-    And   I expand "My profile" node
-    When  I follow "Messages"
+    When  I navigate to "Messages" node in "My profile"
     And   I follow "Do not reply to this email (1)"
     Then  I should see "The course was viewed."
 
@@ -111,16 +110,15 @@ Feature: tool_monitor_subscriptions
     And   I am on homepage
     And   I follow "Course 1"
     And   I navigate to "Event monitoring" node in "My profile settings"
-    And   I set the field "courseid" to "Course 1"
-    And   I set the field "cmid" to "All events"
+    And   I set the field "Select a course" to "Course 1"
+    And   I set the field "Subscribe to rule \"New rule course level\"" to "All events"
     And   I should see "Subscription successfully created"
     And   "#toolmonitorsubs_r0" "css_element" should exist
     And   I am on homepage
     And   I follow "Course 1"
     And   I trigger cron
     And   I am on homepage
-    And   I expand "My profile" node
-    When  I follow "Messages"
+    When  I navigate to "Messages" node in "My profile"
     And   I follow "Do not reply to this email (1)"
     Then  I should see "The course was viewed."
 
