@@ -630,6 +630,13 @@ function forum_cron() {
                     continue;
                 }
 
+                if ($subscriptiontime = \mod_forum\subscriptions::fetch_discussion_subscription($forum->id, $userto->id)) {
+                    // Skip posts if the user subscribed to the discussion after it was created.
+                    if (isset($subscriptiontime[$post->discussion]) && ($subscriptiontime[$post->discussion] > $post->created)) {
+                        continue;
+                    }
+                }
+
                 // Don't send email if the forum is Q&A and the user has not posted.
                 // Initial topics are still mailed.
                 if ($forum->type == 'qanda' && !forum_get_user_posted_time($discussion->id, $userto->id) && $pid != $discussion->firstpost) {
@@ -3848,7 +3855,7 @@ function forum_search_form($course, $search='') {
     $output .= '<fieldset class="invisiblefieldset">';
     $output .= $OUTPUT->help_icon('search');
     $output .= '<label class="accesshide" for="search" >'.get_string('search', 'forum').'</label>';
-    $output .= '<input id="search" name="search" type="text" size="18" value="'.s($search, true).'" alt="search" />';
+    $output .= '<input id="search" name="search" type="text" size="18" value="'.s($search, true).'" />';
     $output .= '<label class="accesshide" for="searchforums" >'.get_string('searchforums', 'forum').'</label>';
     $output .= '<input id="searchforums" value="'.get_string('searchforums', 'forum').'" type="submit" />';
     $output .= '<input name="id" type="hidden" value="'.$course->id.'" />';
@@ -4654,15 +4661,16 @@ function forum_post_subscription($fromform, $forum, $discussion) {
 
     $info = new stdClass();
     $info->name  = fullname($USER);
+    $info->discussion = format_string($discussion->name);
     $info->forum = format_string($forum->name);
 
     if ($fromform->discussionsubscribe) {
         if ($result = \mod_forum\subscriptions::subscribe_user_to_discussion($USER->id, $discussion)) {
-            return html_writer::tag('p', get_string('nowsubscribed', 'forum', $info));
+            return html_writer::tag('p', get_string('discussionnowsubscribed', 'forum', $info));
         }
     } else {
         if ($result = \mod_forum\subscriptions::unsubscribe_user_from_discussion($USER->id, $discussion)) {
-            return html_writer::tag('p', get_string('nownotsubscribed', 'forum', $info));
+            return html_writer::tag('p', get_string('discussionnownotsubscribed', 'forum', $info));
         }
     }
 
