@@ -143,9 +143,12 @@ span.unread {
     float: left;
 }
 
-.path-mod-forum .discussiontoggle {
-    display: inline-block;
-    width: 12px;
+.path-mod-forum .preload-subscribe {
+    background: url([[pix:mod_forum|t/subscribed]]) no-repeat -9999px -9999px;
+}
+
+.path-mod-forum .preload-unsubscribe {
+    background: url([[pix:mod_forum|t/unsubscribed]]) no-repeat -9999px -9999px;
 }
 
 .path-mod-forum .discussionsubscription {
@@ -154,7 +157,8 @@ span.unread {
     margin-bottom: 10px;
 }
 
-.path-mod-forum .discussionsubscription > a {
+.path-mod-forum .discussionsubscription > a > img {
+    width: 12px;
     padding: 0 4px;
 }
 

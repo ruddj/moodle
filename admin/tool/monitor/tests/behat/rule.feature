@@ -15,6 +15,9 @@ Feature: tool_monitor_rule
       | user | course | role |
       | teacher1 | C1 | editingteacher |
     And I log in as "admin"
+    And I navigate to "Event monitoring rules" node in "Site administration > Reports"
+    And I click on "Enable" "link"
+    And I am on homepage
     And I follow "Course 1"
     And I navigate to "Event monitoring rules" node in "Course administration > Reports"
     And I press "Add a new rule"
@@ -66,7 +69,7 @@ Feature: tool_monitor_rule
     And I follow "Course 1"
     And I navigate to "Event monitoring rules" node in "Course administration > Reports"
     When I click on "Delete rule" "link"
-    Then I should see "Are you sure you want to delete rule \"New rule course level\"?"
+    Then I should see "Are you sure you want to delete the rule \"New rule course level\"?"
     And I press "Continue"
     And I should see "Rule successfully deleted"
     And I should not see "New rule course level"
@@ -126,7 +129,7 @@ Feature: tool_monitor_rule
     Given I log in as "admin"
     And I navigate to "Event monitoring rules" node in "Site administration > Reports"
     When I click on "Delete rule" "link"
-    Then I should see "Are you sure you want to delete rule \"New rule site level\"?"
+    Then I should see "Are you sure you want to delete the rule \"New rule site level\"?"
     And I press "Continue"
     And I should see "Rule successfully deleted"
     And I should not see "New rule site level"

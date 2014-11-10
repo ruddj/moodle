@@ -1182,13 +1182,17 @@ function forum_make_mail_text($course, $cm, $forum, $discussion, $post, $userfro
 
     $strforums = get_string('forums', 'forum');
 
-    $canunsubscribe = ! \mod_forum\subscriptions::is_forcesubscribed($forum);
+    $canunsubscribe = !\mod_forum\subscriptions::is_forcesubscribed($forum);
 
     $posttext = '';
 
+    if ($replyaddress) {
+        $posttext .= "--" . get_string('deleteoriginalonreply', 'mod_forum') . "--\n";
+    }
+
     if (!$bare) {
         $shortname = format_string($course->shortname, true, array('context' => context_course::instance($course->id)));
-        $posttext  = "$shortname -> $strforums -> ".format_string($forum->name,true);
+        $posttext  .= "$shortname -> $strforums -> ".format_string($forum->name,true);
 
         if ($discussion->name != $forum->name) {
             $posttext  .= " -> ".format_string($discussion->name,true);
@@ -1211,15 +1215,25 @@ function forum_make_mail_text($course, $cm, $forum, $discussion, $post, $userfro
     $posttext .= "\n\n";
     $posttext .= forum_print_attachments($post, $cm, "text");
 
-    if (!$bare && $canreply) {
-        $posttext .= "---------------------------------------------------------------------\n";
-        $posttext .= get_string("postmailinfo", "forum", $shortname)."\n";
-        $posttext .= "$CFG->wwwroot/mod/forum/post.php?reply=$post->id\n";
-    }
-    if (!$bare && $canunsubscribe) {
-        $posttext .= "\n---------------------------------------------------------------------\n";
-        $posttext .= get_string("unsubscribe", "forum");
-        $posttext .= ": $CFG->wwwroot/mod/forum/subscribe.php?id=$forum->id\n";
+    if (!$bare) {
+        if ($canreply) {
+            $posttext .= "---------------------------------------------------------------------\n";
+            $posttext .= get_string("postmailinfo", "forum", $shortname)."\n";
+            $posttext .= "$CFG->wwwroot/mod/forum/post.php?reply=$post->id\n";
+        }
+
+        if ($canunsubscribe) {
+            if (\mod_forum\subscriptions::is_subscribed($userto->id, $forum, null, $cm)) {
+                // If subscribed to this forum, offer the unsubscribe link.
+                $posttext .= "\n---------------------------------------------------------------------\n";
+                $posttext .= get_string("unsubscribe", "forum");
+                $posttext .= ": $CFG->wwwroot/mod/forum/subscribe.php?id=$forum->id\n";
+            }
+            // Always offer the unsubscribe from discussion link.
+            $posttext .= "\n---------------------------------------------------------------------\n";
+            $posttext .= get_string("unsubscribediscussion", "forum");
+            $posttext .= ": $CFG->wwwroot/mod/forum/subscribe.php?id=$forum->id&amp;d=$discussion->id\n";
+        }
     }
 
     $posttext .= "\n---------------------------------------------------------------------\n";
@@ -1227,7 +1241,7 @@ function forum_make_mail_text($course, $cm, $forum, $discussion, $post, $userfro
     $posttext .= ": {$CFG->wwwroot}/mod/forum/index.php?id={$forum->course}\n";
 
     if ($replyaddress) {
-        $posttext .= "\n\n" . get_string('replytoforumpost', 'mod_forum', $replyaddress);
+        $posttext .= "\n\n" . get_string('replytoforumpost', 'mod_forum');
     }
 
     return $posttext;
@@ -1272,6 +1286,10 @@ function forum_make_mail_html($course, $cm, $forum, $discussion, $post, $userfro
     $posthtml .= '</head>';
     $posthtml .= "\n<body id=\"email\">\n\n";
 
+    if ($replyaddress) {
+        $posthtml .= "<p><em>--" . get_string('deleteoriginalonreply', 'mod_forum') . "--</em></p>";
+    }
+
     $posthtml .= '<div class="navbar">'.
     '<a target="_blank" href="'.$CFG->wwwroot.'/course/view.php?id='.$course->id.'">'.$shortname.'</a> &raquo; '.
     '<a target="_blank" href="'.$CFG->wwwroot.'/mod/forum/index.php?id='.$course->id.'">'.$strforums.'</a> &raquo; '.
@@ -1285,12 +1303,23 @@ function forum_make_mail_html($course, $cm, $forum, $discussion, $post, $userfro
     $posthtml .= forum_make_mail_post($course, $cm, $forum, $discussion, $post, $userfrom, $userto, false, $canreply, true, false);
 
     if ($replyaddress) {
-        $posthtml .= "<p>" . get_string('replytoforumpost_html', 'mod_forum', $replyaddress) . "</p>";
+        $posthtml .= html_writer::tag('p', get_string('replytoforumpost', 'mod_forum'));
     }
 
     $footerlinks = array();
     if ($canunsubscribe) {
-        $footerlinks[] = '<a href="' . $CFG->wwwroot . '/mod/forum/subscribe.php?id=' . $forum->id . '">' . get_string('unsubscribe', 'forum') . '</a>';
+        if (\mod_forum\subscriptions::is_subscribed($userto->id, $forum, null, $cm)) {
+            // If subscribed to this forum, offer the unsubscribe link.
+            $unsublink = new moodle_url('/mod/forum/subscribe.php', array('id' => $forum->id));
+            $footerlinks[] = html_writer::link($unsublink, get_string('unsubscribe', 'mod_forum'));
+        }
+        // Always offer the unsubscribe from discussion link.
+        $unsublink = new moodle_url('/mod/forum/subscribe.php', array(
+                'id' => $forum->id,
+                'd' => $discussion->id,
+            ));
+        $footerlinks[] = html_writer::link($unsublink, get_string('unsubscribediscussion', 'mod_forum'));
+
         $footerlinks[] = '<a href="' . $CFG->wwwroot . '/mod/forum/unsubscribeall.php">' . get_string('unsubscribeall', 'forum') . '</a>';
     }
     $footerlinks[] = "<a href='{$CFG->wwwroot}/mod/forum/index.php?id={$forum->course}'>" . get_string('digestmailpost', 'forum') . '</a>';
@@ -3755,7 +3784,9 @@ function forum_print_discussion_header(&$post, $forum, $group=-1, $datestring=""
           userdate($usedate, $datestring).'</a>';
     echo "</td>\n";
 
-    if ((!isguestuser() && isloggedin()) && has_capability('mod/forum:viewdiscussion', $modcontext)) {
+    // is_guest should be used here as this also checks whether the user is a guest in the current course.
+    // Guests and visitors cannot subscribe - only enrolled users.
+    if ((!is_guest($modcontext, $USER) && isloggedin()) && has_capability('mod/forum:viewdiscussion', $modcontext)) {
         // Discussion subscription.
         if (\mod_forum\subscriptions::is_subscribable($forum)) {
             echo '<td class="discussionsubscription">';
@@ -3790,32 +3821,51 @@ function forum_get_discussion_subscription_icon($forum, $discussionid, $returnur
         'd' => $discussionid,
         'returnurl' => $returnurl,
     ));
-    if ($subscriptionstatus) {
-        $o .= html_writer::link($subscriptionlink,
-            $OUTPUT->pix_icon('t/subscribed', get_string('clicktounsubscribe', 'forum'), 'mod_forum'),
-            array(
-                'title' => get_string('clicktounsubscribe', 'forum'),
-                'class' => 'discussiontoggle iconsmall',
-                'data-forumid' => $forum->id,
-                'data-discussionid' => $discussionid,
-                'data-includetext' => $includetext,
-        ));
-    } else {
-        $o .= html_writer::link($subscriptionlink,
-            $OUTPUT->pix_icon('t/unsubscribed', get_string('clicktosubscribe', 'forum'), 'mod_forum'),
-            array(
-                'title' => get_string('clicktosubscribe', 'forum'),
-                'class' => 'discussiontoggle iconsmall',
-                'data-forumid' => $forum->id,
-                'data-discussionid' => $discussionid,
-                'data-includetext' => $includetext,
-        ));
-    }
 
     if ($includetext) {
         $o .= $subscriptionstatus ? get_string('subscribed', 'mod_forum') : get_string('notsubscribed', 'mod_forum');
     }
 
+    if ($subscriptionstatus) {
+        $output = $OUTPUT->pix_icon('t/subscribed', get_string('clicktounsubscribe', 'forum'), 'mod_forum');
+        if ($includetext) {
+            $output .= get_string('subscribed', 'mod_forum');
+        }
+
+        return html_writer::link($subscriptionlink, $output, array(
+                'title' => get_string('clicktounsubscribe', 'forum'),
+                'class' => 'discussiontoggle iconsmall',
+                'data-forumid' => $forum->id,
+                'data-discussionid' => $discussionid,
+                'data-includetext' => $includetext,
+            ));
+
+    } else {
+        $output = $OUTPUT->pix_icon('t/unsubscribed', get_string('clicktosubscribe', 'forum'), 'mod_forum');
+        if ($includetext) {
+            $output .= get_string('notsubscribed', 'mod_forum');
+        }
+
+        return html_writer::link($subscriptionlink, $output, array(
+                'title' => get_string('clicktosubscribe', 'forum'),
+                'class' => 'discussiontoggle iconsmall',
+                'data-forumid' => $forum->id,
+                'data-discussionid' => $discussionid,
+                'data-includetext' => $includetext,
+            ));
+    }
+}
+
+/**
+ * Return a pair of spans containing classes to allow the subscribe and
+ * unsubscribe icons to be pre-loaded by a browser.
+ *
+ * @return string The generated markup
+ */
+function forum_get_discussion_subscription_icon_preloaders() {
+    $o = '';
+    $o .= html_writer::span('&nbsp;', 'preload-subscribe');
+    $o .= html_writer::span('&nbsp;', 'preload-unsubscribe');
     return $o;
 }
 
@@ -5380,9 +5430,11 @@ function forum_print_latest_discussions($course, $forum, $maxdiscussions = -1, $
             }
         }
         echo '<th class="header lastpost" scope="col">'.get_string('lastpost', 'forum').'</th>';
-        if (has_capability('mod/forum:viewdiscussion', $context)) {
+        if ((!is_guest($context, $USER) && isloggedin()) && has_capability('mod/forum:viewdiscussion', $context)) {
             if (\mod_forum\subscriptions::is_subscribable($forum)) {
-                echo '<th class="header discussionsubscription" scope="col">&nbsp;</th>';
+                echo '<th class="header discussionsubscription" scope="col">';
+                echo forum_get_discussion_subscription_icon_preloaders();
+                echo '</th>';
             }
         }
         echo '</tr>';
@@ -7075,7 +7127,10 @@ function forum_extend_settings_navigation(settings_navigation $settingsnav, navi
             } else {
                 $linktext = get_string('trackforum', 'forum');
             }
-            $url = new moodle_url('/mod/forum/settracking.php', array('id'=>$forumobject->id));
+            $url = new moodle_url('/mod/forum/settracking.php', array(
+                    'id' => $forumobject->id,
+                    'sesskey' => sesskey(),
+                ));
             $forumnode->add($linktext, $url, navigation_node::TYPE_SETTING);
         }
     }

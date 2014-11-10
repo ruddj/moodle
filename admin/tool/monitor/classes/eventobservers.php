@@ -53,13 +53,9 @@ class eventobservers {
      * @param \core\event\course_deleted $event The course deleted event.
      */
     public static function course_deleted(\core\event\course_deleted $event) {
-        $rules = rule_manager::get_rules_by_courseid($event->courseid);
-        $context = null;
-        if ($event->contextlevel == CONTEXT_COURSE) {
-            $context = $event->get_context();
-        }
+        $rules = rule_manager::get_rules_by_courseid($event->courseid, 0, 0, false);
         foreach ($rules as $rule) {
-            rule_manager::delete_rule($rule->id, $context);
+            rule_manager::delete_rule($rule->id, $event->get_context());
         }
     }
 
@@ -72,6 +68,9 @@ class eventobservers {
      * @param \core\event\base $event event object
      */
     public static function process_event(\core\event\base $event) {
+        if (!get_config('tool_monitor', 'enablemonitor')) {
+            return; // The tool is disabled. Nothing to do.
+        }
 
         if (empty(self::$instance)) {
             self::$instance = new static();
@@ -94,6 +93,11 @@ class eventobservers {
      * @param \core\event\base $event
      */
     protected function buffer_event(\core\event\base $event) {
+
+        // If there are no subscriptions for this event do not buffer it.
+        if (!\tool_monitor\subscription_manager::event_has_subscriptions($event->eventname, $event->courseid)) {
+            return;
+        }
 
         $eventdata = $event->get_data();
         $eventobj = new \stdClass();

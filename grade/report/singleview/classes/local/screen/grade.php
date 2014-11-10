@@ -329,10 +329,19 @@ class grade extends tablelike implements selectable_items, filterable_items {
 
                     $data->$field = empty($grade) ? $null : $grade->finalgrade;
                     $data->{"old$field"} = $data->$field;
+
+                    preg_match('/_(\d+)_(\d+)/', $field, $oldoverride);
+                    $oldoverride = 'oldoverride' . $oldoverride[0];
+                    if (empty($data->$oldoverride)) {
+                        $data->$field = (!isset($grade->rawgrade)) ? $null : $grade->rawgrade;
+                    }
                 }
             }
 
             foreach ($data as $varname => $value) {
+                if (preg_match('/override_(\d+)_(\d+)/', $varname, $matches)) {
+                    $data->$matches[0] = '1';
+                }
                 if (!preg_match('/^finalgrade_(\d+)_/', $varname, $matches)) {
                     continue;
                 }

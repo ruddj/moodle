@@ -337,27 +337,36 @@ class user extends tablelike implements selectable_items {
         if ($bulk->is_applied($data)) {
             $filter = $bulk->get_type($data);
             $insertvalue = $bulk->get_insert_value($data);
-            // Appropriately massage data that may not exist.
 
             $userid = $this->item->id;
             foreach ($this->items as $gradeitemid => $gradeitem) {
                 $null = $gradeitem->gradetype == GRADE_TYPE_SCALE ? -1 : '';
-                $field = "finalgrade_{$gradeitem->id}_{$gradeitemid}";
+                $field = "finalgrade_{$gradeitem->id}_{$this->itemid}";
                 if (isset($data->$field)) {
                     continue;
                 }
 
                 $grade = grade_grade::fetch(array(
-                    'itemid' => $gradeitem->id,
+                    'itemid' => $this->itemid,
                     'userid' => $userid
                 ));
 
                 $data->$field = empty($grade) ? $null : $grade->finalgrade;
                 $data->{"old$field"} = $data->$field;
+
+                preg_match('/_(\d+)_(\d+)/', $field, $oldoverride);
+                $oldoverride = 'oldoverride' . $oldoverride[0];
+                if (empty($data->$oldoverride)) {
+                    $data->$field = (!isset($grade->rawgrade)) ? $null : $grade->rawgrade;
+                }
+
             }
 
             foreach ($data as $varname => $value) {
-                if (!preg_match('/^finalgrade_(\d+)_/', $varname, $matches)) {
+                if (preg_match('/override_(\d+)_(\d+)/', $varname, $matches)) {
+                    $data->$matches[0] = '1';
+                }
+                if (!preg_match('/^finalgrade_(\d+)_(\d+)/', $varname, $matches)) {
                     continue;
                 }
 
@@ -376,7 +385,6 @@ class user extends tablelike implements selectable_items {
                 }
             }
         }
-
         return parent::process($data);
     }
 }
