@@ -1,6 +1,10 @@
 This files describes API changes in core libraries and APIs,
 information provided here is intended especially for developers.
 
+=== 2.9 ===
+
+* \core\event\course_viewed 'other' argument renamed from coursesectionid to coursesectionnumber as it contains the section number.
+
 === 2.8 ===
 
 * Gradebook grade category option "aggregatesubcats" has been removed completely.
