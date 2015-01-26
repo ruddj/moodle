@@ -51,15 +51,13 @@ function lesson_add_instance($data, $mform) {
     $lessonid = $DB->insert_record("lesson", $data);
     $data->id = $lessonid;
 
-    $lesson = $DB->get_record('lesson', array('id'=>$lessonid), '*', MUST_EXIST);
-
     lesson_update_media_file($lessonid, $context, $draftitemid);
 
     lesson_process_post_save($data);
 
     lesson_grade_item_update($data);
 
-    return $lesson->id;
+    return $lessonid;
 }
 
 /**
@@ -198,8 +196,8 @@ function lesson_user_complete($course, $user, $mod, $lesson) {
                 "retry, timeseen")) {
         echo $OUTPUT->box_start();
         $table = new html_table();
-        $table->head = array (get_string("attempt", "lesson"),  get_string("numberofpagesviewed", "lesson"),
-            get_string("numberofcorrectanswers", "lesson"), get_string("time"));
+        $table->head = array (get_string("attemptheader", "lesson"),  get_string("numberofpagesviewedheader", "lesson"),
+            get_string("numberofcorrectanswersheader", "lesson"), get_string("time"));
         $table->width = "100%";
         $table->align = array ("center", "center", "center", "center");
         $table->size = array ("*", "*", "*", "*");
@@ -286,7 +284,7 @@ function lesson_print_overview($courses, &$htmlarray) {
             // Attempt information
             if (has_capability('mod/lesson:manage', context_module::instance($lesson->coursemodule))) {
                 // Number of user attempts
-                $attempts = $DB->count_records('lesson_attempts', array('lessonid'=>$lesson->id));
+                $attempts = $DB->count_records('lesson_grades', array('lessonid' => $lesson->id));
                 $str     .= $OUTPUT->box(get_string('xattempts', 'lesson', $attempts), 'info');
             } else {
                 // Determine if the user has attempted the lesson or not
@@ -430,11 +428,11 @@ function lesson_grade_item_update($lesson, $grades=null) {
         $params = array('itemname'=>$lesson->name);
     }
 
-    if ($lesson->grade > 0) {
+    if (!$lesson->practice and $lesson->grade > 0) {
         $params['gradetype']  = GRADE_TYPE_VALUE;
         $params['grademax']   = $lesson->grade;
         $params['grademin']   = 0;
-    } else if ($lesson->grade < 0) {
+    } else if (!$lesson->practice and $lesson->grade < 0) {
         $params['gradetype']  = GRADE_TYPE_SCALE;
         $params['scaleid']   = -$lesson->grade;
 
@@ -482,18 +480,6 @@ function lesson_grade_item_update($lesson, $grades=null) {
     }
 
     return grade_update('mod/lesson', $lesson->course, 'mod', 'lesson', $lesson->id, 0, $grades, $params);
-}
-
-/**
- * Delete grade item for given lesson
- *
- * @category grade
- * @param object $lesson object
- * @return object lesson
- */
-function lesson_grade_item_delete($lesson) {
-    global $CFG;
-
 }
 
 /**
@@ -700,6 +686,7 @@ function lesson_reset_userdata($data) {
         $DB->delete_records_select('lesson_high_scores', "lessonid IN ($lessonssql)", $params);
         $DB->delete_records_select('lesson_grades', "lessonid IN ($lessonssql)", $params);
         $DB->delete_records_select('lesson_attempts', "lessonid IN ($lessonssql)", $params);
+        $DB->delete_records_select('lesson_branch', "lessonid IN ($lessonssql)", $params);
 
         // remove all grades from gradebook
         if (empty($data->reset_gradebook_grades)) {
@@ -742,13 +729,13 @@ function lesson_supports($feature) {
             return false;
         case FEATURE_GROUPINGS:
             return false;
-        case FEATURE_GROUPMEMBERSONLY:
-            return true;
         case FEATURE_MOD_INTRO:
             return true;
         case FEATURE_COMPLETION_TRACKS_VIEWS:
             return true;
         case FEATURE_GRADE_HAS_GRADE:
+            return true;
+        case FEATURE_COMPLETION_HAS_RULES:
             return true;
         case FEATURE_GRADE_OUTCOMES:
             return true;
@@ -762,6 +749,32 @@ function lesson_supports($feature) {
 }
 
 /**
+ * Obtains the automatic completion state for this lesson based on any conditions
+ * in lesson settings.
+ *
+ * @param object $course Course
+ * @param object $cm course-module
+ * @param int $userid User ID
+ * @param bool $type Type of comparison (or/and; can be used as return value if no conditions)
+ * @return bool True if completed, false if not, $type if conditions not set.
+ */
+function lesson_get_completion_state($course, $cm, $userid, $type) {
+    global $CFG, $DB;
+
+    // Get lesson details.
+    $lesson = $DB->get_record('lesson', array('id' => $cm->instance), '*',
+            MUST_EXIST);
+
+    // If completion option is enabled, evaluate it and return true/false.
+    if ($lesson->completionendreached) {
+        return $DB->record_exists('lesson_timer', array(
+                'lessonid' => $lesson->id, 'userid' => $userid, 'completed' => 1));
+    } else {
+        // Completion option is not enabled so just return $type.
+        return $type;
+    }
+}
+/**
  * This function extends the settings navigation block for the site.
  *
  * It is safe to rely on PAGE here as we will only ever be within the module
@@ -773,12 +786,14 @@ function lesson_supports($feature) {
 function lesson_extend_settings_navigation($settings, $lessonnode) {
     global $PAGE, $DB;
 
-    $url = new moodle_url('/mod/lesson/view.php', array('id'=>$PAGE->cm->id));
-    $lessonnode->add(get_string('preview', 'lesson'), $url);
-
     if (has_capability('mod/lesson:edit', $PAGE->cm->context)) {
-        $url = new moodle_url('/mod/lesson/edit.php', array('id'=>$PAGE->cm->id));
-        $lessonnode->add(get_string('edit', 'lesson'), $url);
+        $url = new moodle_url('/mod/lesson/view.php', array('id' => $PAGE->cm->id));
+        $lessonnode->add(get_string('preview', 'lesson'), $url);
+        $editnode = $lessonnode->add(get_string('edit', 'lesson'));
+        $url = new moodle_url('/mod/lesson/edit.php', array('id' => $PAGE->cm->id, 'mode' => 'collapsed'));
+        $editnode->add(get_string('collapsed', 'lesson'), $url);
+        $url = new moodle_url('/mod/lesson/edit.php', array('id' => $PAGE->cm->id, 'mode' => 'full'));
+        $editnode->add(get_string('full', 'lesson'), $url);
     }
 
     if (has_capability('mod/lesson:manage', $PAGE->cm->context)) {
