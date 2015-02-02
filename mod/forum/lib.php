@@ -1209,7 +1209,6 @@ function forum_make_mail_text($course, $cm, $forum, $discussion, $post, $userfro
 
     $posttext .= "\n";
     $posttext .= $CFG->wwwroot.'/mod/forum/discuss.php?d='.$discussion->id;
-    $posttext .= "\n---------------------------------------------------------------------\n";
     $posttext .= format_string($post->subject,true);
     if ($bare) {
         $posttext .= " ($CFG->wwwroot/mod/forum/discuss.php?d=$discussion->id#p$post->id)";
@@ -1219,10 +1218,10 @@ function forum_make_mail_text($course, $cm, $forum, $discussion, $post, $userfro
     $posttext .= format_text_email($post->message, $post->messageformat);
     $posttext .= "\n\n";
     $posttext .= forum_print_attachments($post, $cm, "text");
+    $posttext .= "\n---------------------------------------------------------------------\n";
 
     if (!$bare) {
         if ($canreply) {
-            $posttext .= "---------------------------------------------------------------------\n";
             $posttext .= get_string("postmailinfo", "forum", $shortname)."\n";
             $posttext .= "$CFG->wwwroot/mod/forum/post.php?reply=$post->id\n";
         }
@@ -1230,18 +1229,15 @@ function forum_make_mail_text($course, $cm, $forum, $discussion, $post, $userfro
         if ($canunsubscribe) {
             if (\mod_forum\subscriptions::is_subscribed($userto->id, $forum, null, $cm)) {
                 // If subscribed to this forum, offer the unsubscribe link.
-                $posttext .= "\n---------------------------------------------------------------------\n";
                 $posttext .= get_string("unsubscribe", "forum");
                 $posttext .= ": $CFG->wwwroot/mod/forum/subscribe.php?id=$forum->id\n";
             }
             // Always offer the unsubscribe from discussion link.
-            $posttext .= "\n---------------------------------------------------------------------\n";
             $posttext .= get_string("unsubscribediscussion", "forum");
             $posttext .= ": $CFG->wwwroot/mod/forum/subscribe.php?id=$forum->id&d=$discussion->id\n";
         }
     }
 
-    $posttext .= "\n---------------------------------------------------------------------\n";
     $posttext .= get_string("digestmailpost", "forum");
     $posttext .= ": {$CFG->wwwroot}/mod/forum/index.php?id={$forum->course}\n";
 
@@ -2152,21 +2148,9 @@ function forum_search_posts($searchterms, $courseid=0, $limitfrom=0, $limitnum=5
 
     if ($lexer->parse($searchstring)) {
         $parsearray = $parser->get_parsed_array();
-    // Experimental feature under 1.8! MDL-8830
-    // Use alternative text searches if defined
-    // This feature only works under mysql until properly implemented for other DBs
-    // Requires manual creation of text index for forum_posts before enabling it:
-    // CREATE FULLTEXT INDEX foru_post_tix ON [prefix]forum_posts (subject, message)
-    // Experimental feature under 1.8! MDL-8830
-        if (!empty($CFG->forum_usetextsearches)) {
-            list($messagesearch, $msparams) = search_generate_text_SQL($parsearray, 'p.message', 'p.subject',
-                                                 'p.userid', 'u.id', 'u.firstname',
-                                                 'u.lastname', 'p.modified', 'd.forum');
-        } else {
-            list($messagesearch, $msparams) = search_generate_SQL($parsearray, 'p.message', 'p.subject',
-                                                 'p.userid', 'u.id', 'u.firstname',
-                                                 'u.lastname', 'p.modified', 'd.forum');
-        }
+        list($messagesearch, $msparams) = search_generate_SQL($parsearray, 'p.message', 'p.subject',
+                                                              'p.userid', 'u.id', 'u.firstname',
+                                                              'u.lastname', 'p.modified', 'd.forum');
         $params = array_merge($params, $msparams);
     }
 

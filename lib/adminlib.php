@@ -3415,9 +3415,35 @@ class admin_setting_configduration extends admin_setting {
 
 
 /**
+ * Seconds duration setting with an advanced checkbox, that controls a additional
+ * $name.'_adv' setting.
+ *
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright 2014 The Open University
+ */
+class admin_setting_configduration_with_advanced extends admin_setting_configduration {
+    /**
+     * Constructor
+     * @param string $name unique ascii name, either 'mysetting' for settings that in config,
+     *                     or 'myplugin/mysetting' for ones in config_plugins.
+     * @param string $visiblename localised name
+     * @param string $description localised long description
+     * @param array  $defaultsetting array of int value, and bool whether it is
+     *                     is advanced by default.
+     * @param int $defaultunit - day, week, etc. (in seconds)
+     */
+    public function __construct($name, $visiblename, $description, $defaultsetting, $defaultunit = 86400) {
+        parent::__construct($name, $visiblename, $description, $defaultsetting['value'], $defaultunit);
+        $this->set_advanced_flag_options(admin_setting_flag::ENABLED, !empty($defaultsetting['adv']));
+    }
+}
+
+
+/**
  * Used to validate a textarea used for ip addresses
  *
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright 2011 Petr Skoda (http://skodak.org)
  */
 class admin_setting_configiplist extends admin_setting_configtextarea {
 
@@ -4387,6 +4413,44 @@ class admin_setting_special_backupdays extends admin_setting_configmulticheckbox
             $this->choices[$day] = get_string($day, 'calendar');
         }
         return true;
+    }
+}
+
+/**
+ * Special setting for backup auto destination.
+ *
+ * @package    core
+ * @subpackage admin
+ * @copyright  2014 Frédéric Massart - FMCorz.net
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class admin_setting_special_backup_auto_destination extends admin_setting_configdirectory {
+
+    /**
+     * Calls parent::__construct with specific arguments.
+     */
+    public function __construct() {
+        parent::__construct('backup/backup_auto_destination', new lang_string('saveto'), new lang_string('backupsavetohelp'), '');
+    }
+
+    /**
+     * Check if the directory must be set, depending on backup/backup_auto_storage.
+     *
+     * Note: backup/backup_auto_storage must be specified BEFORE this setting otherwise
+     * there will be conflicts if this validation happens before the other one.
+     *
+     * @param string $data Form data.
+     * @return string Empty when no errors.
+     */
+    public function write_setting($data) {
+        $storage = (int) get_config('backup', 'backup_auto_storage');
+        if ($storage !== 0) {
+            if (empty($data) || !file_exists($data) || !is_dir($data) || !is_writable($data) ) {
+                // The directory must exist and be writable.
+                return get_string('backuperrorinvaliddestination');
+            }
+        }
+        return parent::write_setting($data);
     }
 }
 
