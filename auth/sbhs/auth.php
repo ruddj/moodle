@@ -68,7 +68,6 @@ class auth_plugin_sbhs extends auth_plugin_base {
             // Other SHS SSO magic is to turn on LDAP SSO in Moodle, but set it to only apply for an impossibly small
             // subnet (recommended: 169.254.255.255/32). Also don't configure NTLM/Kerberos in Apache.
             if ($frm->password == '') {
-              //die($frm->username);
               $frm->password = sesskey();
               $frm->username = strtolower($frm->username);
               set_cache_flag('auth/ldap/ntlmsess', sesskey(), strtolower(sso_getUser()), 4); // 4 seconds
