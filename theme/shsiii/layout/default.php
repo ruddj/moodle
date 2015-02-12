@@ -154,7 +154,7 @@ if ($hascustommenu) {
             </li>
 
             <? if (!\core\session\manager::is_loggedinas()) : ?>
-              <?php if ($PAGE->theme->settings->password_reset): ?>
+              <?php if (isset($PAGE->theme->settings->password_reset)): ?>
                 <li>
                   <a href="<?php echo $PAGE->theme->settings->password_reset; ?>">
                     Change password
