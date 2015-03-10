@@ -406,7 +406,7 @@ Login (Front Page)
 /*
 Tabs
 -----------------------*/
-.tabtree ul {
+/*.tabtree ul {
     text-align:center;
 }
 .tabtree .tabrow0 {
@@ -481,9 +481,7 @@ Tabs
     color: black;
     text-decoration: none;
 }
-/*
-tab styles for ie6 & ie7
------------------------*/
+
 .ie7 .tabtree .tabrow0 li {
     margin-left: 0;
 }
@@ -541,7 +539,7 @@ tab styles for ie6 & ie7
 .ie6 .tabtree .tabrow0 div {
     top: 3.5em;
     padding: 0.2em 0;
-}
+}*/
 /* Filemanager
 -------------------------*/
 .filemanager select,
@@ -722,13 +720,13 @@ h2.headingblock + div.notifyproblem {
 
 h2.headingblock,
 h2.coursetitle,
-div#intro {
+div#intro > div:first-line {
 	color: #095197;
 	font-family: 'Droid Sans', Arial;
 	font-weight: normal;
 }
 
-div#intro {
+div#intro > div:first-line {
   font-size: 1.4em;
 }
 
@@ -858,12 +856,12 @@ div.gradeparent td {
 
 
 div.tabtree ul li a:hover {
-  background-color: transparent;
+  /*background-color: transparent;*/
 }
 
 div.tabtree ul.tabrow0 li a:hover,
 div.tabtree ul.tabrow1 li a:hover {
-  background-color: transparent;
+  /*background-color: transparent;*/
   color: #095197;
   text-decoration: underline;
 }
@@ -895,15 +893,23 @@ div.gradeparent td {
 
 
 div.tabtree ul li a:hover {
-  background-color: transparent;
+  /*background-color: transparent;*/
 }
 
 div.tabtree ul.tabrow0 li a:hover,
 div.tabtree ul.tabrow1 li a:hover {
-  background-color: transparent;
+  /*background-color: transparent;*/
   color: #095197;
   text-decoration: underline;
 }
+
+.tabtree {position:relative;margin-bottom:3.5em;}
+.tabtree li {display:inline;}
+.tabtree ul {margin:5px;}
+.tabtree ul li.here ul {position:absolute;top:100%;width:100%;}
+.tabtree ul li.here .empty {display:none;}
+
+
 
 fieldset > legend > a.fheader:hover,
 div.collapsible-actions > a:hover {
@@ -933,4 +939,102 @@ ul.ctopics > li#toggle-all a:hover {
 #page-content ul.ctopics div.left,
 #page-content ul.ctopics div.right {
   color: white;
+}
+
+/* 26/2/15 */
+.block-region li .buttons ul li {
+  margin: 0;
+}
+
+ul.topics div.content .moodle-actionmenu > ul.menubar {
+  width: 75px;
+}
+
+.section img.iconsmall {
+  margin: 0 4px;
+}
+
+.course-content ul.topics li.section .right img.icon {
+  padding: 0;
+}
+
+.editing .sitetopic .section .activity .activityinstance, 
+.editing .course-content .section .activity .activityinstance, 
+.editing .sitetopic .section .activity .contentwithoutlink, 
+.editing .course-content .section .activity .contentwithoutlink {
+  padding-right: 140px;
+}
+
+.section .activity .mod-indent-outer {
+  padding-left: 0;
+}
+
+.path-course-view .section .summary {
+  padding-left: 4px;
+}
+
+.course-content ul.topics li.section .left,
+.course-content ul.topics li.section .right {
+  height: 0;
+  padding: 0;
+}
+
+.course-content ul.topics li.section:first-child, 
+.course-content ul.weeks li.section:first-child {
+  padding-top: 0;
+}
+
+table table {
+  font-size: 100%;
+}
+
+table.criteria td {
+  line-height: 150%;
+}
+
+div.gradingform_guide-description p {
+  margin-top: 0;
+  margin-bottom: 4px;
+  font-weight: bold;
+  font-size: 120%;
+}
+
+div.gradingform_guide label.commentheader {
+  font-size: 120%;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.mform .fitem .felement, 
+.mform .fitem fieldset.felement {
+  /*padding-left: 0;*/
+}
+
+div.editor_atto_toolbar {
+  width: auto;
+}
+
+#fitem_id_description_editor .felement.feditor {
+  margin-top: 20px;
+}
+
+#fitem_id_guide {
+  margin-top: 20px;
+}
+
+.mform .fitem .fitemtitle {
+  padding-right: 6px;
+}
+
+.tabtree .tabrow0 .tabrow1 {
+  margin-top: 3px;
+}
+
+.tabtree .tabrow0 li a {
+  border-radius: 5px 5px 0 0;
+}
+
+div.tabtree ul.tabrow0 li a:nolink:hover {
+  text-decoration: none;
+  background-color: white;
 }
