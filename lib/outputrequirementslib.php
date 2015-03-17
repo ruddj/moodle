@@ -1524,6 +1524,14 @@ class page_requirements_manager {
         global $CFG;
         $output = '';
 
+        // Set the log level for the JS logging.
+        $logconfig = new stdClass();
+        $logconfig->level = 'warn';
+        if ($CFG->debugdeveloper) {
+            $logconfig->level = 'trace';
+        }
+        $this->js_call_amd('core/log', 'setConfig', array($logconfig));
+
         // Call amd init functions.
         $output .= $this->get_amd_footercode();
 
