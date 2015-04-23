@@ -7,25 +7,23 @@ Feature: Users can send messages to each other
   Background:
     Given the following "users" exist:
       | username | firstname | lastname | email |
-      | user1 | User | One | one@asd.com |
-      | user2 | User | Two | two@asd.com |
+      | user1 | User | One | one@example.com |
+      | user2 | User | Two | two@example.com |
 
   @javascript
   Scenario: Using the 'Send message' dialog on one's profile
-    Given I log in as "admin"
-    And I set the following administration settings values:
+    Given the following config values are set as admin:
       | forceloginforprofiles | 0 |
-    And I log out
     And I log in as "user1"
-    And I navigate to "Messages" node in "My profile"
+    And I follow "Messages" in the user menu
     And I set the field "Search people and messages" to "User Two"
     And I press "Search people and messages"
     And I follow "Picture of User Two"
-    When I follow "Send a message"
+    When I press "Message"
     And I set the field "Message to send" to "Lorem ipsum sa messagus textus"
     And I press "Send message"
     And I am on homepage
-    And I navigate to "Messages" node in "My profile"
+    And I follow "Messages" in the user menu
     And I set the field "Search people and messages" to "User Two"
     And I press "Search people and messages"
     And I follow "Send message to User Two"
@@ -44,11 +42,11 @@ Feature: Users can send messages to each other
     And I follow "Course 1"
     And I follow "Participants"
     And I follow "User Two"
-    When I follow "Send a message"
+    When I press "Message"
     And I set the field "Message to send" to "Lorem ipsum sa messagus textus"
     And I press "Send message"
     And I am on homepage
-    And I navigate to "Messages" node in "My profile"
+    And I follow "Messages" in the user menu
     And I set the field "Search people and messages" to "User Two"
     And I press "Search people and messages"
     And I follow "Send message to User Two"

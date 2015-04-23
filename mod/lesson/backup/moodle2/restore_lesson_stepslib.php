@@ -42,6 +42,7 @@ class restore_lesson_activity_structure_step extends restore_activity_structure_
         $paths[] = new restore_path_element('lesson', '/activity/lesson');
         $paths[] = new restore_path_element('lesson_page', '/activity/lesson/pages/page');
         $paths[] = new restore_path_element('lesson_answer', '/activity/lesson/pages/page/answers/answer');
+        $paths[] = new restore_path_element('lesson_override', '/activity/lesson/overrides/override');
         if ($userinfo) {
             $paths[] = new restore_path_element('lesson_attempt', '/activity/lesson/pages/page/answers/answer/attempts/attempt');
             $paths[] = new restore_path_element('lesson_grade', '/activity/lesson/grades/grade');
@@ -78,6 +79,11 @@ class restore_lesson_activity_structure_step extends restore_activity_structure_
         }
         if (!isset($data->completiontimespent)) {
             $data->completiontimespent = 0;
+        }
+
+        if (!isset($data->intro)) {
+            $data->intro = '';
+            $data->introformat = FORMAT_HTML;
         }
 
         // Compatibility with old backups with maxtime and timed fields.
@@ -199,6 +205,43 @@ class restore_lesson_activity_structure_step extends restore_activity_structure_
         $newitemid = $DB->insert_record('lesson_timer', $data);
     }
 
+    /**
+     * Process a lesson override restore
+     * @param object $data The data in object form
+     * @return void
+     */
+    protected function process_lesson_override($data) {
+        global $DB;
+
+        $data = (object)$data;
+        $oldid = $data->id;
+
+        // Based on userinfo, we'll restore user overides or no.
+        $userinfo = $this->get_setting_value('userinfo');
+
+        // Skip user overrides if we are not restoring userinfo.
+        if (!$userinfo && !is_null($data->userid)) {
+            return;
+        }
+
+        $data->lessonid = $this->get_new_parentid('lesson');
+
+        if (!is_null($data->userid)) {
+            $data->userid = $this->get_mappingid('user', $data->userid);
+        }
+        if (!is_null($data->groupid)) {
+            $data->groupid = $this->get_mappingid('group', $data->groupid);
+        }
+
+        $data->available = $this->apply_date_offset($data->available);
+        $data->deadline = $this->apply_date_offset($data->deadline);
+
+        $newitemid = $DB->insert_record('lesson_overrides', $data);
+
+        // Add mapping, restore of logs needs it.
+        $this->set_mapping('lesson_override', $oldid, $newitemid);
+    }
+
     protected function after_execute() {
         global $DB;
 
@@ -215,7 +258,8 @@ class restore_lesson_activity_structure_step extends restore_activity_structure_
                     'answerid' => $answer->id));
         }
 
-        // Add lesson mediafile, no need to match by itemname (just internally handled context)
+        // Add lesson files, no need to match by itemname (just internally handled context).
+        $this->add_related_files('mod_lesson', 'intro', null);
         $this->add_related_files('mod_lesson', 'mediafile', null);
         // Add lesson page files, by lesson_page itemname
         $this->add_related_files('mod_lesson', 'page_contents', 'lesson_page');
@@ -255,7 +299,7 @@ class restore_lesson_activity_structure_step extends restore_activity_structure_
         }
         $rs->close();
 
-        // Replay the upgrade step 2015022700
+        // Replay the upgrade step 2015030301
         // to clean lesson answers that should be plain text.
         // 1 = LESSON_PAGE_SHORTANSWER, 8 = LESSON_PAGE_NUMERICAL, 20 = LESSON_PAGE_BRANCHTABLE.
 
@@ -274,6 +318,23 @@ class restore_lesson_activity_structure_step extends restore_activity_structure_
             $DB->update_record('lesson_answers', $badanswer);
         }
         $badanswers->close();
+
+        // Replay the upgrade step 2015032700.
+        // Delete any orphaned lesson_branch record.
+        if ($DB->get_dbfamily() === 'mysql') {
+            $sql = "DELETE {lesson_branch}
+                      FROM {lesson_branch}
+                 LEFT JOIN {lesson_pages}
+                        ON {lesson_branch}.pageid = {lesson_pages}.id
+                     WHERE {lesson_pages}.id IS NULL";
+        } else {
+            $sql = "DELETE FROM {lesson_branch}
+               WHERE NOT EXISTS (
+                         SELECT 'x' FROM {lesson_pages}
+                          WHERE {lesson_branch}.pageid = {lesson_pages}.id)";
+        }
+
+        $DB->execute($sql);
 
         // Re-map the dependency and activitylink information
         // If a depency or activitylink has no mapping in the backup data then it could either be a duplication of a

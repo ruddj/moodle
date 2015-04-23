@@ -45,6 +45,9 @@ if ($backtocourse) {
     redirect(new moodle_url('/course/view.php', array('id'=>$course->id)));
 }
 
+// Apply overrides.
+$lesson->update_effective_access($USER->id);
+
 // Mark as viewed
 $completion = new completion_info($course);
 $completion->set_module_viewed($cm);
@@ -85,12 +88,26 @@ if (!$canmanage) {
         $correctpass = false;
         if (!empty($userpassword) && (($lesson->password == md5(trim($userpassword))) || ($lesson->password == trim($userpassword)))) {
             // with or without md5 for backward compatibility (MDL-11090)
+            $correctpass = true;
             $USER->lessonloggedin[$lesson->id] = true;
             if ($lesson->highscores) {
                 // Logged in - redirect so we go through all of these checks before starting the lesson.
                 redirect("$CFG->wwwroot/mod/lesson/view.php?id=$cm->id");
             }
-        } else {
+        } else if (isset($lesson->extrapasswords)) {
+            // Group overrides may have additional passwords.
+            foreach ($lesson->extrapasswords as $password) {
+                if (strcmp($password, md5(trim($userpassword))) === 0 || strcmp($password, trim($userpassword)) === 0) {
+                    $correctpass = true;
+                    $USER->lessonloggedin[$lesson->id] = true;
+                    if ($lesson->highscores) {
+                        // Logged in - redirect so we go through all of these checks before starting the lesson.
+                        redirect("$CFG->wwwroot/mod/lesson/view.php?id=$cm->id");
+                    }
+                }
+            }
+        }
+        if (!$correctpass) {
             echo $lessonoutput->header($lesson, $cm, '', false, null, get_string('passwordprotectedlesson', 'lesson', format_string($lesson->name)));
             echo $lessonoutput->login_prompt($lesson, $userpassword !== '');
             echo $lessonoutput->footer();
@@ -516,19 +533,16 @@ if ($pageid != LESSON_EOL) {
             $grade->userid = $USER->id;
             $grade->grade = $gradeinfo->grade;
             $grade->completed = time();
-            if (!$lesson->practice) {
-                if (isset($USER->modattempts[$lesson->id])) { // if reviewing, make sure update old grade record
-                    if (!$grades = $DB->get_records("lesson_grades", array("lessonid" => $lesson->id, "userid" => $USER->id), "completed DESC", '*', 0, 1)) {
-                        print_error('cannotfindgrade', 'lesson');
-                    }
-                    $oldgrade = array_shift($grades);
-                    $grade->id = $oldgrade->id;
-                    $DB->update_record("lesson_grades", $grade);
-                } else {
-                    $newgradeid = $DB->insert_record("lesson_grades", $grade);
+            if (isset($USER->modattempts[$lesson->id])) { // If reviewing, make sure update old grade record.
+                if (!$grades = $DB->get_records("lesson_grades",
+                        array("lessonid" => $lesson->id, "userid" => $USER->id), "completed DESC", '*', 0, 1)) {
+                    print_error('cannotfindgrade', 'lesson');
                 }
+                $oldgrade = array_shift($grades);
+                $grade->id = $oldgrade->id;
+                $DB->update_record("lesson_grades", $grade);
             } else {
-                $DB->delete_records("lesson_attempts", array("lessonid" => $lesson->id, "userid" => $USER->id, "retry" => $ntries));
+                $newgradeid = $DB->insert_record("lesson_grades", $grade);
             }
         } else {
             if ($lesson->timelimit) {
@@ -538,9 +552,7 @@ if ($pageid != LESSON_EOL) {
                     $grade->userid = $USER->id;
                     $grade->grade = 0;
                     $grade->completed = time();
-                    if (!$lesson->practice) {
-                        $newgradeid = $DB->insert_record("lesson_grades", $grade);
-                    }
+                    $newgradeid = $DB->insert_record("lesson_grades", $grade);
                     $lessoncontent .= $lessonoutput->paragraph(get_string("eolstudentoutoftimenoanswers", "lesson"));
                 }
             } else {
