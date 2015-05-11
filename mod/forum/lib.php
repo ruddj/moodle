@@ -3388,7 +3388,7 @@ function forum_print_post($post, $discussion, $forum, &$cm, $course, $ownpost=fa
     }
 
     if (!empty($post->lastpost)) {
-        $forumpostclass = ' lastpost';
+        $forumpostclass .= ' lastpost';
     }
 
     $postbyuser = new stdClass;
@@ -3929,14 +3929,10 @@ function forum_set_return() {
     global $CFG, $SESSION;
 
     if (! isset($SESSION->fromdiscussion)) {
-        if (!empty($_SERVER['HTTP_REFERER'])) {
-            $referer = $_SERVER['HTTP_REFERER'];
-        } else {
-            $referer = "";
-        }
+        $referer = clean_param($_SERVER['HTTP_REFERER'], PARAM_LOCALURL);
         // If the referer is NOT a login screen then save it.
         if (! strncasecmp("$CFG->wwwroot/login", $referer, 300)) {
-            $SESSION->fromdiscussion = $_SERVER["HTTP_REFERER"];
+            $SESSION->fromdiscussion = $referer;
         }
     }
 }
@@ -7833,8 +7829,7 @@ function mod_forum_myprofile_navigation(core_user\output\myprofile\tree $tree, $
     if (!empty($course)) {
         $postsurl->param('course', $course->id);
     }
-    $string = $iscurrentuser ? get_string('myprofileownpost', 'mod_forum') :
-            get_string('forumposts', 'mod_forum');
+    $string = get_string('forumposts', 'mod_forum');
     $node = new core_user\output\myprofile\node('miscellaneous', 'forumposts', $string, null, $postsurl);
     $tree->add_node($node);
 
@@ -7842,8 +7837,7 @@ function mod_forum_myprofile_navigation(core_user\output\myprofile\tree $tree, $
     if (!empty($course)) {
         $discussionssurl->param('course', $course->id);
     }
-    $string = $iscurrentuser ? get_string('myprofileowndis', 'mod_forum') :
-            get_string('myprofileotherdis', 'mod_forum');
+    $string = get_string('myprofileotherdis', 'mod_forum');
     $node = new core_user\output\myprofile\node('miscellaneous', 'forumdiscussions', $string, null,
         $discussionssurl);
     $tree->add_node($node);
