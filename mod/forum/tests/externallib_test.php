@@ -762,4 +762,85 @@ class mod_forum_external_testcase extends externallib_advanced_testcase {
         $this->assertCount(0, $discussions['warnings']);
 
     }
+
+    /**
+     * Test add_discussion_post
+     */
+    public function test_add_discussion_post() {
+        global $CFG;
+
+        $this->resetAfterTest(true);
+
+        $user = self::getDataGenerator()->create_user();
+        $otheruser = self::getDataGenerator()->create_user();
+
+        self::setAdminUser();
+
+        // Create course to add the module.
+        $course = self::getDataGenerator()->create_course(array('groupmode' => VISIBLEGROUPS, 'groupmodeforce' => 0));
+
+        // Forum with tracking off.
+        $record = new stdClass();
+        $record->course = $course->id;
+        $forum = self::getDataGenerator()->create_module('forum', $record);
+        $cm = get_coursemodule_from_id('forum', $forum->cmid, 0, false, MUST_EXIST);
+        $forumcontext = context_module::instance($forum->cmid);
+
+        // Add discussions to the forums.
+        $record = new stdClass();
+        $record->course = $course->id;
+        $record->userid = $user->id;
+        $record->forum = $forum->id;
+        $discussion = self::getDataGenerator()->get_plugin_generator('mod_forum')->create_discussion($record);
+
+        // Try to post (user not enrolled).
+        self::setUser($user);
+        try {
+            mod_forum_external::add_discussion_post($discussion->firstpost, 'some subject', 'some text here...');
+            $this->fail('Exception expected due to being unenrolled from the course.');
+        } catch (moodle_exception $e) {
+            $this->assertEquals('requireloginerror', $e->errorcode);
+        }
+
+        $this->getDataGenerator()->enrol_user($user->id, $course->id);
+        $this->getDataGenerator()->enrol_user($otheruser->id, $course->id);
+
+        $post = mod_forum_external::add_discussion_post($discussion->firstpost, 'some subject', 'some text here...');
+        $post = external_api::clean_returnvalue(mod_forum_external::add_discussion_post_returns(), $post);
+
+        $posts = mod_forum_external::get_forum_discussion_posts($discussion->id);
+        $posts = external_api::clean_returnvalue(mod_forum_external::get_forum_discussion_posts_returns(), $posts);
+        // We receive the discussion and the post.
+        $this->assertEquals(2, count($posts['posts']));
+
+        $tested = false;
+        foreach ($posts['posts'] as $postel) {
+            if ($post['postid'] == $postel['id']) {
+                $this->assertEquals('some subject', $postel['subject']);
+                $this->assertEquals('some text here...', $postel['message']);
+                $tested = true;
+            }
+        }
+        $this->assertTrue($tested);
+
+        // Check not posting in groups the user is not member of.
+        $group = $this->getDataGenerator()->create_group(array('courseid' => $course->id));
+        groups_add_member($group->id, $otheruser->id);
+
+        $forum = self::getDataGenerator()->create_module('forum', $record, array('groupmode' => SEPARATEGROUPS));
+        $record->forum = $forum->id;
+        $record->userid = $otheruser->id;
+        $record->groupid = $group->id;
+        $discussion = self::getDataGenerator()->get_plugin_generator('mod_forum')->create_discussion($record);
+
+        try {
+            mod_forum_external::add_discussion_post($discussion->firstpost, 'some subject', 'some text here...');
+            $this->fail('Exception expected due to invalid permissions for posting.');
+        } catch (moodle_exception $e) {
+            // Expect debugging since we are switching context, and this is something WS_SERVER mode don't like.
+            $this->assertDebuggingCalled();
+            $this->assertEquals('nopostforum', $e->errorcode);
+        }
+
+    }
 }

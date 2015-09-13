@@ -15,40 +15,38 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * A scheduled task.
+ * Edit course tags form
  *
- * @package    core
- * @copyright  2013 onwards Martin Dougiamas  http://dougiamas.com
+ * @package    core_course
+ * @copyright  2015 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace core\task;
+
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->libdir.'/formslib.php');
 
 /**
- * Simple task to run the completion cron.
+ * Edit course tags form
+ *
+ * @package    core_course
+ * @copyright  2015 Marina Glancy
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class completion_cron_task extends scheduled_task {
+class coursetags_form extends moodleform {
 
     /**
-     * Get a descriptive name for this task (shown to admins).
-     *
-     * @return string
+     * Form definition
      */
-    public function get_name() {
-        return get_string('taskcompletioncron', 'admin');
+    public function definition() {
+        $mform    = $this->_form;
+
+        $mform->addElement('tags', 'tags', get_string('tags'));
+
+        $mform->addElement('hidden', 'id', null);
+        $mform->setType('id', PARAM_INT);
+
+        $this->add_action_buttons();
+
     }
-
-    /**
-     * Do the job.
-     * Throw exceptions on errors (the job will be retried).
-     */
-    public function execute() {
-        global $CFG;
-
-        if ($CFG->enablecompletion) {
-            // Completion cron.
-            require_once($CFG->dirroot.'/completion/cron.php');
-            completion_cron();
-        }
-    }
-
 }
