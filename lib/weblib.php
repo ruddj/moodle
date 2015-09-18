@@ -1354,6 +1354,9 @@ function format_string($string, $striplinks = true, $options = null) {
     } else if (is_numeric($options['context'])) {
         $options['context'] = context::instance_by_id($options['context']);
     }
+    if (!isset($options['filter'])) {
+        $options['filter'] = true;
+    }
 
     if (!$options['context']) {
         // We did not find any context? weird.
@@ -1372,7 +1375,7 @@ function format_string($string, $striplinks = true, $options = null) {
     // Regular expression moved to its own method for easier unit testing.
     $string = replace_ampersands_not_followed_by_entity($string);
 
-    if (!empty($CFG->filterall)) {
+    if (!empty($CFG->filterall) && $options['filter']) {
         $filtermanager = filter_manager::instance();
         $filtermanager->setup_page_for_filters($PAGE, $options['context']); // Setup global stuff filters may have.
         $string = $filtermanager->filter_string($string, $options['context']);
@@ -2590,7 +2593,7 @@ function redirect($url, $message='', $delay=-1) {
     // Technically, HTTP/1.1 requires Location: header to contain the absolute path.
     // (In practice browsers accept relative paths - but still, might as well do it properly.)
     // This code turns relative into absolute.
-    if (!preg_match('|^[a-z]+:|', $url)) {
+    if (!preg_match('|^[a-z]+:|i', $url)) {
         // Get host name http://www.wherever.com.
         $hostpart = preg_replace('|^(.*?[^:/])/.*$|', '$1', $CFG->wwwroot);
         if (preg_match('|^/|', $url)) {
