@@ -4616,6 +4616,14 @@ class settings_navigation extends navigation_node {
             $categorynode->add(get_string('restorecourse', 'admin'), $url, self::TYPE_SETTING, null, 'restorecourse', new pix_icon('i/restore', ''));
         }
 
+        // Let plugins hook into category settings navigation.
+        $pluginsfunction = get_plugins_with_function('extend_navigation_category_settings', 'lib.php');
+        foreach ($pluginsfunction as $plugintype => $plugins) {
+            foreach ($plugins as $pluginfunction) {
+                $pluginfunction($categorynode, $catcontext);
+            }
+        }
+
         return $categorynode;
     }
 
@@ -4772,6 +4780,33 @@ class settings_navigation extends navigation_node {
      */
     public function clear_cache() {
         $this->cache->volatile();
+    }
+
+    /**
+     * Checks to see if there are child nodes available in the specific user's preference node.
+     * If so, then they have the appropriate permissions view this user's preferences.
+     *
+     * @since Moodle 2.9.3
+     * @param int $userid The user's ID.
+     * @return bool True if child nodes exist to view, otherwise false.
+     */
+    public function can_view_user_preferences($userid) {
+        if (is_siteadmin()) {
+            return true;
+        }
+        // See if any nodes are present in the preferences section for this user.
+        $preferencenode = $this->find('userviewingsettings' . $userid, null);
+        if ($preferencenode && $preferencenode->has_children()) {
+            // Run through each child node.
+            foreach ($preferencenode->children as $childnode) {
+                // If the child node has children then this user has access to a link in the preferences page.
+                if ($childnode->has_children()) {
+                    return true;
+                }
+            }
+        }
+        // No links found for the user to access on the preferences page.
+        return false;
     }
 }
 

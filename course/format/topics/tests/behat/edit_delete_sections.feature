@@ -25,14 +25,14 @@ Feature: Sections can be edited and deleted in topics format
     And I turn editing mode on
 
   Scenario: Edit section summary in topics format
-    When I click on "Edit summary" "link" in the "li#section-2" "css_element"
+    When I edit the section "2"
     And I set the following fields to these values:
       | Summary | Welcome to section 2 |
     And I press "Save changes"
     Then I should see "Welcome to section 2" in the "li#section-2" "css_element"
 
   Scenario: Edit section default name in topics format
-    When I click on "Edit summary" "link" in the "li#section-2" "css_element"
+    When I edit the section "2"
     And I set the following fields to these values:
       | Use default section name | 0                        |
       | name                     | This is the second topic |
@@ -41,17 +41,17 @@ Feature: Sections can be edited and deleted in topics format
     And I should not see "Topic 2" in the "li#section-2" "css_element"
 
   Scenario: Deleting the last section in topics format
-    When I click on "Delete topic" "link" in the "li#section-5" "css_element"
+    When I delete section "5"
     Then I should see "Are you absolutely sure you want to completely delete \"Topic 5\" and all the activities it contains?"
-    And I press "Continue"
+    And I press "Delete"
     And I should not see "Topic 5"
     And I navigate to "Edit settings" node in "Course administration"
     And I expand all fieldsets
     And the field "Number of sections" matches value "4"
 
   Scenario: Deleting the middle section in topics format
-    When I click on "Delete topic" "link" in the "li#section-4" "css_element"
-    And I press "Continue"
+    When I delete section "4"
+    And I press "Delete"
     Then I should not see "Topic 5"
     And I should not see "Test chat name"
     And I should see "Test choice name" in the "li#section-4" "css_element"
@@ -62,8 +62,8 @@ Feature: Sections can be edited and deleted in topics format
   Scenario: Deleting the orphaned section in topics format
     When I follow "Reduce the number of sections"
     Then I should see "Orphaned activities (section 5)" in the "li#section-5" "css_element"
-    And I click on "Delete topic" "link" in the "li#section-5" "css_element"
-    And I press "Continue"
+    And I delete section "5"
+    And I press "Delete"
     And I should not see "Topic 5"
     And I should not see "Orphaned activities"
     And "li#section-5" "css_element" should not exist
@@ -76,8 +76,8 @@ Feature: Sections can be edited and deleted in topics format
     Then I should see "Orphaned activities (section 5)" in the "li#section-5" "css_element"
     And "li#section-5.orphaned" "css_element" should exist
     And "li#section-4.orphaned" "css_element" should not exist
-    And I click on "Delete topic" "link" in the "li#section-1" "css_element"
-    And I press "Continue"
+    And I delete section "1"
+    And I press "Delete"
     And I should not see "Test book name"
     And I should see "Orphaned activities (section 4)" in the "li#section-4" "css_element"
     And "li#section-5" "css_element" should not exist
