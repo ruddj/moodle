@@ -550,13 +550,27 @@ class mod_scorm_external extends external_api {
             $params['attempt'] = scorm_get_last_attempt($scorm->id, $user->id);
         }
 
-        if ($scormtracks = scorm_get_tracks($sco->id, $user->id, $params['attempt'])) {
-            foreach ($scormtracks as $element => $value) {
-                $tracks[] = array(
-                    'element' => $element,
-                    'value' => $value,
-                );
+        $attempted = false;
+        if ($scormtracks = scorm_get_tracks($sco->id, $params['userid'], $params['attempt'])) {
+            // Check if attempted.
+            if ($scormtracks->status != '') {
+                $attempted = true;
+                foreach ($scormtracks as $element => $value) {
+                    $tracks[] = array(
+                        'element' => $element,
+                        'value' => $value,
+                    );
+                }
             }
+        }
+
+        if (!$attempted) {
+            $warnings[] = array(
+                'item' => 'attempt',
+                'itemid' => $params['attempt'],
+                'warningcode' => 'notattempted',
+                'message' => get_string('notattempted', 'scorm')
+            );
         }
 
         $result = array();
@@ -651,7 +665,7 @@ class mod_scorm_external extends external_api {
                 $module['id'] = $scorm->id;
                 $module['coursemodule'] = $scorm->coursemodule;
                 $module['course'] = $scorm->course;
-                $module['name']  = format_string($scorm->name, true, array('context' => $context));
+                $module['name']  = external_format_string($scorm->name, $context->id);
                 list($module['intro'], $module['introformat']) =
                     external_format_text($scorm->intro, $scorm->introformat, $context->id, 'mod_scorm', 'intro', $scorm->id);
 
@@ -678,6 +692,8 @@ class mod_scorm_external extends external_api {
                                                     $context->id, 'mod_scorm', 'package', 0, '/', $scorm->reference)->out(false);
                         }
                     }
+
+                    $module['protectpackagedownloads'] = get_config('scorm', 'protectpackagedownloads');
 
                     $viewablefields = array('version', 'maxgrade', 'grademethod', 'whatgrade', 'maxattempt', 'forcecompleted',
                                             'forcenewattempt', 'lastattemptlock', 'displayattemptstatus', 'displaycoursestructure',
@@ -725,7 +741,7 @@ class mod_scorm_external extends external_api {
                             'id' => new external_value(PARAM_INT, 'SCORM id'),
                             'coursemodule' => new external_value(PARAM_INT, 'Course module id'),
                             'course' => new external_value(PARAM_INT, 'Course id'),
-                            'name' => new external_value(PARAM_TEXT, 'SCORM name'),
+                            'name' => new external_value(PARAM_RAW, 'SCORM name'),
                             'intro' => new external_value(PARAM_RAW, 'The SCORM intro'),
                             'introformat' => new external_format_value('intro'),
                             'packagesize' => new external_value(PARAM_INT, 'SCORM zip package size', VALUE_OPTIONAL),
@@ -766,6 +782,8 @@ class mod_scorm_external extends external_api {
                                                                         VALUE_OPTIONAL),
                             'scormtype' => new external_value(PARAM_ALPHA, 'SCORM type', VALUE_OPTIONAL),
                             'reference' => new external_value(PARAM_NOTAGS, 'Reference to the package', VALUE_OPTIONAL),
+                            'protectpackagedownloads' => new external_value(PARAM_BOOL, 'Protect package downloads?',
+                                                                            VALUE_OPTIONAL),
                             'updatefreq' => new external_value(PARAM_INT, 'Auto-update frequency for remote packages',
                                                                 VALUE_OPTIONAL),
                             'options' => new external_value(PARAM_RAW, 'Additional options', VALUE_OPTIONAL),

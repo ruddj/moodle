@@ -750,6 +750,14 @@ $functions = array(
         'type'        => 'read'
     ),
 
+    'core_course_get_course_module_by_instance' => array(
+        'classname'   => 'core_course_external',
+        'methodname'  => 'get_course_module_by_instance',
+        'classpath'   => 'course/externallib.php',
+        'description' => 'Return information about a given module name and instance id',
+        'type'        => 'read'
+    ),
+
     // === course category related functions ===
 
     'core_course_get_categories' => array(
@@ -1200,6 +1208,7 @@ $services = array(
             'core_course_view_course',
             'core_course_search_courses',
             'core_course_get_course_module',
+            'core_course_get_course_module_by_instance',
             'core_completion_get_activities_completion_status',
             'core_notes_get_course_notes',
             'core_completion_get_course_completion_status',
@@ -1237,6 +1246,10 @@ $services = array(
             'mod_choice_submit_choice_response',
             'mod_choice_view_choice',
             'mod_choice_get_choices_by_courses',
+            'mod_choice_delete_choice_responses',
+            'mod_lti_get_tool_launch_data',
+            'mod_lti_get_ltis_by_courses',
+            'mod_lti_view_lti',
             'mod_imscp_view_imscp',
             'mod_imscp_get_imscps_by_courses',
             ),

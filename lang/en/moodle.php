@@ -1344,7 +1344,7 @@ $string['nothingtodisplay'] = 'Nothing to display';
 $string['notice'] = 'Notice';
 $string['noticenewerbackup'] = 'This backup file has been created with Moodle {$a->backuprelease} ({$a->backupversion}) and it\'s newer than your currently installed Moodle {$a->serverrelease} ({$a->serverversion}). This could cause some inconsistencies because backwards compatibility of backup files cannot be guaranteed.';
 $string['notifications'] = 'Notifications';
-$string['notifyloginfailuresmessage'] = '{$a->time}, IP: {$a->ip}, User: {$a->info}';
+$string['notifyloginfailuresmessage'] = '{$a->time}, IP: {$a->ip}, User: {$a->info}, User full name: {$a->name}';
 $string['notifyloginfailuresmessageend'] = 'You can view these logs at {$a}';
 $string['notifyloginfailuresmessagestart'] = 'Here is a list of failed login attempts at {$a} since you were last notified';
 $string['notifyloginfailuressubject'] = '{$a} :: Failed logins notification';
@@ -1826,6 +1826,11 @@ $string['teacheronly'] = 'for the {$a} only';
 $string['teacherroles'] = '{$a} roles';
 $string['teachers'] = 'Teachers';
 $string['textediting'] = 'Text editor';
+$string['textediting_help'] = 'If an HTML editor such as Atto or TinyMCE is selected, text input areas will have a toolbar with buttons for easily adding content.
+
+If \'plain text area\' is selected, a format for text input areas such as HTML or Markdown can be chosen.
+
+The list of available text editors is determined by the site administrator.';
 $string['texteditor'] = 'Use standard web forms';
 $string['textformat'] = 'Plain text format';
 $string['thanks'] = 'Thanks';
@@ -1869,6 +1874,7 @@ $string['undecided'] = 'Undecided';
 $string['unfinished'] = 'Unfinished';
 $string['unknowncategory'] = 'Unknown category';
 $string['unknownerror'] = 'Unknown error';
+$string['unknownuser'] = 'Unknown user';
 $string['unlimited'] = 'Unlimited';
 $string['unpacking'] = 'Unpacking {$a}';
 $string['unsafepassword'] = 'Unsafe password - try something else';

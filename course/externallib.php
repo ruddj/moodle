@@ -238,16 +238,16 @@ class core_course_external extends external_api {
 
                         $module = array();
 
+                        $modcontext = context_module::instance($cm->id);
+
                         //common info (for people being able to see the module or availability dates)
                         $module['id'] = $cm->id;
-                        $module['name'] = format_string($cm->name, true);
+                        $module['name'] = external_format_string($cm->name, $modcontext->id);
                         $module['instance'] = $cm->instance;
                         $module['modname'] = $cm->modname;
                         $module['modplural'] = $cm->modplural;
                         $module['modicon'] = $cm->get_icon_url()->out(false);
                         $module['indent'] = $cm->indent;
-
-                        $modcontext = context_module::instance($cm->id);
 
                         if (!empty($cm->showdescription) or $cm->modname == 'label') {
                             // We want to use the external format. However from reading get_formatted_content(), $cm->content format is always FORMAT_HTML.
@@ -2370,7 +2370,7 @@ class core_course_external extends external_api {
             $info->completion = $cm->completion;
         }
         // Format name.
-        $info->name = format_string($cm->name, true, array('context' => $context));
+        $info->name = external_format_string($cm->name, $context->id);
 
         $result = array();
         $result['cm'] = $info;
@@ -2392,7 +2392,7 @@ class core_course_external extends external_api {
                         'id' => new external_value(PARAM_INT, 'The course module id'),
                         'course' => new external_value(PARAM_INT, 'The course id'),
                         'module' => new external_value(PARAM_INT, 'The module type id'),
-                        'name' => new external_value(PARAM_TEXT, 'The activity name'),
+                        'name' => new external_value(PARAM_RAW, 'The activity name'),
                         'modname' => new external_value(PARAM_COMPONENT, 'The module component name (forum, assign, etc..)'),
                         'instance' => new external_value(PARAM_INT, 'The activity instance id'),
                         'section' => new external_value(PARAM_INT, 'The module section id'),
@@ -2416,6 +2416,54 @@ class core_course_external extends external_api {
                 'warnings' => new external_warnings()
             )
         );
+    }
+
+    /**
+     * Returns description of method parameters
+     *
+     * @return external_function_parameters
+     * @since Moodle 3.0
+     */
+    public static function get_course_module_by_instance_parameters() {
+        return new external_function_parameters(
+            array(
+                'module' => new external_value(PARAM_COMPONENT, 'The module name'),
+                'instance' => new external_value(PARAM_INT, 'The module instance id')
+            )
+        );
+    }
+
+    /**
+     * Return information about a course module.
+     *
+     * @param string $module the module name
+     * @param int $instance the activity instance id
+     * @return array of warnings and the course module
+     * @since Moodle 3.0
+     * @throws moodle_exception
+     */
+    public static function get_course_module_by_instance($module, $instance) {
+
+        $params = self::validate_parameters(self::get_course_module_by_instance_parameters(),
+                                            array(
+                                                'module' => $module,
+                                                'instance' => $instance,
+                                            ));
+
+        $warnings = array();
+        $cm = get_coursemodule_from_instance($params['module'], $params['instance'], 0, false, MUST_EXIST);
+
+        return self::get_course_module($cm->id);
+    }
+
+    /**
+     * Returns description of method result value
+     *
+     * @return external_description
+     * @since Moodle 3.0
+     */
+    public static function get_course_module_by_instance_returns() {
+        return self::get_course_module_returns();
     }
 
 }
