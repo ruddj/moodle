@@ -200,15 +200,15 @@
     <location>zend</location>
     <name>Zend Framework</name>
     <license>BSD</license>
-    <version>1.10.6</version>
+    <version>1.12.16</version>
     <licenseversion></licenseversion>
   </library>
   <library>
     <location>html2text.php</location>
     <name>HTML2Text</name>
     <license>GPL</license>
-    <version>1.0.0</version>
-    <licenseversion>3.0+</licenseversion>
+    <version>3.0.0</version>
+    <licenseversion>2.0+</licenseversion>
   </library>
   <library>
     <location>markdown</location>
