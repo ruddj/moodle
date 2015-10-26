@@ -15,28 +15,25 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Adds new instance of enrol_guest to specified course.
+ * Definition of auth_cas tasks.
  *
- * @package    enrol_guest
- * @copyright  2010 Petr Skoda  {@link http://skodak.org}
+ * @package    auth_cas
+ * @category   task
+ * @copyright  2015 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require('../../config.php');
+defined('MOODLE_INTERNAL') || die();
 
-$id = required_param('id', PARAM_INT); // course id
-
-$course = $DB->get_record('course', array('id'=>$id), '*', MUST_EXIST);
-$context = context_course::instance($course->id, MUST_EXIST);
-
-require_login($course);
-require_capability('moodle/course:enrolconfig', $context);
-require_sesskey();
-
-$enrol = enrol_get_plugin('guest');
-
-if ($enrol->get_newinstance_link($course->id)) {
-    $enrol->add_default_instance($course);
-}
-
-redirect(new moodle_url('/enrol/instances.php', array('id'=>$course->id)));
+$tasks = array(
+    array(
+        'classname' => 'auth_cas\task\sync_task',
+        'blocking' => 0,
+        'minute' => '0',
+        'hour' => '0',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+        'disabled' => 1
+    )
+);
