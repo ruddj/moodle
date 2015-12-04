@@ -906,6 +906,15 @@ $functions = array(
         'capabilities'  => '',
     ),
 
+    'core_message_delete_message' => array(
+        'classname'     => 'core_message_external',
+        'methodname'    => 'delete_message',
+        'classpath'     => 'message/externallib.php',
+        'description'   => 'Deletes a message.',
+        'type'          => 'write',
+        'capabilities'  => 'moodle/site:deleteownmessage',
+    ),
+
     // === notes related functions ===
 
     'moodle_notes_create_notes' => array(
@@ -1160,6 +1169,7 @@ $services = array(
             'core_enrol_get_enrolled_users',
             'core_enrol_get_course_enrolment_methods',
             'enrol_self_enrol_user',
+            'enrol_self_get_instance_info',
             'core_user_get_users_by_id',
             'core_webservice_get_site_info',
             'core_notes_create_notes',
@@ -1216,6 +1226,7 @@ $services = array(
             'core_completion_get_course_completion_status',
             'core_user_view_user_list',
             'core_message_mark_message_read',
+            'core_message_delete_message',
             'core_notes_view_notes',
             'mod_forum_view_forum_discussion',
             'core_user_view_user_profile',

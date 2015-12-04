@@ -1,6 +1,17 @@
 This files describes API changes in core libraries and APIs,
 information provided here is intended especially for developers.
 
+=== 3.1 ===
+
+* Plugins can extend the navigation for user by declaring the following callback:
+  <frankenstyle>_extend_navigation_user(navigation_node $parentnode, stdClass $user,
+                                        context_user $context, stdClass $course,
+                                        context_course $coursecontext)
+* The function notify() now throws a debugging message - see MDL-50269.
+* Ajax calls going through lib/ajax/* now validate the return values before sending
+  the response. If the validation does not pass an exception is raised. This behaviour
+  is consistent with web services.
+
 === 3.0 ===
 
 * Minify updated to 2.2.1
