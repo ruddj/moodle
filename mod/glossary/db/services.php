@@ -15,24 +15,24 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Description 'question' definition class.
+ * Glossary module external functions.
  *
- * @package    qtype
- * @subpackage description
- * @copyright  2009 The Open University
+ * @package    mod_glossary
+ * @category   external
+ * @copyright  2015 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/question/type/questionbase.php');
+$functions = array(
 
-/**
- * Represents a description 'question'.
- *
- * @copyright  2009 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class qtype_description_question extends question_information_item {
-}
+    'mod_glossary_get_glossaries_by_courses' => array(
+        'classname'     => 'mod_glossary_external',
+        'methodname'    => 'get_glossaries_by_courses',
+        'description'   => 'Retrieve a list of glossaries from several courses.',
+        'type'          => 'read',
+        'capabilities'  => 'mod/glossary:view'
+    ),
+
+);

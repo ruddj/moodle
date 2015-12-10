@@ -1132,7 +1132,7 @@ $functions = array(
     ),
 
     // Tag functions.
-   'core_tag_update_tags' => array(
+    'core_tag_update_tags' => array(
         'classname'   => 'core_tag_external',
         'methodname'  => 'update_tags',
         'description' => 'Updates tags',
@@ -1197,6 +1197,7 @@ $services = array(
             'mod_forum_get_forum_discussion_posts',
             'mod_forum_add_discussion_post',
             'mod_forum_add_discussion',
+            'mod_forum_can_add_discussion',
             'core_files_get_files',
             'core_message_get_messages',
             'core_message_create_contacts',
@@ -1269,6 +1270,8 @@ $services = array(
             'mod_lti_view_lti',
             'mod_imscp_view_imscp',
             'mod_imscp_get_imscps_by_courses',
+            'mod_glossary_get_glossaries_by_courses',
+            'mod_wiki_get_wikis_by_courses',
             ),
         'enabled' => 0,
         'restrictedusers' => 0,

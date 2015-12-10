@@ -15,24 +15,23 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Description 'question' definition class.
+ * Wiki external functions and service definitions.
  *
- * @package    qtype
- * @subpackage description
- * @copyright  2009 The Open University
+ * @package    mod_wiki
+ * @category   external
+ * @copyright  2015 Dani Palou <dani@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since      Moodle 3.1
  */
 
+$functions = array(
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($CFG->dirroot . '/question/type/questionbase.php');
-
-/**
- * Represents a description 'question'.
- *
- * @copyright  2009 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class qtype_description_question extends question_information_item {
-}
+    'mod_wiki_get_wikis_by_courses' => array(
+        'classname'     => 'mod_wiki_external',
+        'methodname'    => 'get_wikis_by_courses',
+        'description'   => 'Returns a list of wiki instances in a provided set of courses, if ' .
+                           'no courses are provided then all the wiki instances the user has access to will be returned.',
+        'type'          => 'read',
+        'capabilities'  => 'mod/wiki:viewpage'
+    )
+);
