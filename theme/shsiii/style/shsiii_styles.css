@@ -1038,3 +1038,16 @@ div.tabtree ul.tabrow0 li a:nolink:hover {
   text-decoration: none;
   background-color: white;
 }
+
+.section .activity .editing_move {
+  left: -25px;
+}
+
+[data-enhanced].show.moodle-actionmenu .menu > li {
+  min-width: 180px;
+}
+
+.mform fieldset div div .editor_atto_wrap {
+  margin-top: 20px;
+}
+
