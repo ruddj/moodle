@@ -24,9 +24,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 require_once(dirname(dirname(__FILE__)).'/config.php');
-require_once('lib.php');
-require_once('locallib.php');
-require_once($CFG->dirroot .'/comment/lib.php');
+require_once($CFG->dirroot . '/blog/lib.php');
+require_once($CFG->dirroot . '/blog/locallib.php');
+require_once($CFG->dirroot . '/comment/lib.php');
+require_once($CFG->dirroot . '/blog/edit_form.php');
 
 $action   = required_param('action', PARAM_ALPHA);
 $id       = optional_param('entryid', 0, PARAM_INT);
@@ -132,8 +133,12 @@ if ($action === 'delete') {
             redirect($returnurl);
         }
     } else if (blog_user_can_edit_entry($entry)) {
-        $optionsyes = array('entryid'=>$id, 'action'=>'delete', 'confirm'=>1, 'sesskey'=>sesskey(), 'courseid'=>$courseid);
-        $optionsno = array('userid'=>$entry->userid, 'courseid'=>$courseid);
+        $optionsyes = array('entryid' => $id,
+                            'action' => 'delete',
+                            'confirm' => 1,
+                            'sesskey' => sesskey(),
+                            'courseid' => $courseid);
+        $optionsno = array('userid' => $entry->userid, 'courseid' => $courseid);
         $PAGE->set_title("$SITE->shortname: $strblogs");
         $PAGE->set_heading($SITE->fullname);
         echo $OUTPUT->header();
@@ -181,10 +186,9 @@ if (!empty($entry->id)) {
     }
 }
 
-require_once('edit_form.php');
-$summaryoptions = array('maxfiles'=> 99, 'maxbytes'=>$CFG->maxbytes, 'trusttext'=>true, 'context'=>$sitecontext,
-    'subdirs'=>file_area_contains_subdirs($sitecontext, 'blog', 'post', $entry->id));
-$attachmentoptions = array('subdirs'=>false, 'maxfiles'=> 99, 'maxbytes'=>$CFG->maxbytes);
+$summaryoptions = array('maxfiles' => 99, 'maxbytes' => $CFG->maxbytes, 'trusttext' => true, 'context' => $sitecontext,
+    'subdirs' => file_area_contains_subdirs($sitecontext, 'blog', 'post', $entry->id));
+$attachmentoptions = array('subdirs' => false, 'maxfiles' => 99, 'maxbytes' => $CFG->maxbytes);
 
 $blogeditform = new blog_edit_form(null, compact('entry',
                                                  'summaryoptions',
@@ -202,9 +206,8 @@ $entry = file_prepare_standard_filemanager($entry,
                                            'attachment',
                                            $entry->id);
 
-if (!empty($CFG->usetags) && !empty($entry->id)) {
-    include_once($CFG->dirroot.'/tag/lib.php');
-    $entry->tags = tag_get_tags_array('post', $entry->id);
+if (!empty($entry->id)) {
+    $entry->tags = core_tag_tag::get_item_tags_array('core', 'post', $entry->id);
 }
 
 $entry->action = $action;
@@ -267,7 +270,6 @@ switch ($action) {
         if (empty($entry->id)) {
             print_error('wrongentryid', 'blog');
         }
-        $entry->tags = tag_get_tags_array('post', $entry->id);
         $strformheading = get_string('updateentrywithid', 'blog');
 
         break;

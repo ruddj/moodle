@@ -1148,6 +1148,14 @@ $functions = array(
         'ajax'        => true
     ),
 
+    'core_tag_get_tagindex' => array(
+        'classname'   => 'core_tag_external',
+        'methodname'  => 'get_tagindex',
+        'description' => 'Gets tag index page for one tag and one tag area',
+        'type'        => 'read',
+        'ajax'        => true
+    ),
+
 );
 
 $services = array(
@@ -1168,11 +1176,13 @@ $services = array(
             'core_enrol_get_users_courses',
             'core_enrol_get_enrolled_users',
             'core_enrol_get_course_enrolment_methods',
+            'enrol_guest_get_instance_info',
             'enrol_self_enrol_user',
             'enrol_self_get_instance_info',
             'core_user_get_users_by_id',
             'core_webservice_get_site_info',
             'core_notes_create_notes',
+            'core_notes_delete_notes',
             'core_user_get_course_user_profiles',
             'core_message_send_instant_messages',
             'mod_assign_get_grades',
@@ -1244,6 +1254,7 @@ $services = array(
             'mod_scorm_get_scorm_sco_tracks',
             'mod_scorm_get_scorm_attempt_count',
             'mod_scorm_get_scorms_by_courses',
+            'mod_scorm_launch_sco',
             'mod_survey_get_surveys_by_courses',
             'mod_survey_view_survey',
             'mod_survey_get_questions',
@@ -1272,6 +1283,21 @@ $services = array(
             'mod_imscp_get_imscps_by_courses',
             'mod_glossary_get_glossaries_by_courses',
             'mod_wiki_get_wikis_by_courses',
+            'mod_wiki_view_wiki',
+            'mod_wiki_view_page',
+            'mod_glossary_view_glossary',
+            'mod_glossary_view_entry',
+            'mod_glossary_get_entries_by_letter',
+            'mod_glossary_get_entries_by_date',
+            'mod_glossary_get_categories',
+            'mod_glossary_get_entries_by_category',
+            'mod_glossary_get_authors',
+            'mod_glossary_get_entries_by_author',
+            'mod_glossary_get_entries_by_author_id',
+            'mod_glossary_get_entries_by_search',
+            'mod_glossary_get_entries_by_term',
+            'mod_glossary_get_entries_to_approve',
+            'mod_glossary_get_entry_by_id',
             ),
         'enabled' => 0,
         'restrictedusers' => 0,
