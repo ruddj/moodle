@@ -475,6 +475,13 @@ class core_renderer extends renderer_base {
         }
 
         $output = '';
+
+        // Allow a url_rewrite plugin to setup any dynamic head content.
+        if (isset($CFG->urlrewriteclass) && !isset($CFG->upgraderunning)) {
+            $class = $CFG->urlrewriteclass;
+            $output .= $class::html_head_setup();
+        }
+
         $output .= '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />' . "\n";
         $output .= '<meta name="keywords" content="moodle, ' . $this->page->title . '" />' . "\n";
         // This is only set by the {@link redirect()} method
@@ -4119,6 +4126,16 @@ EOD;
     public function tag_list($tags, $label = null, $classes = '', $limit = 10, $pagecontext = null) {
         $list = new \core_tag\output\taglist($tags, $label, $classes, $limit, $pagecontext);
         return $this->render_from_template('core_tag/taglist', $list->export_for_template($this));
+    }
+
+    /**
+     * Renders element for inline editing of any value
+     *
+     * @param \core\output\inplace_editable $element
+     * @return string
+     */
+    public function render_inplace_editable(\core\output\inplace_editable $element) {
+        return $this->render_from_template('core/inplace_editable', $element->export_for_template($this));
     }
 }
 
