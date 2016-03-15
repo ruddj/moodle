@@ -701,3 +701,17 @@ table.category_subcategories tr.r1,
 .maincalendar table.calendartable td div.day a {
   font-weight: bold;
 }
+
+.gradingtable .no-overflow {
+  overflow: visible;
+}
+
+.gradingtable table.generaltable,
+.gradereport-grader-table {
+  background-color: white;
+}
+
+.gradingtable table.generaltable th, 
+.gradingtable table.generaltable td {
+  border: 1px solid #DDD;
+}
