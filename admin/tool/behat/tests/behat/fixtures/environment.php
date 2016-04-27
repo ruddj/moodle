@@ -15,22 +15,20 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for the ltiservice_toolsettings service.
+ * Display environment used for running behat.
  *
- * @package    ltiservice_toolsettings
- * @copyright  2014 Vital Source Technologies http://vitalsource.com
- * @author     Stephen Vickers
+ * This file is used for behat testing to ensure cli and apache
+ * version of environment is same.
+ *
+ * @package    tool_behat
+ * @copyright  2016 onwards Rajesh Taneja
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+require_once(__DIR__.'/../../../../../../config.php');
 
-defined('MOODLE_INTERNAL') || die();
+// Only continue for behat site.
+defined('BEHAT_SITE_RUNNING') ||  die();
 
-
-$plugin->version   = 2015051101;
-$plugin->requires  = 2015050500;
-$plugin->component = 'ltiservice_toolsettings';
-$plugin->dependencies = array(
-    'ltiservice_profile' => 2015050500,
-    'ltiservice_toolproxy' => 2015050500
-);
+require_once($CFG->libdir.'/behat/classes/util.php');
+echo json_encode(behat_util::get_environment(), true);
