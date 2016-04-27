@@ -242,6 +242,10 @@ $CFG->admin = 'admin';
 //      $CFG->session_handler_class = '\core\session\file';
 //      $CFG->session_file_save_path = $CFG->dataroot.'/sessions';
 //
+//   Redis session handler (requires redis server and redis extension):
+//      $CFG->session_handler_class = '\core\session\redis';
+//      $CFG->session_redis_save_path = 'tcp://127.0.0.1'
+//
 //   Memcached session handler (requires memcached server and extension):
 //      $CFG->session_handler_class = '\core\session\memcached';
 //      $CFG->session_memcached_save_path = '127.0.0.1:11211';
@@ -840,6 +844,12 @@ $CFG->admin = 'admin';
 // Note that, for now, this only used by the profiling features
 // (Development->Profiling) built into Moodle.
 //      $CFG->pathtodot = '';
+//
+// Path to unoconv.
+// Probably something like /usr/bin/unoconv. Used as a fallback to convert between document formats.
+// Unoconv is used convert between file formats supported by LibreOffice.
+// Use a recent version of unoconv ( >= 0.7 ), older versions have trouble running from a webserver.
+//      $CFG->pathtounoconv = '';
 
 //=========================================================================
 // ALL DONE!  To continue installation, visit your main page with a browser

@@ -263,14 +263,6 @@ $definitions = array(
         'staticacceleration' => true,
     ),
 
-    // Caches search results.
-    'search_results' => array(
-        'mode' => cache_store::MODE_SESSION,
-        'simplekeys' => true,
-        'staticacceleration' => true,
-        'staticaccelerationsize' => 3
-    ),
-
     // Grade categories. Stored at session level as invalidation is very aggressive.
     'grade_categories' => array(
         'mode' => cache_store::MODE_SESSION,
@@ -285,5 +277,18 @@ $definitions = array(
         'mode' => cache_store::MODE_REQUEST,
         'simplekeys' => true,
         'simpledata' => true
-    )
+    ),
+
+    // Caches tag index builder results.
+    'tagindexbuilder' => array(
+        'mode' => cache_store::MODE_SESSION,
+        'simplekeys' => true,
+        'simplevalues' => true,
+        'staticacceleration' => true,
+        'staticaccelerationsize' => 10,
+        'ttl' => 900, // 15 minutes.
+        'invalidationevents' => array(
+            'resettagindexbuilder',
+        ),
+    ),
 );

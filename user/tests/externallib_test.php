@@ -64,7 +64,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'descriptionformat' => FORMAT_MOODLE,
             'city' => 'Perth',
             'url' => 'http://moodle.org',
-            'country' => 'au'
+            'country' => 'AU'
             );
 
         $user1 = self::getDataGenerator()->create_user($user1);
@@ -222,7 +222,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'descriptionformat' => FORMAT_MOODLE,
             'city' => 'Perth',
             'url' => 'http://moodle.org',
-            'country' => 'au'
+            'country' => 'AU'
             );
         $user1 = self::getDataGenerator()->create_user($user1);
         if (!empty($CFG->usetags)) {
@@ -383,7 +383,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'descriptionformat' => FORMAT_MOODLE,
             'city' => 'Perth',
             'url' => 'http://moodle.org',
-            'country' => 'au'
+            'country' => 'AU'
         );
         $return->user1 = self::getDataGenerator()->create_user($return->user1);
         if (!empty($CFG->usetags)) {
@@ -494,7 +494,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'email' => 'usertest1@example.com',
             'description' => 'This is a description for user 1',
             'city' => 'Perth',
-            'country' => 'au'
+            'country' => 'AU'
             );
 
         $context = context_system::instance();
@@ -586,7 +586,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'descriptionformat' => FORMAT_MOODLE,
             'city' => 'Perth',
             'url' => 'http://moodle.org',
-            'country' => 'au'
+            'country' => 'AU'
             );
         $user1 = self::getDataGenerator()->create_user($user1);
         if (!empty($CFG->usetags)) {
@@ -672,7 +672,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
             'email' => 'usertest1@example.com',
             'description' => 'This is a description for user 1',
             'city' => 'Perth',
-            'country' => 'au'
+            'country' => 'AU'
             );
 
         $context = context_system::instance();
@@ -818,6 +818,7 @@ class core_user_externallib_testcase extends externallib_advanced_testcase {
         $device2['pushid'] = "0987654321";
         $device2['appid'] = "other.app.com";
 
+        $this->setAdminUser();
         // Create a user device using the external API function.
         core_user_external::add_user_device($device['appid'], $device['name'], $device['model'], $device['platform'],
                                             $device['version'], $device['pushid'], $device['uuid']);

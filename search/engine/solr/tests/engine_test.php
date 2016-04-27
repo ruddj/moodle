@@ -165,8 +165,11 @@ class search_solr_engine_testcase extends advanced_testcase {
         $this->assertEquals($USER->id, $results[0]->get('userid'));
         $this->assertEquals(\context_system::instance()->id, $results[0]->get('contextid'));
 
-        // Testing filters we don't purge cache in between assertions because cache key depends on the whole filters set
-        // and they are different.
+        // Do a test to make sure we aren't searching non-query fields, like areaid.
+        $querydata->q = \core_search\manager::generate_areaid('core_mocksearch', 'role_capabilities');
+        $this->assertCount(0, $this->search->search($querydata));
+        $querydata->q = 'message';
+
         sleep(1);
         $beforeadding = time();
         sleep(1);
@@ -187,6 +190,38 @@ class search_solr_engine_testcase extends advanced_testcase {
         unset($querydata->timeend);
         $querydata->title = 'moodle/course:renameroles roleid 1';
         $this->assertCount(1, $this->search->search($querydata));
+
+        // Course IDs.
+        unset($querydata->title);
+        $querydata->courseids = array(SITEID + 1);
+        $this->assertCount(0, $this->search->search($querydata));
+
+        $querydata->courseids = array(SITEID);
+        $this->assertCount(3, $this->search->search($querydata));
+
+        // Now try some area-id combinations.
+        unset($querydata->courseids);
+        $forumpostareaid = \core_search\manager::generate_areaid('mod_forum', 'post');
+        $mockareaid = \core_search\manager::generate_areaid('core_mocksearch', 'role_capabilities');
+
+        $querydata->areaids = array($forumpostareaid);
+        $this->assertCount(0, $this->search->search($querydata));
+
+        $querydata->areaids = array($forumpostareaid, $mockareaid);
+        $this->assertCount(3, $this->search->search($querydata));
+
+        $querydata->areaids = array($mockareaid);
+        $this->assertCount(3, $this->search->search($querydata));
+
+        $querydata->areaids = array();
+        $this->assertCount(3, $this->search->search($querydata));
+
+        // Check that index contents get updated.
+        $DB->delete_records('role_capabilities', array('capability' => 'moodle/course:renameroles'));
+        $this->search->index(true);
+        unset($querydata->title);
+        $querydata->q = '*renameroles*';
+        $this->assertCount(0, $this->search->search($querydata));
     }
 
     public function test_delete() {
@@ -199,7 +234,6 @@ class search_solr_engine_testcase extends advanced_testcase {
 
         $areaid = \core_search\manager::generate_areaid('core_mocksearch', 'role_capabilities');
         $this->search->delete_index($areaid);
-        cache_helper::purge_by_definition('core', 'search_results');
         $this->assertCount(0, $this->search->search($querydata));
     }
 
@@ -398,7 +432,6 @@ class search_solr_engine_testcase extends advanced_testcase {
         // Reindex the document with the changed files.
         $engine->add_document($doc, true);
         $engine->area_index_complete($area->get_area_id());
-        cache_helper::purge_by_definition('core', 'search_results');
 
         // Go through our check array, and see if the file is there or not.
         foreach ($checkfiles as $key => $keep) {
@@ -492,7 +525,6 @@ class search_solr_engine_testcase extends advanced_testcase {
         $deleteid = $first->get('id');
 
         $engine->delete_by_id($deleteid);
-        cache_helper::purge_by_definition('core', 'search_results');
 
         // Check that we don't get a result for it anymore.
         $results = $this->search->search($querydata);

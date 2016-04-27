@@ -112,12 +112,7 @@ class engine extends \core_search\engine {
         // If there is any problem we trigger the exception as soon as possible.
         $client = $this->get_search_client();
 
-        $serverstatus = $this->is_server_ready();
-        if ($serverstatus !== true) {
-            throw new \core_search\engine_exception('engineserverstatus', 'search');
-        }
-
-        $query = new \SolrQuery();
+        $query = new \SolrDisMaxQuery();
         $maxrows = \core_search\manager::MAX_RESULTS;
         if ($this->file_indexing_enabled()) {
             // When using file indexing and grouping, we are going to collapse results, so we want extra results.
@@ -131,9 +126,12 @@ class engine extends \core_search\engine {
         if (!empty($data->title)) {
             $query->addFilterQuery('{!field cache=false f=title}' . $data->title);
         }
-        if (!empty($data->areaid)) {
-            // Even if it is only supposed to contain PARAM_ALPHANUMEXT, better to prevent.
-            $query->addFilterQuery('{!field cache=false f=areaid}' . $data->areaid);
+        if (!empty($data->areaids)) {
+            // If areaids are specified, we want to get any that match.
+            $query->addFilterQuery('{!cache=false}areaid:(' . implode(' OR ', $data->areaids) . ')');
+        }
+        if (!empty($data->courseids)) {
+            $query->addFilterQuery('{!cache=false}courseid:(' . implode(' OR ', $data->courseids) . ')');
         }
 
         if (!empty($data->timestart) or !empty($data->timeend)) {
@@ -159,19 +157,23 @@ class engine extends \core_search\engine {
         // If the user can access all contexts $usercontexts value is just true, we don't need to filter
         // in that case.
         if ($usercontexts && is_array($usercontexts)) {
-            if (!empty($data->areaid)) {
-                $query->addFilterQuery('contextid:(' . implode(' OR ', $usercontexts[$data->areaid]) . ')');
-            } else {
-                // Join all area contexts into a single array and implode.
-                $allcontexts = array();
-                foreach ($usercontexts as $areacontexts) {
-                    foreach ($areacontexts as $contextid) {
-                        // Ensure they are unique.
-                        $allcontexts[$contextid] = $contextid;
-                    }
+            // Join all area contexts into a single array and implode.
+            $allcontexts = array();
+            foreach ($usercontexts as $areaid => $areacontexts) {
+                if (!empty($data->areaids) && !in_array($areaid, $data->areaids)) {
+                    // Skip unused areas.
+                    continue;
                 }
-                $query->addFilterQuery('contextid:(' . implode(' OR ', $allcontexts) . ')');
+                foreach ($areacontexts as $contextid) {
+                    // Ensure they are unique.
+                    $allcontexts[$contextid] = $contextid;
+                }
             }
+            if (empty($allcontexts)) {
+                // This means there are no valid contexts for them, so they get no results.
+                return array();
+            }
+            $query->addFilterQuery('contextid:(' . implode(' OR ', $allcontexts) . ')');
         }
 
         try {
@@ -198,6 +200,7 @@ class engine extends \core_search\engine {
 
     /**
      * Prepares a new query by setting the query, start offset and rows to return.
+     *
      * @param SolrQuery $query
      * @param object    $q Containing query and filters.
      * @param null|int  $maxresults The number of results to limit. manager::MAX_RESULTS if not set.
@@ -226,13 +229,23 @@ class engine extends \core_search\engine {
     /**
      * Sets fields to be returned in the result.
      *
-     * @param SolrQuery $query object.
+     * @param SolrDisMaxQuery|SolrQuery $query object.
      */
     public function add_fields($query) {
         $documentclass = $this->get_document_classname();
-        $fields = array_keys($documentclass::get_default_fields_definition());
-        foreach ($fields as $field) {
-            $query->addField($field);
+        $fields = $documentclass::get_default_fields_definition();
+
+        $dismax = false;
+        if ($query instanceof \SolrDisMaxQuery) {
+            $dismax = true;
+        }
+
+        foreach ($fields as $key => $field) {
+            $query->addField($key);
+            if ($dismax && !empty($field['mainquery'])) {
+                // Add fields the main query should be run against.
+                $query->addQueryField($key);
+            }
         }
     }
 
@@ -607,7 +620,7 @@ class engine extends \core_search\engine {
                         if ($indexedfile->solr_filecontenthash != $files[$fileid]->get_contenthash()) {
                             continue;
                         }
-                        if ($indexedfile->solr_fileindexedcontent == document::INDEXED_FILE_FALSE &&
+                        if ($indexedfile->solr_fileindexstatus == document::INDEXED_FILE_FALSE &&
                                 $this->file_is_indexable($files[$fileid])) {
                             // This means that the last time we indexed this file, filtering blocked it.
                             // Current settings say it is indexable, so we will allow it to be indexed.
@@ -671,7 +684,7 @@ class engine extends \core_search\engine {
         $query->addField('title');
         $query->addField('solr_fileid');
         $query->addField('solr_filecontenthash');
-        $query->addField('solr_fileindexedcontent');
+        $query->addField('solr_fileindexstatus');
 
         $query->addFilterQuery('{!cache=false}solr_filegroupingid:(' . $document->get('id') . ')');
         $query->addFilterQuery('type:' . \core_search\manager::TYPE_FILE);
@@ -718,7 +731,7 @@ class engine extends \core_search\engine {
             $result->title = $doc->title;
             $result->solr_fileid = $doc->solr_fileid;
             $result->solr_filecontenthash = $doc->solr_filecontenthash;
-            $result->solr_fileindexedcontent = $doc->solr_fileindexedcontent;
+            $result->solr_fileindexstatus = $doc->solr_fileindexstatus;
             $out[] = $result;
         }
 
@@ -741,7 +754,7 @@ class engine extends \core_search\engine {
 
         if (!$this->file_is_indexable($storedfile)) {
             // For files that we don't consider indexable, we will still place a reference in the search engine.
-            $filedoc['solr_fileindexedcontent'] = document::INDEXED_FILE_FALSE;
+            $filedoc['solr_fileindexstatus'] = document::INDEXED_FILE_FALSE;
             $this->add_solr_document($filedoc);
             return;
         }
@@ -752,6 +765,11 @@ class engine extends \core_search\engine {
 
         // This will prevent solr from automatically making fields for every tika output.
         $url->param('uprefix', 'ignored_');
+
+        // Control how content is captured. This will keep our file content clean of non-important metadata.
+        $url->param('captureAttr', 'true');
+        // Move the content to a field for indexing.
+        $url->param('fmap.content', 'solr_filecontent');
 
         // These are common fields that matches the standard *_point dynamic field and causes an error.
         $url->param('fmap.media_white_point', 'ignored_mwp');
@@ -822,7 +840,7 @@ class engine extends \core_search\engine {
         }
 
         // If we get here, the document was not indexed due to an error. So we will index just the base info without the file.
-        $filedoc['solr_fileindexedcontent'] = document::INDEXED_FILE_ERROR;
+        $filedoc['solr_fileindexstatus'] = document::INDEXED_FILE_ERROR;
         $this->add_solr_document($filedoc);
     }
 
@@ -925,6 +943,29 @@ class engine extends \core_search\engine {
      */
     public function is_server_ready() {
 
+        $configured = $this->is_server_configured();
+        if ($configured !== true) {
+            return $configured;
+        }
+
+        // Check that the schema is already set up.
+        try {
+            $schema = new \search_solr\schema();
+            $schema->validate_setup();
+        } catch (\moodle_exception $e) {
+            return $e->getMessage();
+        }
+
+        return true;
+    }
+
+    /**
+     * Is the solr server properly configured?.
+     *
+     * @return true|string Returns true if all good or an error string.
+     */
+    public function is_server_configured() {
+
         if (empty($this->config->server_hostname) || empty($this->config->indexname)) {
             return 'No solr configuration found';
         }
@@ -934,22 +975,28 @@ class engine extends \core_search\engine {
         }
 
         try {
-            @$client->ping();
+            if ($this->get_solr_major_version() < 4) {
+                // Minimum solr 4.0.
+                return get_string('minimumsolr4', 'search_solr');
+            }
         } catch (\SolrClientException $ex) {
             return 'Solr client error: ' . $ex->getMessage();
         } catch (\SolrServerException $ex) {
             return 'Solr server error: ' . $ex->getMessage();
         }
 
-        // Check that setup schema has already run.
-        try {
-            $schema = new \search_solr\schema();
-            $schema->validate_setup();
-        } catch (\moodle_exception $e) {
-            return $e->getMessage();
-        }
-
         return true;
+    }
+
+    /**
+     * Returns the solr server major version.
+     *
+     * @return int
+     */
+    public function get_solr_major_version() {
+        $systemdata = $this->get_search_client()->system();
+        $solrversion = $systemdata->getResponse()->offsetGet('lucene')->offsetGet('solr-spec-version');
+        return intval(substr($solrversion, 0, strpos($solrversion, '.')));
     }
 
     /**

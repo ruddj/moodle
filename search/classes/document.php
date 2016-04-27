@@ -103,12 +103,14 @@ class document implements \renderable, \templatable {
         'title' => array(
             'type' => 'text',
             'stored' => true,
-            'indexed' => true
+            'indexed' => true,
+            'mainquery' => true
         ),
         'content' => array(
             'type' => 'text',
             'stored' => true,
-            'indexed' => true
+            'indexed' => true,
+            'mainquery' => true
         ),
         'contextid' => array(
             'type' => 'int',
@@ -160,12 +162,14 @@ class document implements \renderable, \templatable {
         'description1' => array(
             'type' => 'text',
             'stored' => true,
-            'indexed' => true
+            'indexed' => true,
+            'mainquery' => true
         ),
         'description2' => array(
             'type' => 'text',
             'stored' => true,
-            'indexed' => true
+            'indexed' => true,
+            'mainquery' => true
         )
     );
 
@@ -559,7 +563,7 @@ class document implements \renderable, \templatable {
 
         $title = $this->is_set('title') ? $this->format_text($this->get('title')) : '';
         $data = [
-            'courseurl' => new \moodle_url('/course/view.php?id=' . $this->get('courseid')),
+            'courseurl' => course_get_url($this->get('courseid')),
             'coursefullname' => format_string($this->get('coursefullname'), true, array('context' => $this->get('contextid'))),
             'modified' => userdate($this->get('modified')),
             'title' => ($title !== '') ? $title : get_string('notitle', 'search'),

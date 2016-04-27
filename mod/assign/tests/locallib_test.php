@@ -119,6 +119,54 @@ class mod_assign_locallib_testcase extends mod_assign_base_testcase {
     }
 
     /**
+     * Data provider for test_get_assign_perpage
+     *
+     * @return array Provider data
+     */
+    public function get_assign_perpage_provider() {
+        return array(
+            array(
+                'maxperpage' => -1,
+                'userprefs' => array(
+                    -1 => -1,
+                    10 => 10,
+                    20 => 20,
+                    50 => 50,
+                ),
+            ),
+            array(
+                'maxperpage' => 15,
+                'userprefs' => array(
+                    -1 => 15,
+                    10 => 10,
+                    20 => 15,
+                    50 => 15,
+                ),
+            ),
+        );
+    }
+
+    /**
+     * Test maxperpage
+     *
+     * @dataProvider get_assign_perpage_provider
+     * @param integer $maxperpage site config value
+     * @param array $userprefs Array of user preferences and expected page sizes
+     */
+    public function test_get_assign_perpage($maxperpage, $userprefs) {
+
+        $this->setUser($this->editingteachers[0]);
+        $assign = $this->create_instance();
+        set_config('maxperpage', $maxperpage, 'assign');
+        set_user_preference('assign_perpage', null);
+        $this->assertEquals(10, $assign->get_assign_perpage());
+        foreach ($userprefs as $pref => $perpage) {
+            set_user_preference('assign_perpage', $pref);
+            $this->assertEquals($perpage, $assign->get_assign_perpage());
+        }
+    }
+
+    /**
      * Test submissions with extension date.
      */
     public function test_gradingtable_extension_due_date() {
@@ -2328,6 +2376,49 @@ Anchor link 2:<a title=\"bananas\" href=\"../logo-240x60.gif\">Link text</a>
         $this->assertTrue(in_array($this->students[1]->id, $allgroupmembers));
         $this->assertTrue(in_array($this->extrastudents[0]->id, $allgroupmembers));
         $this->assertTrue(in_array($this->extrastudents[1]->id , $allgroupmembers));
+    }
+
+    /**
+     * Test get plugins file areas
+     */
+    public function test_get_plugins_file_areas() {
+        $this->setUser($this->editingteachers[0]);
+        $assign = $this->create_instance();
+
+        // Test that all the submission and feedback plugins are returning the expected file aras.
+        $usingfilearea = 0;
+        foreach ($assign->get_submission_plugins() as $plugin) {
+            $type = $plugin->get_type();
+            $fileareas = $plugin->get_file_areas();
+
+            if ($type == 'onlinetext') {
+                $this->assertEquals(array('submissions_onlinetext' => 'Online text'), $fileareas);
+                $usingfilearea++;
+            } else if ($type == 'file') {
+                $this->assertEquals(array('submission_files' => 'File submissions'), $fileareas);
+                $usingfilearea++;
+            } else {
+                $this->assertEmpty($fileareas);
+            }
+        }
+        $this->assertEquals(2, $usingfilearea);
+
+        $usingfilearea = 0;
+        foreach ($assign->get_feedback_plugins() as $plugin) {
+            $type = $plugin->get_type();
+            $fileareas = $plugin->get_file_areas();
+
+            if ($type == 'editpdf') {
+                $this->assertEquals(array('download' => 'Annotate PDF'), $fileareas);
+                $usingfilearea++;
+            } else if ($type == 'file') {
+                $this->assertEquals(array('feedback_files' => 'Feedback files'), $fileareas);
+                $usingfilearea++;
+            } else {
+                $this->assertEmpty($fileareas);
+            }
+        }
+        $this->assertEquals(2, $usingfilearea);
     }
 
     /**
