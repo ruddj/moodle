@@ -176,7 +176,7 @@ class data_field_checkbox extends data_field_base {
         global $DB;
 
         if ($content = $DB->get_record('data_content', array('fieldid'=>$this->field->id, 'recordid'=>$recordid))) {
-            if (empty($content->content)) {
+            if (strval($content->content) === '') {
                 return false;
             }
 
@@ -233,7 +233,7 @@ class data_field_checkbox extends data_field_base {
     function notemptyfield($value, $name) {
         $found = false;
         foreach ($value as $checkboxitem) {
-            if (!empty($checkboxitem)) {
+            if (strval($checkboxitem) !== '') {
                 $found = true;
                 break;
             }
