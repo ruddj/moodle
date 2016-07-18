@@ -195,9 +195,12 @@ class core_course_external extends external_api {
                 $sectionvalues['id'] = $section->id;
                 $sectionvalues['name'] = get_section_name($course, $section);
                 $sectionvalues['visible'] = $section->visible;
+
+                $options = (object) array('noclean' => true);
                 list($sectionvalues['summary'], $sectionvalues['summaryformat']) =
                         external_format_text($section->summary, $section->summaryformat,
-                                $context->id, 'course', 'section', $section->id);
+                                $context->id, 'course', 'section', $section->id, $options);
+                $sectionvalues['section'] = $section->section;
                 $sectioncontents = array();
 
                 //for each module of the section
@@ -325,6 +328,7 @@ class core_course_external extends external_api {
                     'visible' => new external_value(PARAM_INT, 'is the section visible', VALUE_OPTIONAL),
                     'summary' => new external_value(PARAM_RAW, 'Section description'),
                     'summaryformat' => new external_format_value('summary'),
+                    'section' => new external_value(PARAM_INT, 'Section number inside the course', VALUE_OPTIONAL),
                     'modules' => new external_multiple_structure(
                             new external_single_structure(
                                 array(
@@ -429,8 +433,8 @@ class core_course_external extends external_api {
 
             $courseinfo = array();
             $courseinfo['id'] = $course->id;
-            $courseinfo['fullname'] = $course->fullname;
-            $courseinfo['shortname'] = $course->shortname;
+            $courseinfo['fullname'] = external_format_string($course->fullname, $context->id);
+            $courseinfo['shortname'] = external_format_string($course->shortname, $context->id);
             $courseinfo['displayname'] = external_format_string(get_course_display_name_for_list($course), $context->id);
             $courseinfo['categoryid'] = $course->category;
             list($courseinfo['summary'], $courseinfo['summaryformat']) =
@@ -1548,7 +1552,7 @@ class core_course_external extends external_api {
                     }
 
                     if (isset($value)) {
-                        $conditions[$key] = $crit['value'];
+                        $conditions[$key] = $value;
                         $wheres[] = $key . " = :" . $key;
                     }
                 }

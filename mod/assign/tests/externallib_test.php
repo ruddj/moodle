@@ -153,7 +153,8 @@ class mod_assign_external_testcase extends externallib_advanced_testcase {
         // Create a course.
         $course1 = self::getDataGenerator()->create_course(array(
             'idnumber' => 'idnumbercourse1',
-            'fullname' => 'Lightwork Course 1',
+            'fullname' => '<b>Lightwork Course 1</b>',      // Adding tags here to check that external_format_string works.
+            'shortname' => '<b>Lightwork Course 1</b>',     // Adding tags here to check that external_format_string works.
             'summary' => 'Lightwork Course 1 description',
             'summaryformat' => FORMAT_MOODLE,
             'category' => $category->id
@@ -221,6 +222,7 @@ class mod_assign_external_testcase extends externallib_advanced_testcase {
         $this->assertEquals(1, count($result['courses']));
         $course = $result['courses'][0];
         $this->assertEquals('Lightwork Course 1', $course['fullname']);
+        $this->assertEquals('Lightwork Course 1', $course['shortname']);
         $this->assertEquals(1, count($course['assignments']));
         $assignment = $course['assignments'][0];
         $this->assertEquals($assign1->id, $assignment['id']);
@@ -231,6 +233,7 @@ class mod_assign_external_testcase extends externallib_advanced_testcase {
         $this->assertRegExp('@"' . $CFG->wwwroot . '/webservice/pluginfile.php/\d+/mod_assign/intro/intro\.txt"@', $assignment['intro']);
         $this->assertEquals(1, $assignment['markingworkflow']);
         $this->assertEquals(1, $assignment['markingallocation']);
+        $this->assertEquals(0, $assignment['preventsubmissionnotingroup']);
 
         $this->assertCount(1, $assignment['introattachments']);
         $this->assertEquals('introattachment.txt', $assignment['introattachments'][0]['filename']);
@@ -256,6 +259,7 @@ class mod_assign_external_testcase extends externallib_advanced_testcase {
         $this->assertArrayNotHasKey('introattachments', $assignment);
         $this->assertEquals(1, $assignment['markingworkflow']);
         $this->assertEquals(1, $assignment['markingallocation']);
+        $this->assertEquals(0, $assignment['preventsubmissionnotingroup']);
 
         $result = mod_assign_external::get_assignments(array($course2->id));
 
@@ -293,6 +297,7 @@ class mod_assign_external_testcase extends externallib_advanced_testcase {
         $this->assertArrayNotHasKey('introattachments', $assignment);
         $this->assertEquals(1, $assignment['markingworkflow']);
         $this->assertEquals(1, $assignment['markingallocation']);
+        $this->assertEquals(0, $assignment['preventsubmissionnotingroup']);
     }
 
     /**
@@ -967,7 +972,7 @@ class mod_assign_external_testcase extends externallib_advanced_testcase {
         // Now try a submission.
         $submissionpluginparams = array();
         $submissionpluginparams['files_filemanager'] = $draftidfile;
-        $onlinetexteditorparams = array('text'=>'Yeeha!',
+        $onlinetexteditorparams = array('text' => '<p>Yeeha!</p>',
                                         'format'=>1,
                                         'itemid'=>$draftidonlinetext);
         $submissionpluginparams['onlinetext_editor'] = $onlinetexteditorparams;

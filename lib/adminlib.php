@@ -199,14 +199,14 @@ function uninstall_plugin($type, $name) {
     $DB->delete_records('event', array('modulename' => $pluginname));
 
     // Delete scheduled tasks.
-    $DB->delete_records('task_scheduled', array('component' => $pluginname));
+    $DB->delete_records('task_scheduled', array('component' => $component));
 
     // Delete Inbound Message datakeys.
     $DB->delete_records_select('messageinbound_datakeys',
-            'handler IN (SELECT id FROM {messageinbound_handlers} WHERE component = ?)', array($pluginname));
+            'handler IN (SELECT id FROM {messageinbound_handlers} WHERE component = ?)', array($component));
 
     // Delete Inbound Message handlers.
-    $DB->delete_records('messageinbound_handlers', array('component' => $pluginname));
+    $DB->delete_records('messageinbound_handlers', array('component' => $component));
 
     // delete all the logs
     $DB->delete_records('log', array('module' => $pluginname));
@@ -9715,7 +9715,7 @@ class admin_setting_searchsetupinfo extends admin_setting {
 
         // Available areas.
         $row = array();
-        $url = new moodle_url('/admin/settings.php?section=manageglobalsearch#admin-searchengine');
+        $url = new moodle_url('/admin/searchareas.php');
         $row[0] = '2. ' . html_writer::tag('a', get_string('enablesearchareas', 'admin'),
                         array('href' => $url));
 
@@ -9750,7 +9750,7 @@ class admin_setting_searchsetupinfo extends admin_setting {
 
         // Indexed data.
         $row = array();
-        $url = new moodle_url('/report/search/index.php#searchindexform');
+        $url = new moodle_url('/admin/searchareas.php');
         $row[0] = '4. ' . html_writer::tag('a', get_string('indexdata', 'admin'), array('href' => $url));
         if ($anyindexed) {
             $status = html_writer::tag('span', get_string('yes'), array('class' => 'statusok'));

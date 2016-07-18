@@ -1,4 +1,3 @@
-<?php
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,21 +14,19 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'report_search'
+ * Events for the grading interface.
  *
- * @package    report_search
- * @copyright  2015 David Monllao {@link http://www.davidmonllao.com}
+ * @module     mod_assign/grading_events
+ * @package    mod_assign
+ * @copyright  2016 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since      3.1
  */
-
-$string['delete'] = 'Delete';
-$string['deleted'] = 'Selected indexes deleted';
-$string['entireindex'] = 'Entire index';
-$string['execute'] = 'Execute';
-$string['indexed'] = 'Indexing finished';
-$string['indexform'] = 'Indexing';
-$string['indexinginfo'] = 'The recommended way to index your site\'s contents is using "Global search indexing" scheduled task which runs automatically by Cron.';
-$string['indexsite'] = 'Index all site contents';
-$string['lastrun'] = 'Last run (time, # docs, # records, # ignores)';
-$string['newestdocindexed'] = 'Newest document indexed';
-$string['pluginname'] = 'Global search info';
+define(function() {
+    return {
+        COLLAPSE_REVIEW_PANEL: 'grading:collapse-review-panel',
+        EXPAND_REVIEW_PANEL: 'grading:expand-review-panel',
+        COLLAPSE_GRADE_PANEL: 'grading:collapse-grade-panel',
+        EXPAND_GRADE_PANEL: 'grading:expand-grade-panel',
+    };
+});

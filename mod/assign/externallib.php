@@ -341,6 +341,7 @@ class mod_assign_external extends external_api {
                 if (!isset($courses[$cid])) {
                     $courses[$cid] = get_course($cid);
                 }
+                $courses[$cid]->contextid = $context->id;
             } catch (Exception $e) {
                 unset($courses[$cid]);
                 $warnings[] = array(
@@ -378,6 +379,7 @@ class mod_assign_external extends external_api {
                      'm.markingworkflow, ' .
                      'm.markingallocation, ' .
                      'm.requiresubmissionstatement, '.
+                     'm.preventsubmissionnotingroup, '.
                      'm.intro, '.
                      'm.introformat';
         $coursearray = array();
@@ -439,6 +441,7 @@ class mod_assign_external extends external_api {
                         'markingworkflow' => $module->markingworkflow,
                         'markingallocation' => $module->markingallocation,
                         'requiresubmissionstatement' => $module->requiresubmissionstatement,
+                        'preventsubmissionnotingroup' => $module->preventsubmissionnotingroup,
                         'configs' => $configarray
                     );
 
@@ -449,6 +452,8 @@ class mod_assign_external extends external_api {
 
                         list($assignment['intro'], $assignment['introformat']) = external_format_text($module->intro,
                             $module->introformat, $context->id, 'mod_assign', 'intro', null);
+                        $assignment['introfiles'] = external_util::get_area_files($context->id, 'mod_assign', 'intro', false,
+                                                                                    false);
 
                         $fs = get_file_storage();
                         if ($files = $fs->get_area_files($context->id, 'mod_assign', ASSIGN_INTROATTACHMENT_FILEAREA,
@@ -473,8 +478,8 @@ class mod_assign_external extends external_api {
             }
             $coursearray[]= array(
                 'id' => $courses[$id]->id,
-                'fullname' => $courses[$id]->fullname,
-                'shortname' => $courses[$id]->shortname,
+                'fullname' => external_format_string($courses[$id]->fullname, $course->contextid),
+                'shortname' => external_format_string($courses[$id]->shortname, $course->contextid),
                 'timemodified' => $courses[$id]->timemodified,
                 'assignments' => $assignmentarray
             );
@@ -521,10 +526,12 @@ class mod_assign_external extends external_api {
                 'markingworkflow' => new external_value(PARAM_INT, 'enable marking workflow'),
                 'markingallocation' => new external_value(PARAM_INT, 'enable marking allocation'),
                 'requiresubmissionstatement' => new external_value(PARAM_INT, 'student must accept submission statement'),
+                'preventsubmissionnotingroup' => new external_value(PARAM_INT, 'Prevent submission not in group', VALUE_OPTIONAL),
                 'configs' => new external_multiple_structure(self::get_assignments_config_structure(), 'configuration settings'),
                 'intro' => new external_value(PARAM_RAW,
                     'assignment intro, not allways returned because it deppends on the activity configuration', VALUE_OPTIONAL),
                 'introformat' => new external_format_value('intro', VALUE_OPTIONAL),
+                'introfiles' => new external_files('Files in the introduction text', VALUE_OPTIONAL),
                 'introattachments' => new external_multiple_structure(
                     new external_single_structure(
                         array (
@@ -2433,7 +2440,10 @@ class mod_assign_external extends external_api {
             // We need to change the type of some of the structures retrieved from the renderable.
             if (!empty($lastattempt->submissiongroup)) {
                 $lastattempt->submissiongroup = $lastattempt->submissiongroup->id;
+            } else {
+                unset($lastattempt->submissiongroup);
             }
+
             if (!empty($lastattempt->usergroups)) {
                 $lastattempt->usergroups = array_keys($lastattempt->usergroups);
             }

@@ -129,7 +129,7 @@ class mod_lti_external_testcase extends externallib_advanced_testcase {
 
         // Create what we expect to be returned when querying the two courses.
         // First for the student user.
-        $expectedfields = array('id', 'coursemodule', 'course', 'name', 'intro', 'introformat', 'launchcontainer',
+        $expectedfields = array('id', 'coursemodule', 'course', 'name', 'intro', 'introformat', 'introfiles', 'launchcontainer',
                                 'showtitlelaunch', 'showdescriptionlaunch', 'icon', 'secureicon');
 
         // Add expected coursemodule and data.
@@ -140,6 +140,7 @@ class mod_lti_external_testcase extends externallib_advanced_testcase {
         $lti1->visible = true;
         $lti1->groupmode = 0;
         $lti1->groupingid = 0;
+        $lti1->introfiles = [];
 
         $lti2->coursemodule = $lti2->cmid;
         $lti2->introformat = 1;
@@ -147,6 +148,7 @@ class mod_lti_external_testcase extends externallib_advanced_testcase {
         $lti2->visible = true;
         $lti2->groupmode = 0;
         $lti2->groupingid = 0;
+        $lti2->introfiles = [];
 
         foreach ($expectedfields as $field) {
                 $expected1[$field] = $lti1->{$field};
@@ -285,10 +287,12 @@ class mod_lti_external_testcase extends externallib_advanced_testcase {
      * Test create tool proxy
      */
     public function test_mod_lti_create_tool_proxy() {
-        $proxy = mod_lti_external::create_tool_proxy('Test proxy', $this->getExternalTestFileUrl('/test.html'), array(), array());
+        $capabilities = ['AA', 'BB'];
+        $proxy = mod_lti_external::create_tool_proxy('Test proxy', $this->getExternalTestFileUrl('/test.html'), $capabilities, []);
         $this->assertEquals('Test proxy', $proxy->name);
         $this->assertEquals($this->getExternalTestFileUrl('/test.html'), $proxy->regurl);
         $this->assertEquals(LTI_TOOL_PROXY_STATE_PENDING, $proxy->state);
+        $this->assertEquals(implode("\n", $capabilities), $proxy->capabilityoffered);
     }
 
     /*
