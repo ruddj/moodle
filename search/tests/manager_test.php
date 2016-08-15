@@ -70,7 +70,7 @@ class search_manager_testcase extends advanced_testcase {
         $fakeareaid = \core_search\manager::generate_areaid('mod_unexisting', 'chihuaquita');
 
         $searcharea = \core_search\manager::get_search_area($this->forumpostareaid);
-        $this->assertInstanceOf('\core_search\area\base', $searcharea);
+        $this->assertInstanceOf('\core_search\base', $searcharea);
 
         $this->assertFalse(\core_search\manager::get_search_area($fakeareaid));
 
@@ -252,5 +252,20 @@ class search_manager_testcase extends advanced_testcase {
         $allcontexts = array($context1->id => $context1->id, $context2->id => $context2->id);
         $this->assertEquals($allcontexts, $contexts[$this->forumpostareaid]);
         $this->assertEquals(array($course1ctx->id => $course1ctx->id), $contexts[$this->mycoursesareaid]);
+    }
+
+    /**
+     * test_is_search_area
+     *
+     * @return void
+     */
+    public function test_is_search_area() {
+
+        $this->assertFalse(testable_core_search::is_search_area('\asd\asd'));
+        $this->assertFalse(testable_core_search::is_search_area('\mod_forum\search\posta'));
+        $this->assertFalse(testable_core_search::is_search_area('\core_search\base_mod'));
+        $this->assertTrue(testable_core_search::is_search_area('\mod_forum\search\post'));
+        $this->assertTrue(testable_core_search::is_search_area('\\mod_forum\\search\\post'));
+        $this->assertTrue(testable_core_search::is_search_area('mod_forum\\search\\post'));
     }
 }

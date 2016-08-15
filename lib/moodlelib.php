@@ -2053,6 +2053,11 @@ function make_timestamp($year, $month=1, $day=1, $hour=0, $minute=0, $second=0, 
 
     $time = $date->getTimestamp();
 
+    if ($time === false) {
+        throw new coding_exception('getTimestamp() returned false, please ensure you have passed correct values.'.
+            ' This can fail if year is more than 2038 and OS is 32 bit windows');
+    }
+
     // Moodle BC DST stuff.
     if (!$applydst) {
         $time += dst_offset_on($time, $timezone);
@@ -4376,7 +4381,6 @@ function password_is_legacy_hash($password) {
  */
 function validate_internal_user_password($user, $password) {
     global $CFG;
-    require_once($CFG->libdir.'/password_compat/lib/password.php');
 
     if ($user->password === AUTH_PASSWORD_NOT_CACHED) {
         // Internal password is not used at all, it can not validate.
@@ -4437,7 +4441,6 @@ function validate_internal_user_password($user, $password) {
  */
 function hash_internal_user_password($password, $fasthash = false) {
     global $CFG;
-    require_once($CFG->libdir.'/password_compat/lib/password.php');
 
     // Set the cost factor to 4 for fast hashing, otherwise use default cost.
     $options = ($fasthash) ? array('cost' => 4) : array();
@@ -4473,7 +4476,6 @@ function hash_internal_user_password($password, $fasthash = false) {
  */
 function update_internal_user_password($user, $password, $fasthash = false) {
     global $CFG, $DB;
-    require_once($CFG->libdir.'/password_compat/lib/password.php');
 
     // Figure out what the hashed password should be.
     if (!isset($user->auth)) {

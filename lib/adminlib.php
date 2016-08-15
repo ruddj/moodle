@@ -3526,21 +3526,24 @@ class admin_setting_configiplist extends admin_setting_configtextarea {
             return true;
         }
         $result = true;
+        $badips = array();
         foreach($ips as $ip) {
             $ip = trim($ip);
+            if (empty($ip)) {
+                continue;
+            }
             if (preg_match('#^(\d{1,3})(\.\d{1,3}){0,3}$#', $ip, $match) ||
                 preg_match('#^(\d{1,3})(\.\d{1,3}){0,3}(\/\d{1,2})$#', $ip, $match) ||
                 preg_match('#^(\d{1,3})(\.\d{1,3}){3}(-\d{1,3})$#', $ip, $match)) {
-                $result = true;
             } else {
                 $result = false;
-                break;
+                $badips[] = $ip;
             }
         }
         if($result) {
             return true;
         } else {
-            return get_string('validateerror', 'admin');
+            return get_string('validateiperror', 'admin', join(', ', $badips));
         }
     }
 }
@@ -9738,7 +9741,11 @@ class admin_setting_searchsetupinfo extends admin_setting {
                             array('href' => $url));
             // Check the engine status.
             $searchengine = \core_search\manager::search_engine_instance();
-            $serverstatus = $searchengine->is_server_ready();
+            try {
+                $serverstatus = $searchengine->is_server_ready();
+            } catch (\moodle_exception $e) {
+                $serverstatus = $e->getMessage();
+            }
             if ($serverstatus === true) {
                 $status = html_writer::tag('span', get_string('yes'), array('class' => 'statusok'));
             } else {
