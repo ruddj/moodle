@@ -2083,5 +2083,99 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2016081700.00);
     }
 
+    if ($oldversion < 2016081700.02) {
+        // Default schedule values.
+        $hour = 0;
+        $minute = 0;
+
+        // Get the old settings.
+        if (isset($CFG->statsruntimestarthour)) {
+            $hour = $CFG->statsruntimestarthour;
+        }
+        if (isset($CFG->statsruntimestartminute)) {
+            $minute = $CFG->statsruntimestartminute;
+        }
+
+        // Retrieve the scheduled task record first.
+        $stattask = $DB->get_record('task_scheduled', array('component' => 'moodle', 'classname' => '\core\task\stats_cron_task'));
+
+        // Don't touch customised scheduling.
+        if ($stattask && !$stattask->customised) {
+
+            $nextruntime = mktime($hour, $minute, 0, date('m'), date('d'), date('Y'));
+            if ($nextruntime < $stattask->lastruntime) {
+                // Add 24 hours to the next run time.
+                $newtime = new DateTime();
+                $newtime->setTimestamp($nextruntime);
+                $newtime->add(new DateInterval('P1D'));
+                $nextruntime = $newtime->getTimestamp();
+            }
+            $stattask->nextruntime = $nextruntime;
+            $stattask->minute = $minute;
+            $stattask->hour = $hour;
+            $stattask->customised = 1;
+            $DB->update_record('task_scheduled', $stattask);
+        }
+        // These settings are no longer used.
+        unset_config('statsruntimestarthour');
+        unset_config('statsruntimestartminute');
+        unset_config('statslastexecution');
+
+        upgrade_main_savepoint(true, 2016081700.02);
+    }
+
+    if ($oldversion < 2016082200.00) {
+        // An upgrade step to remove any duplicate stamps, within the same context, in the question_categories table, and to
+        // add a unique index to (contextid, stamp) to avoid future stamp duplication. See MDL-54864.
+
+        // Extend the execution time limit of the script to 2 hours.
+        upgrade_set_timeout(7200);
+
+        // This SQL fetches the id of those records which have duplicate stamps within the same context.
+        // This doesn't return the original record within the context, from which the duplicate stamps were likely created.
+        $fromclause = "FROM (
+                        SELECT min(id) AS minid, contextid, stamp
+                            FROM {question_categories}
+                            GROUP BY contextid, stamp
+                        ) minid
+                        JOIN {question_categories} qc
+                            ON qc.contextid = minid.contextid AND qc.stamp = minid.stamp AND qc.id > minid.minid";
+
+        // Get the total record count - used for the progress bar.
+        $countduplicatessql = "SELECT count(qc.id) $fromclause";
+        $total = $DB->count_records_sql($countduplicatessql);
+
+        // Get the records themselves.
+        $getduplicatessql = "SELECT qc.id $fromclause ORDER BY minid";
+        $rs = $DB->get_recordset_sql($getduplicatessql);
+
+        // For each duplicate, update the stamp to a new random value.
+        $i = 0;
+        $pbar = new progress_bar('updatequestioncategorystamp', 500, true);
+        foreach ($rs as $record) {
+            // Generate a new, unique stamp and update the record.
+            do {
+                $newstamp = make_unique_id_code();
+            } while (isset($usedstamps[$newstamp]));
+            $usedstamps[$newstamp] = 1;
+            $DB->set_field('question_categories', 'stamp', $newstamp, array('id' => $record->id));
+
+            // Update progress.
+            $i++;
+            $pbar->update($i, $total, "Updating duplicate question category stamp - $i/$total.");
+        }
+        unset($usedstamps);
+
+        // The uniqueness of each (contextid, stamp) pair is now guaranteed, so add the unique index to stop future duplicates.
+        $table = new xmldb_table('question_categories');
+        $index = new xmldb_index('contextidstamp', XMLDB_INDEX_UNIQUE, array('contextid', 'stamp'));
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Savepoint reached.
+        upgrade_main_savepoint(true, 2016082200.00);
+    }
+
     return true;
 }
