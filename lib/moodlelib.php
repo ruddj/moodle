@@ -1225,6 +1225,25 @@ function clean_param($param, $type) {
 }
 
 /**
+ * Whether the PARAM_* type is compatible in RTL.
+ *
+ * Being compatible with RTL means that the data they contain can flow
+ * from right-to-left or left-to-right without compromising the user experience.
+ *
+ * Take URLs for example, they are not RTL compatible as they should always
+ * flow from the left to the right. This also applies to numbers, email addresses,
+ * configuration snippets, base64 strings, etc...
+ *
+ * This function tries to best guess which parameters can contain localised strings.
+ *
+ * @param string $paramtype Constant PARAM_*.
+ * @return bool
+ */
+function is_rtl_compatible($paramtype) {
+    return $paramtype == PARAM_TEXT || $paramtype == PARAM_NOTAGS;
+}
+
+/**
  * Makes sure the data is using valid utf8, invalid characters are discarded.
  *
  * Note: this function is not intended for full objects with methods and private properties.
@@ -2625,8 +2644,17 @@ function require_login($courseorid = null, $autologinguest = true, $cm = null, $
         }
     }
 
-    // Check that the user account is properly set up.
-    if (user_not_fully_set_up($USER)) {
+    // Check that the user account is properly set up. If we can't redirect to
+    // edit their profile, perform just the lax check. It will allow them to
+    // use filepicker on the profile edit page.
+
+    if ($preventredirect) {
+        $usernotfullysetup = user_not_fully_set_up($USER, false);
+    } else {
+        $usernotfullysetup = user_not_fully_set_up($USER, true);
+    }
+
+    if ($usernotfullysetup) {
         if ($preventredirect) {
             throw new require_login_exception('User not fully set-up');
         }
@@ -3141,14 +3169,39 @@ function update_user_login_times() {
 /**
  * Determines if a user has completed setting up their account.
  *
+ * The lax mode (with $strict = false) has been introduced for special cases
+ * only where we want to skip certain checks intentionally. This is valid in
+ * certain mnet or ajax scenarios when the user cannot / should not be
+ * redirected to edit their profile. In most cases, you should perform the
+ * strict check.
+ *
  * @param stdClass $user A {@link $USER} object to test for the existence of a valid name and email
+ * @param bool $strict Be more strict and assert id and custom profile fields set, too
  * @return bool
  */
-function user_not_fully_set_up($user) {
+function user_not_fully_set_up($user, $strict = true) {
+    global $CFG;
+    require_once($CFG->dirroot.'/user/profile/lib.php');
+
     if (isguestuser($user)) {
         return false;
     }
-    return (empty($user->firstname) or empty($user->lastname) or empty($user->email) or over_bounce_threshold($user));
+
+    if (empty($user->firstname) or empty($user->lastname) or empty($user->email) or over_bounce_threshold($user)) {
+        return true;
+    }
+
+    if ($strict) {
+        if (empty($user->id)) {
+            // Strict mode can be used with existing accounts only.
+            return true;
+        }
+        if (!profile_has_required_custom_fields_set($user->id)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**

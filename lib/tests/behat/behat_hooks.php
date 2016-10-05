@@ -111,6 +111,11 @@ class behat_hooks extends behat_base {
      * @BeforeSuite
      */
     public static function before_suite_hook(BeforeSuiteScope $scope) {
+        // If behat has been initialised then no need to do this again.
+        if (self::$initprocessesfinished) {
+            return;
+        }
+
         try {
             self::before_suite($scope);
         } catch (behat_stop_exception $e) {
@@ -613,4 +618,5 @@ class behat_hooks extends behat_base {
  * @copyright  2016 Rajesh Taneja <rajesh@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class behat_stop_exception extends \Exception{}
+class behat_stop_exception extends \Exception {
+}

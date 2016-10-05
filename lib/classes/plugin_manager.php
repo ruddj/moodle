@@ -1866,7 +1866,7 @@ class core_plugin_manager {
             ),
 
             'quizaccess' => array(
-                'delaybetweenattempts', 'ipaddress', 'numattempts', 'openclosedate',
+                'delaybetweenattempts', 'ipaddress', 'numattempts', 'offlineattempts', 'openclosedate',
                 'password', 'safebrowser', 'securewindow', 'timelimit'
             ),
 
@@ -1900,7 +1900,7 @@ class core_plugin_manager {
             ),
 
             'theme' => array(
-                'bootstrapbase', 'clean', 'more'
+                'boost', 'bootstrapbase', 'clean', 'more'
             ),
 
             'tool' => array(

@@ -242,6 +242,24 @@
     <version>1.6.3</version>
   </library>
   <library>
+    <location>php-css-parser</location>
+    <name>PHP-CSS-Parser</name>
+    <license>MIT</license>
+    <version>8.1.0</version>
+  </library>
+  <library>
+    <location>rtlcss</location>
+    <name>RTLCSS for PHP</name>
+    <license>MIT</license>
+    <version>1.0.0</version>
+  </library>
+  <library>
+    <location>scssphp</location>
+    <name>scssphp</name>
+    <license>MIT</license>
+    <version>0.6.5</version>
+  </library>
+  <library>
     <location>spout</location>
     <name>Spout</name>
     <license>GPL</license>
@@ -251,7 +269,7 @@
     <location>amd/src/chartjs-lazy.js</location>
     <name>Chart.js</name>
     <license>MIT</license>
-    <version>2.1.6</version>
+    <version>2.2.2</version>
   </library>
   <library>
     <location>maxmind/GeoIp2</location>
