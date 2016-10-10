@@ -184,15 +184,6 @@ module.exports = function(grunt) {
                     syntax: 'less',
                     configOverrides: {
                         rules: {
-                            // TODO: MDL-55165 -Enable these rules once we make output-changing changes to less.
-                            "declaration-block-no-ignored-properties": null,
-                            "value-keyword-case": null,
-                            "declaration-block-no-duplicate-properties": null,
-                            "declaration-block-no-shorthand-property-overrides": null,
-                            "selector-type-no-unknown": null,
-                            "length-zero-no-unit": null,
-                            "color-hex-case": null,
-                            "color-hex-length": null,
                             // These rules have to be disabled in .stylelintrc for scss compat.
                             "at-rule-no-unknown": true,
                             "no-browser-hacks": [true, {"severity": "warning"}]
@@ -204,6 +195,18 @@ module.exports = function(grunt) {
             scss: {
                 options: {syntax: 'scss'},
                 src: ['*/**/*.scss']
+            },
+            css: {
+                src: ['*/**/*.css'],
+                options: {
+                    configOverrides: {
+                        rules: {
+                            // These rules have to be disabled in .stylelintrc for scss compat.
+                            "at-rule-no-unknown": true,
+                            "no-browser-hacks": [true, {"severity": "warning"}]
+                        }
+                    }
+                }
             }
         }
     });
@@ -358,7 +361,7 @@ module.exports = function(grunt) {
     grunt.registerTask('js', ['amd', 'yui']);
 
     // Register CSS taks.
-    grunt.registerTask('css', ['stylelint:scss', 'stylelint:less', 'less:bootstrapbase']);
+    grunt.registerTask('css', ['stylelint:scss', 'stylelint:less', 'less:bootstrapbase', 'stylelint:css']);
 
     // Register the startup task.
     grunt.registerTask('startup', 'Run the correct tasks for the current directory', tasks.startup);

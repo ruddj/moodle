@@ -81,9 +81,6 @@ class renderer_base {
         global $CFG;
 
         if ($this->mustache === null) {
-            require_once($CFG->dirroot . '/lib/mustache/src/Mustache/Autoloader.php');
-            Mustache_Autoloader::register();
-
             $themename = $this->page->theme->name;
             $themerev = theme_get_revision();
 
@@ -538,6 +535,15 @@ class core_renderer extends renderer_base {
         // already meta refreshing
         if ($this->metarefreshtag=='' && $this->page->periodicrefreshdelay!==null) {
             $output .= '<meta http-equiv="refresh" content="'.$this->page->periodicrefreshdelay.';url='.$this->page->url->out().'" />';
+        }
+
+        // Smart App Banners meta tag is only displayed if mobile services are enabled and configured.
+        if (!empty($CFG->enablemobilewebservice)) {
+            $mobilesettings = get_config('tool_mobile');
+            if (!empty($mobilesettings->enablesmartappbanners) and !empty($mobilesettings->iosappid)) {
+                $output .= '<meta name="apple-itunes-app" content="app-id=' . s($mobilesettings->iosappid) . ', ';
+                $output .= 'app-argument=' . $this->page->url->out() . '"/>';
+            }
         }
 
         // flow player embedding support

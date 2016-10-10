@@ -29,7 +29,7 @@ require_once(__DIR__ . '/lib.php');
 $THEME->name = 'boost';
 $THEME->scssfile = theme_boost_get_scss_file($THEME);
 $THEME->sheets = [];
-$THEME->editor_sheets = ['editor'];
+$THEME->editor_sheets = [];
 
 $THEME->layouts = [
     // Most backwards compatible layout without the blocks - this is the layout used by default.
@@ -147,6 +147,5 @@ $THEME->enable_dock = false;
 $THEME->csstreepostprocessor = 'theme_boost_css_tree_post_processor';
 $THEME->extrascsscallback = 'theme_boost_get_extra_scss';
 $THEME->scssvariablescallback = 'theme_boost_get_scss_variables';
-$THEME->supportscssoptimisation = false;
 $THEME->yuicssmodules = array();
 $THEME->rendererfactory = 'theme_overridden_renderer_factory';

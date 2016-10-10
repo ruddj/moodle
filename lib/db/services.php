@@ -34,6 +34,14 @@
  */
 
 $functions = array(
+    'core_auth_confirm_user' => array(
+        'classname'   => 'core_auth_external',
+        'methodname'  => 'confirm_user',
+        'description' => 'Confirm a user account.',
+        'type'        => 'write',
+        'ajax'          => true,
+        'loginrequired' => false,
+    ),
     'core_badges_get_user_badges' => array(
         'classname'     => 'core_badges_external',
         'methodname'    => 'get_user_badges',
@@ -316,6 +324,14 @@ $functions = array(
         'classpath' => 'course/externallib.php',
         'description' => 'Return a list of administration options in a set of courses that are avaialable or not for the current
                             user.',
+        'type' => 'read',
+        'services' => array(MOODLE_OFFICIAL_MOBILE_SERVICE),
+    ),
+    'core_course_get_courses_by_field' => array(
+        'classname' => 'core_course_external',
+        'methodname' => 'get_courses_by_field',
+        'classpath' => 'course/externallib.php',
+        'description' => 'Get courses matching a specific field (id/s, shortname, idnumber, category)',
         'type' => 'read',
         'services' => array(MOODLE_OFFICIAL_MOBILE_SERVICE),
     ),
@@ -746,6 +762,14 @@ $functions = array(
         'capabilities' => 'moodle/rating:view',
         'services' => array(MOODLE_OFFICIAL_MOBILE_SERVICE),
     ),
+    'core_rating_add_rating' => array(
+        'classname' => 'core_rating_external',
+        'methodname' => 'add_rating',
+        'description' => 'Rates an item.',
+        'type' => 'write',
+        'capabilities' => 'moodle/rating:rate',
+        'services' => array(MOODLE_OFFICIAL_MOBILE_SERVICE),
+    ),
     'core_role_assign_roles' => array(
         'classname' => 'core_role_external',
         'methodname' => 'assign_roles',
@@ -905,6 +929,23 @@ $functions = array(
         'capabilities' => 'moodle/user:editownprofile, moodle/user:editprofile',
         'services' => array(MOODLE_OFFICIAL_MOBILE_SERVICE),
     ),
+    'core_user_set_user_preferences' => array(
+        'classname' => 'core_user_external',
+        'methodname' => 'set_user_preferences',
+        'classpath' => 'user/externallib.php',
+        'description' => 'Set user preferences.',
+        'type' => 'write',
+        'capabilities' => 'moodle/site:config',
+    ),
+    'core_user_agree_site_policy' => array(
+        'classname' => 'core_user_external',
+        'methodname' => 'agree_site_policy',
+        'classpath' => 'user/externallib.php',
+        'description' => 'Agree the site policy for the current user.',
+        'type' => 'write',
+        'services' => array(MOODLE_OFFICIAL_MOBILE_SERVICE),
+    ),
+
     // Competencies functions.
     'core_competency_create_competency_framework' => array(
         'classname'    => 'core_competency\external',

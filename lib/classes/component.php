@@ -69,7 +69,8 @@ class core_component {
     protected static $filestomap = array('lib.php', 'settings.php');
     /** @var array associative array of PSR-0 namespaces and corresponding paths. */
     protected static $psr0namespaces = array(
-        'Horde' => 'lib/horde/framework/Horde'
+        'Horde' => 'lib/horde/framework/Horde',
+        'Mustache' => 'lib/mustache/src/Mustache',
     );
     /** @var array associative array of PRS-4 namespaces and corresponding paths. */
     protected static $psr4namespaces = array(
@@ -77,7 +78,8 @@ class core_component {
         'GeoIp2' => 'lib/maxmind/GeoIp2',
         'Sabberworm\\CSS' => 'lib/php-css-parser',
         'MoodleHQ\\RTLCSS' => 'lib/rtlcss',
-        'Leafo\\ScssPhp' => 'lib/scssphp'
+        'Leafo\\ScssPhp' => 'lib/scssphp',
+        'Box\\Spout' => 'lib/spout/src/Spout'
     );
 
     /**

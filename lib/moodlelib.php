@@ -2685,7 +2685,7 @@ function require_login($courseorid = null, $autologinguest = true, $cm = null, $
     if (!$USER->policyagreed and !is_siteadmin()) {
         if (!empty($CFG->sitepolicy) and !isguestuser()) {
             if ($preventredirect) {
-                throw new require_login_exception('Policy not agreed');
+                throw new moodle_exception('sitepolicynotagreed', 'error', '', $CFG->sitepolicy);
             }
             if ($setwantsurltome) {
                 $SESSION->wantsurl = qualified_me();
@@ -2693,7 +2693,7 @@ function require_login($courseorid = null, $autologinguest = true, $cm = null, $
             redirect($CFG->wwwroot .'/user/policy.php');
         } else if (!empty($CFG->sitepolicyguest) and isguestuser()) {
             if ($preventredirect) {
-                throw new require_login_exception('Policy not agreed');
+                throw new moodle_exception('sitepolicynotagreed', 'error', '', $CFG->sitepolicyguest);
             }
             if ($setwantsurltome) {
                 $SESSION->wantsurl = qualified_me();
@@ -5178,6 +5178,15 @@ function reset_course_userdata($data) {
         }
 
         $status[] = array('component' => $componentstr, 'item' => get_string('datechanged'), 'error' => false);
+    }
+
+    if (!empty($data->reset_end_date)) {
+        // If the user set a end date value respect it.
+        $DB->set_field('course', 'enddate', $data->reset_end_date, array('id' => $data->courseid));
+    } else if ($data->timeshift > 0 && $data->reset_end_date_old) {
+        // If there is a time shift apply it to the end date as well.
+        $enddate = $data->reset_end_date_old + $data->timeshift;
+        $DB->set_field('course', 'enddate', $enddate, array('id' => $data->courseid));
     }
 
     if (!empty($data->reset_events)) {
