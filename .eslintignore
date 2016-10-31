@@ -3,6 +3,8 @@
 */**/build/
 node_modules/
 vendor/
+admin/tool/usertours/amd/src/tour.js
+admin/tool/usertours/amd/src/popper.js
 auth/cas/CAS/
 auth/fc/fcFPP.php
 enrol/lti/ims-blti/
@@ -54,6 +56,7 @@ lib/spout/
 lib/amd/src/chartjs-lazy.js
 lib/maxmind/GeoIp2/
 lib/maxmind/MaxMind/
+lib/ltiprovider/
 mod/assign/feedback/editpdf/fpdi/
 repository/s3/S3.php
 theme/boost/scss/bootstrap/

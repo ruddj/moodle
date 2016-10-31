@@ -2406,13 +2406,11 @@ class admin_setting_configpasswordunmask extends admin_setting_configtext {
     }
 
     /**
-     * Returns XHTML for the field
-     * Writes Javascript into the HTML below right before the last div
+     * Returns HTML for the field.
      *
-     * @todo Make javascript available through newer methods if possible
-     * @param string $data Value for the field
-     * @param string $query Passed as final argument for format_admin_setting
-     * @return string XHTML field
+     * @param   string  $data       Value for the field
+     * @param   string  $query      Passed as final argument for format_admin_setting
+     * @return  string              Rendered HTML
      */
     public function output_html($data, $query='') {
         global $OUTPUT;
@@ -9081,6 +9079,7 @@ class admin_setting_configcolourpicker extends admin_setting {
         $context = (object) [
             'id' => $this->get_id(),
             'name' => $this->get_full_name(),
+            'value' => $data,
             'icon' => $icon->export_for_template($OUTPUT),
             'haspreviewconfig' => !empty($this->previewconfig),
             'forceltr' => $this->get_force_ltr()
@@ -9699,19 +9698,13 @@ class admin_setting_searchsetupinfo extends admin_setting {
         $return = '';
         $brtag = html_writer::empty_tag('br');
 
-        // Available search areas.
         $searchareas = \core_search\manager::get_search_areas_list();
-        $anyenabled = false;
+        $anyenabled = !empty(\core_search\manager::get_search_areas_list(true));
         $anyindexed = false;
         foreach ($searchareas as $areaid => $searcharea) {
             list($componentname, $varname) = $searcharea->get_config_var_name();
-            if (!$anyenabled) {
-                $anyenabled = get_config($componentname, $varname . '_enabled');
-            }
-            if (!$anyindexed) {
-                $anyindexed = get_config($componentname, $varname . '_indexingstart');
-            }
-            if ($anyenabled && $anyindexed) {
+            if (get_config($componentname, $varname . '_indexingstart')) {
+                $anyindexed = true;
                 break;
             }
         }

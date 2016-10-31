@@ -391,7 +391,6 @@ $capabilities = array(
         'captype' => 'read',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => array(
-            'teacher' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
             'manager' => CAP_ALLOW
         )
@@ -2015,6 +2014,18 @@ $capabilities = array(
 
     // Award badge to a user.
     'moodle/badges:awardbadge' => array(
+        'riskbitmask'  => RISK_SPAM,
+        'captype'      => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes'   => array(
+            'manager'        => CAP_ALLOW,
+            'teacher'        => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+        )
+    ),
+
+    // Revoke badge from a user.
+    'moodle/badges:revokebadge' => array(
         'riskbitmask'  => RISK_SPAM,
         'captype'      => 'write',
         'contextlevel' => CONTEXT_COURSE,

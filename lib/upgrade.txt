@@ -3,6 +3,10 @@ information provided here is intended especially for developers.
 
 === 3.2 ===
 
+* Admin setting "Show My courses expanded on Dashboard" has been removed.
+* Some backwards and forwards compatibility has been added for different bootstrap versions.
+  This is to allow the same markup to work in "clean" and "boost" themes alot of the time. It is also to allow user text
+  with bootstrap classes to keep working in the new theme. See MDL-56004 for the list of supported classes.
 * MForms element 'submitlink' has been deprecated.
 * Node.js versions >=4 are now required to run grunt.
 * JQuery has been updated to 3.1.0. JQuery migrate plugins are no longer shipped - please read
@@ -28,6 +32,16 @@ information provided here is intended especially for developers.
   - put_records_csv() Please use download_as_dataformat (lib/dataformatlib.php) instead.
   - zip_files()   - See MDL-24343 for more information.
   - unzip_file()  - See MDL-24343 for more information.
+  - print_log()           - See MDL-43681 for more information
+  - print_log_csv()       - See MDL-43681 for more information
+  - print_log_ods()       - See MDL-43681 for more information
+  - print_log_xls()       - See MDL-43681 for more information
+  - print_mnet_log()      - See MDL-43681 for more information
+  - build_logs_array()    - See MDL-43681 for more information
+  - get_logs()            - See MDL-43681 for more information
+  - get_logs_usercourse() - See MDL-43681 for more information
+  - get_logs_userday()    - See MDL-43681 for more information
+  - prevent_form_autofill_password() Please do not use anymore.
 * The password_compat library was removed as it is no longer required.
 * Phpunit has been upgraded to 5.4.x and following has been deprecated and is not used any more:
   - setExpectedException(), use @expectedException or $this->expectException() and $this->expectExceptionMessage()
@@ -102,6 +116,9 @@ information provided here is intended especially for developers.
 * The minifier library used by core_minify has been switched to https://github.com/matthiasmullie/minify - there are minor differences
   in minifier output.
 * context_header additional buttons can now have a class attribute provided in the link attributes.
+* Webservice function mod_assign_get_submissions returns a new field 'gradingstatus' from each submission.
+* The return signature for the antivirus::scan_file() function has changed.
+  The calling function will now handle removal of infected files from Moodle based on the new integer return value.
 
 === 3.1 ===
 

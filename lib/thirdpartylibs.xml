@@ -46,7 +46,7 @@
     <location>htmlpurifier</location>
     <name>HTML Purifier</name>
     <license>LGPL</license>
-    <version>4.7.0</version>
+    <version>4.8.0</version>
     <licenseversion>2.1+</licenseversion>
   </library>
   <library>
@@ -290,5 +290,12 @@
     <name>MaxMind DB Reader API</name>
     <license>Apache 2.0</license>
     <version>1.1.0</version>
+  </library>
+  <library>
+    <location>ltiprovider</location>
+    <name>LTI Tool Provider Library PHP</name>
+    <license>Apache</license>
+    <version>3.0.2</version>
+    <licenseversion>2.0</licenseversion>
   </library>
 </libraries>

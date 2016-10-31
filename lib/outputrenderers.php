@@ -659,14 +659,20 @@ class core_renderer extends renderer_base {
             $errorclass = ($timeleft < 30) ? 'error' : 'warning';
             $output .= $this->box_start($errorclass . ' moodle-has-zindex maintenancewarning');
             $a = new stdClass();
-            $a->min = (int)($timeleft/60);
+            $a->hour = (int)($timeleft / 3600);
+            $a->min = (int)(($timeleft / 60) % 60);
             $a->sec = (int)($timeleft % 60);
-            $output .= get_string('maintenancemodeisscheduled', 'admin', $a) ;
+            if ($a->hour > 0) {
+                $output .= get_string('maintenancemodeisscheduledlong', 'admin', $a);
+            } else {
+                $output .= get_string('maintenancemodeisscheduled', 'admin', $a);
+            }
+
             $output .= $this->box_end();
             $this->page->requires->yui_module('moodle-core-maintenancemodetimer', 'M.core.maintenancemodetimer',
                     array(array('timeleftinsec' => $timeleft)));
             $this->page->requires->strings_for_js(
-                    array('maintenancemodeisscheduled', 'sitemaintenance'),
+                    array('maintenancemodeisscheduled', 'maintenancemodeisscheduledlong', 'sitemaintenance'),
                     'admin');
         }
         return $output;
@@ -4086,18 +4092,6 @@ EOD;
         return $html;
     }
 
-    /**
-     * Returns the header bar.
-     *
-     * @since Moodle 2.9
-     * @param array $headerinfo An array of header information, dependant on what type of header is being displayed. The following
-     *                          array example is user specific.
-     *                          heading => Override the page heading.
-     *                          user => User object.
-     *                          usercontext => user context.
-     * @param int $headinglevel What level the 'h' tag will be.
-     * @return string HTML for the header bar.
-     */
     public function context_header($headerinfo = null, $headinglevel = 1) {
         global $DB, $USER, $CFG;
         $context = $this->page->context;
@@ -4388,6 +4382,18 @@ EOD;
             // No template for this element.
             return false;
         }
+    }
+
+    /**
+     * Render the login signup form into a nice template for the theme.
+     *
+     * @param mform $form
+     * @return string
+     */
+    public function render_login_signup_form($form) {
+        $context = $form->export_for_template($this);
+
+        return $this->render_from_template('core/signup_form_layout', $context);
     }
 
     /**
