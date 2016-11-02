@@ -1506,7 +1506,7 @@ class mod_assign_external extends external_api {
      * @param int $userid The id of the user the submission belongs to.
      * @param string $jsonformdata The data from the form, encoded as a json array.
      * @return array of warnings to indicate any errors.
-     * @since Moodle 2.6
+     * @since Moodle 3.1
      */
     public static function submit_grading_form($assignmentid, $userid, $jsonformdata) {
         global $CFG, $USER;
@@ -1536,6 +1536,12 @@ class mod_assign_external extends external_api {
             'rownum' => 0,
             'gradingpanel' => true
         );
+
+        if (WS_SERVER) {
+            // Assume form submission if coming from WS.
+            $USER->ignoresesskey = true;
+            $data['_qf__mod_assign_grade_form_'.$params['userid']] = 1;
+        }
 
         $customdata = (object) $data;
         $formparams = array($assignment, $customdata, $options);
@@ -2370,6 +2376,9 @@ class mod_assign_external extends external_api {
                                                                             $lastattempt->submissiongroupmemberswhoneedtosubmit);
             }
 
+            // Can edit its own submission?
+            $lastattempt->caneditowner = $assign->submissions_open($user->id) && $assign->is_any_submission_plugin_enabled();
+
             $result['lastattempt'] = $lastattempt;
         }
 
@@ -2464,6 +2473,7 @@ class mod_assign_external extends external_api {
                         'locked' => new external_value(PARAM_BOOL, 'Whether new submissions are locked.'),
                         'graded' => new external_value(PARAM_BOOL, 'Whether the submission is graded.'),
                         'canedit' => new external_value(PARAM_BOOL, 'Whether the user can edit the current submission.'),
+                        'caneditowner' => new external_value(PARAM_BOOL, 'Whether the owner of the submission can edit it.'),
                         'cansubmit' => new external_value(PARAM_BOOL, 'Whether the user can submit.'),
                         'extensionduedate' => new external_value(PARAM_INT, 'Extension due date.'),
                         'blindmarking' => new external_value(PARAM_BOOL, 'Whether blind marking is enabled.'),

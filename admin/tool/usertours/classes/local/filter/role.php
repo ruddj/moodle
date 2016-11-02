@@ -37,6 +37,13 @@ use context;
  */
 class role extends base {
     /**
+     * The Site Admin pseudo-role.
+     *
+     * @var ROLE_SITEADMIN int
+     */
+    const ROLE_SITEADMIN = -1;
+
+    /**
      * The name of the filter.
      *
      * @return  string
@@ -52,7 +59,24 @@ class role extends base {
      *                                  And whose values are the values to display
      */
     public static function get_filter_options() {
-        return role_get_names(null, ROLENAME_ALIAS, true);
+        $allroles = role_get_names(null, ROLENAME_ALIAS);
+
+        $roles = [];
+        foreach ($allroles as $role) {
+            if ($role->archetype === 'guest') {
+                // No point in including the 'guest' role as it isn't possible to show tours to a guest.
+                continue;
+            }
+            $roles[$role->shortname] = $role->localname;
+        }
+
+        // Add the Site Administrator pseudo-role.
+        $roles[self::ROLE_SITEADMIN] = get_string('administrator', 'core');
+
+        // Sort alphabetically too.
+        \core_collator::asort($roles);
+
+        return $roles;
     }
 
     /**
@@ -73,14 +97,19 @@ class role extends base {
             return true;
         }
 
-        if (is_siteadmin()) {
-            return true;
-        }
-
         // Presence within the array is sufficient. Ignore any value.
         $values = array_flip($values);
 
+        if (isset($values[self::ROLE_SITEADMIN]) && is_siteadmin()) {
+            // This tour has been restricted to a role including site admin, and this user is a site admin.
+            return true;
+        }
+
+        // Use a request cache to save on DB queries.
+        // We may be checking multiple tours and they'll all be for the same userid, and contextid
         $cache = \cache::make_from_params(\cache_store::MODE_REQUEST, 'tool_usertours', 'filter_role');
+
+        // Get all of the roles used in this context, including special roles such as user, and frontpageuser.
         $cachekey = "{$USER->id}_{$context->id}";
         $userroles = $cache->get($cachekey);
         if ($userroles === false) {
@@ -88,8 +117,20 @@ class role extends base {
             $cache->set($cachekey, $userroles);
         }
 
+        // Some special roles do not include the shortname.
+        // Therefore we must fetch all roles too. Thankfully these don't actually change based on context.
+        // They do require a DB call, so let's cache it.
+        $cachekey = "allroles";
+        $allroles = $cache->get($cachekey);
+        if ($allroles === false) {
+            $allroles = get_all_roles();
+            $cache->set($cachekey, $allroles);
+        }
+
+        // Now we can check whether any of the user roles are in the list of allowed roles for this filter.
         foreach ($userroles as $role) {
-            if (isset($values[$role->roleid])) {
+            $shortname = $allroles[$role->roleid]->shortname;
+            if (isset($values[$shortname])) {
                 return true;
             }
         }

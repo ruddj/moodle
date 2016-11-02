@@ -15,7 +15,7 @@
 }
 
 .context-header-settings-menu .dropdown-toggle > .icon,
-.region-main-settings-menu .dropdown-toggle > .icon {
+#region-main-settings-menu .dropdown-toggle > .icon {
     height: 24px;
     width: auto;
 }
@@ -2008,7 +2008,6 @@ dd:after {
 
         input {
             width: 330px;
-            height: 16px;
             vertical-align: text-bottom;
             margin-bottom: 0;
         }

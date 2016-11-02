@@ -174,6 +174,8 @@ class core_message_api_testcase extends core_message_messagelib_testcase {
      * Tests searching users.
      */
     public function test_search_users() {
+        global $DB;
+
         // Create some users.
         $user1 = new stdClass();
         $user1->firstname = 'User';
@@ -224,10 +226,31 @@ class core_message_api_testcase extends core_message_messagelib_testcase {
         $course3->shortname = 'Three search';
         $course3 = $this->getDataGenerator()->create_course($course3);
 
+        $course4 = new stdClass();
+        $course4->fullname = 'Course Four';
+        $course4->shortname = 'CF100';
+        $course4 = $this->getDataGenerator()->create_course($course4);
+
+        $course5 = new stdClass();
+        $course5->fullname = 'Course';
+        $course5->shortname = 'Five search';
+        $course5 = $this->getDataGenerator()->create_course($course5);
+
+        $role = $DB->get_record('role', ['shortname' => 'student']);
+        $this->getDataGenerator()->enrol_user($user1->id, $course1->id, $role->id);
+        $this->getDataGenerator()->enrol_user($user1->id, $course2->id, $role->id);
+        $this->getDataGenerator()->enrol_user($user1->id, $course3->id, $role->id);
+        $this->getDataGenerator()->enrol_user($user1->id, $course5->id, $role->id);
+
         // Add some users as contacts.
         message_add_contact($user2->id, 0, $user1->id);
         message_add_contact($user3->id, 0, $user1->id);
         message_add_contact($user4->id, 0, $user1->id);
+
+        // Remove the viewparticipants capability from one of the courses.
+        $course5context = context_course::instance($course5->id);
+        assign_capability('moodle/course:viewparticipants', CAP_PROHIBIT, $role->id, $course5context->id);
+        $course5context->mark_dirty();
 
         // Perform a search.
         list($contacts, $courses, $noncontacts) = \core_message\api::search_users($user1->id, 'search');

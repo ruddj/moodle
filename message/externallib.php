@@ -214,11 +214,24 @@ class core_message_external extends external_api {
      * @since Moodle 2.5
      */
     public static function create_contacts($userids, $userid = 0) {
-        global $CFG;
+        global $CFG, $USER;
 
         // Check if messaging is enabled.
         if (empty($CFG->messaging)) {
             throw new moodle_exception('disabled', 'message');
+        }
+
+        if (empty($userid)) {
+            $userid = $USER->id;
+        }
+
+        // Validate context.
+        $context = context_system::instance();
+        self::validate_context($context);
+
+        $capability = 'moodle/site:manageallmessaging';
+        if (($USER->id != $userid) && !has_capability($capability, $context)) {
+            throw new required_capability_exception($context, $capability, 'nopermissions', '');
         }
 
         $params = array('userids' => $userids, 'userid' => $userid);
@@ -276,11 +289,24 @@ class core_message_external extends external_api {
      * @since Moodle 2.5
      */
     public static function delete_contacts($userids, $userid = 0) {
-        global $CFG;
+        global $CFG, $USER;
 
         // Check if messaging is enabled.
         if (empty($CFG->messaging)) {
             throw new moodle_exception('disabled', 'message');
+        }
+
+        if (empty($userid)) {
+            $userid = $USER->id;
+        }
+
+        // Validate context.
+        $context = context_system::instance();
+        self::validate_context($context);
+
+        $capability = 'moodle/site:manageallmessaging';
+        if (($USER->id != $userid) && !has_capability($capability, $context)) {
+            throw new required_capability_exception($context, $capability, 'nopermissions', '');
         }
 
         $params = array('userids' => $userids, 'userid' => $userid);
@@ -331,11 +357,24 @@ class core_message_external extends external_api {
      * @since Moodle 2.5
      */
     public static function block_contacts($userids, $userid = 0) {
-        global $CFG;
+        global $CFG, $USER;
 
         // Check if messaging is enabled.
         if (empty($CFG->messaging)) {
             throw new moodle_exception('disabled', 'message');
+        }
+
+        if (empty($userid)) {
+            $userid = $USER->id;
+        }
+
+        // Validate context.
+        $context = context_system::instance();
+        self::validate_context($context);
+
+        $capability = 'moodle/site:manageallmessaging';
+        if (($USER->id != $userid) && !has_capability($capability, $context)) {
+            throw new required_capability_exception($context, $capability, 'nopermissions', '');
         }
 
         $params = array('userids' => $userids, 'userid' => $userid);
@@ -393,11 +432,24 @@ class core_message_external extends external_api {
      * @since Moodle 2.5
      */
     public static function unblock_contacts($userids, $userid = 0) {
-        global $CFG;
+        global $CFG, $USER;
 
         // Check if messaging is enabled.
         if (empty($CFG->messaging)) {
             throw new moodle_exception('disabled', 'message');
+        }
+
+        if (empty($userid)) {
+            $userid = $USER->id;
+        }
+
+        // Validate context.
+        $context = context_system::instance();
+        self::validate_context($context);
+
+        $capability = 'moodle/site:manageallmessaging';
+        if (($USER->id != $userid) && !has_capability($capability, $context)) {
+            throw new required_capability_exception($context, $capability, 'nopermissions', '');
         }
 
         $params = array('userids' => $userids, 'userid' => $userid);
@@ -1590,7 +1642,12 @@ class core_message_external extends external_api {
      * @return external_description
      */
     public static function get_unread_conversations_count($useridto) {
-        global $USER;
+        global $USER, $CFG;
+
+        // Check if messaging is enabled.
+        if (empty($CFG->messaging)) {
+            throw new moodle_exception('disabled', 'message');
+        }
 
         $params = self::validate_parameters(
             self::get_unread_conversations_count_parameters(),
@@ -1656,6 +1713,11 @@ class core_message_external extends external_api {
     public static function get_blocked_users($userid) {
         global $CFG, $USER, $PAGE;
 
+        // Check if messaging is enabled.
+        if (empty($CFG->messaging)) {
+            throw new moodle_exception('disabled', 'message');
+        }
+
         // Warnings array, it can be empty at the end but is mandatory.
         $warnings = array();
 
@@ -1679,8 +1741,9 @@ class core_message_external extends external_api {
         core_user::require_active_user($user);
 
         // Check if we have permissions for retrieve the information.
-        if ($userid != $USER->id and !has_capability('moodle/site:readallmessages', $context)) {
-            throw new moodle_exception('accessdenied', 'admin');
+        $capability = 'moodle/site:manageallmessaging';
+        if (($USER->id != $userid) && !has_capability($capability, $context)) {
+            throw new required_capability_exception($context, $capability, 'nopermissions', '');
         }
 
         // Now, we can get safely all the blocked users.
@@ -1843,7 +1906,12 @@ class core_message_external extends external_api {
      * @return external_description
      */
     public static function mark_all_messages_as_read($useridto, $useridfrom) {
-        global $USER;
+        global $USER, $CFG;
+
+        // Check if messaging is enabled.
+        if (empty($CFG->messaging)) {
+            throw new moodle_exception('disabled', 'message');
+        }
 
         $params = self::validate_parameters(
             self::mark_all_messages_as_read_parameters(),
@@ -2092,7 +2160,12 @@ class core_message_external extends external_api {
      * @since 3.2
      */
     public static function message_processor_config_form($userid, $name, $formvalues) {
-        global $USER;
+        global $USER, $CFG;
+
+        // Check if messaging is enabled.
+        if (empty($CFG->messaging)) {
+            throw new moodle_exception('disabled', 'message');
+        }
 
         $params = self::validate_parameters(
             self::message_processor_config_form_parameters(),
@@ -2162,7 +2235,12 @@ class core_message_external extends external_api {
      * @since 3.2
      */
     public static function get_message_processor($userid = 0, $name) {
-        global $USER, $PAGE;
+        global $USER, $PAGE, $CFG;
+
+        // Check if messaging is enabled.
+        if (empty($CFG->messaging)) {
+            throw new moodle_exception('disabled', 'message');
+        }
 
         $params = self::validate_parameters(
             self::get_message_processor_parameters(),
@@ -2226,7 +2304,7 @@ class core_message_external extends external_api {
      * @since 3.2
      */
     public static function get_user_notification_preferences($userid = 0) {
-        global $USER, $PAGE;
+        global $USER, $PAGE, $CFG;
 
         $params = self::validate_parameters(
             self::get_user_notification_preferences_parameters(),

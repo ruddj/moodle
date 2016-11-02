@@ -161,6 +161,11 @@ class core_message_externallib_testcase extends externallib_advanced_testcase {
         $return = array_pop($return);
         $this->assertEquals($return['warningcode'], 'contactnotcreated');
         $this->assertEquals($return['itemid'], 99999);
+
+        // Try to add a contact to another user, should throw an exception.
+        // All assertions must be added before this point.
+        $this->expectException('required_capability_exception');
+        core_message_external::create_contacts(array($user2->id), $user3->id);
     }
 
     /**
@@ -198,6 +203,11 @@ class core_message_externallib_testcase extends externallib_advanced_testcase {
         // Removing mixed valid and invalid data.
         $return = core_message_external::delete_contacts(array($user6->id, 99999));
         $this->assertNull($return);
+
+        // Try to delete a contact of another user contact list, should throw an exception.
+        // All assertions must be added before this point.
+        $this->expectException('required_capability_exception');
+        core_message_external::delete_contacts(array($user2->id), $user3->id);
     }
 
     /**
@@ -244,6 +254,11 @@ class core_message_externallib_testcase extends externallib_advanced_testcase {
         $return = array_pop($return);
         $this->assertEquals($return['warningcode'], 'contactnotblocked');
         $this->assertEquals($return['itemid'], 99999);
+
+        // Try to block a contact of another user contact list, should throw an exception.
+        // All assertions must be added before this point.
+        $this->expectException('required_capability_exception');
+        core_message_external::block_contacts(array($user2->id), $user3->id);
     }
 
     /**
@@ -282,6 +297,10 @@ class core_message_externallib_testcase extends externallib_advanced_testcase {
         $return = core_message_external::unblock_contacts(array($user6->id, 99999));
         $this->assertNull($return);
 
+        // Try to unblock a contact of another user contact list, should throw an exception.
+        // All assertions must be added before this point.
+        $this->expectException('required_capability_exception');
+        core_message_external::unblock_contacts(array($user2->id), $user3->id);
     }
 
     /**
@@ -492,7 +511,8 @@ class core_message_externallib_testcase extends externallib_advanced_testcase {
         // We are creating fake notifications but based on real ones.
 
         // This one omits notification = 1.
-        $eventdata = new stdClass();
+        $eventdata = new \core\message\message();
+        $eventdata->courseid          = $course->id;
         $eventdata->modulename        = 'moodle';
         $eventdata->component         = 'enrol_paypal';
         $eventdata->name              = 'paypal_enrolment';
@@ -505,7 +525,8 @@ class core_message_externallib_testcase extends externallib_advanced_testcase {
         $eventdata->smallmessage      = '';
         message_send($eventdata);
 
-        $message = new stdClass();
+        $message = new \core\message\message();
+        $message->courseid          = $course->id;
         $message->notification      = 1;
         $message->component         = 'enrol_manual';
         $message->name              = 'expiry_notification';
@@ -522,7 +543,8 @@ class core_message_externallib_testcase extends externallib_advanced_testcase {
 
         $userfrom = core_user::get_noreply_user();
         $userfrom->maildisplay = true;
-        $eventdata = new stdClass();
+        $eventdata = new \core\message\message();
+        $eventdata->courseid          = $course->id;
         $eventdata->component         = 'moodle';
         $eventdata->name              = 'badgecreatornotice';
         $eventdata->userfrom          = $userfrom;
@@ -535,7 +557,8 @@ class core_message_externallib_testcase extends externallib_advanced_testcase {
         $eventdata->smallmessage      = $eventdata->subject;
         message_send($eventdata);
 
-        $eventdata = new stdClass();
+        $eventdata = new \core\message\message();
+        $eventdata->courseid         = $course->id;
         $eventdata->name             = 'submission';
         $eventdata->component        = 'mod_feedback';
         $eventdata->userfrom         = $user1;
@@ -1172,6 +1195,15 @@ class core_message_externallib_testcase extends externallib_advanced_testcase {
         $course3->shortname = 'Three search';
         $course3 = $this->getDataGenerator()->create_course($course3);
 
+        $course4 = new stdClass();
+        $course4->fullname = 'Course Four';
+        $course4->shortname = 'CF100';
+        $course4 = $this->getDataGenerator()->create_course($course4);
+
+        $this->getDataGenerator()->enrol_user($user1->id, $course1->id, 'student');
+        $this->getDataGenerator()->enrol_user($user1->id, $course2->id, 'student');
+        $this->getDataGenerator()->enrol_user($user1->id, $course3->id, 'student');
+
         // Add some users as contacts.
         message_add_contact($user2->id, 0, $user1->id);
         message_add_contact($user3->id, 0, $user1->id);
@@ -1283,9 +1315,7 @@ class core_message_externallib_testcase extends externallib_advanced_testcase {
         $this->assertEquals($user2->id, $contacts[1]['userid']);
 
         // Check that we retrieved the correct courses.
-        $this->assertCount(2, $courses);
-        $this->assertEquals($course3->id, $courses[0]['id']);
-        $this->assertEquals($course1->id, $courses[1]['id']);
+        $this->assertCount(0, $courses);
 
         // Check that we retrieved the correct non-contacts.
         $this->assertCount(1, $noncontacts);
