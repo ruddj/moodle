@@ -86,7 +86,8 @@ function theme_get_revision() {
 
     if (empty($CFG->themedesignermode)) {
         if (empty($CFG->themerev)) {
-            return -1;
+            // This only happens during install. It doesn't matter what themerev we use as long as it's positive.
+            return 1;
         } else {
             return $CFG->themerev;
         }

@@ -9,20 +9,16 @@ select {
     width: auto;
 }
 
+.path-mod-feedback .feedback_form .col-form-label {
+    display: block !important; /* stylelint-disable-line declaration-no-important */
+}
 // Feedback module
-.path-mod-feedback .feedback_form .col-md-9,
-.path-mod-feedback .feedback_form .col-md-3,
-.path-mod-feedback .feedback_form .col-md-3 label {
-    width: 100%;
-}
-
-.path-mod-feedback .feedback_form .col-md-9 {
-    margin-left: 1rem;
-    margin-bottom: -2rem;
-}
-
 .path-mod-feedback .itemactions {
     float: right;
+}
+.path-mod-feedback .itemhandle {
+    position: absolute;
+    right: 1rem;
 }
 
 // Forum module
@@ -504,7 +500,6 @@ div#dock {
 
 .path-mod-assign [data-region="grading-navigation"] {
     padding: 6px;
-    overflow-y: hidden;
 }
 
 .path-mod-assign [data-region="grade-actions"] {
@@ -548,3 +543,13 @@ div#dock {
     padding: 0;
 }
 
+
+/**
+ * Mod LTI.
+ */
+.path-admin-mod-lti {
+    .btn .loader img,
+    #tool-list-loader-container .loader img {
+        height: auto;
+    }
+}

@@ -19,6 +19,11 @@
     height: 24px;
     width: auto;
 }
+/** Prevent user notifications overlapping with region main settings menu */
+#user-notifications {
+    display: block;
+    overflow: hidden;
+}
 
 /** Page layout CSS starts **/
 .layout-option-noheader #page-header,
@@ -292,7 +297,8 @@ form.popupform div {
 }
 
 span.hide,
-div.hide {
+div.hide,
+.hidden {
     display: none;
 }
 // Accessibility: Skip block link, for keyboard-only users.
@@ -1287,18 +1293,6 @@ body#page-lib-editor-tinymce-plugins-moodlemedia-preview {
     border: 0;
 }
 
-.moodle-dialogue-confirm .confirmation-dialogue {
-    text-align: center;
-}
-
-.moodle-dialogue-confirm .confirmation-dialogue input {
-    text-align: center;
-}
-
-.moodle-dialogue-exception .moodle-exception-message {
-    text-align: center;
-}
-
 .moodle-dialogue-exception .moodle-exception-param label {
     font-weight: bold;
 }
@@ -2172,3 +2166,8 @@ $footer-link-color: $brand-primary !default;
     color: $body-color;
 }
 
+.competency-tree {
+    ul {
+        padding-left: 1.5rem;
+    }
+}

@@ -21,19 +21,26 @@
 
     Example context (json):
     {
+        "text": "Root of menu",
+        "key": "test0",
+        "display": true,
+        "children": []
     }
 }}
-
-<ul class="nav m-l-2">
-    {{#has_action}}
-    <li class="nav-item"><a class="nav-link" href="{{{action}}}">{{text}}</a></li>
-    {{/has_action}}
-    {{^has_action}}
-    <li class="nav-item">{{text}}</li>
-    {{/has_action}}
+{{#display}}
+    {{#action}}
+        <li><a href="{{{action}}}">{{text}}</a></li>
+    {{/action}}
+    {{^action}}
+        <li><strong>{{text}}</strong></li>
+    {{/action}}
     {{#children.count}}
-        {{#children}}
-            {{> core/settings_link_page_single }}
-        {{/children}}
+        <li>
+            <ul class="unstyled indented-list">
+                {{#children}}
+                    {{> core/settings_link_page_single }}
+                {{/children}}
+            </ul>
+        </li>
     {{/children.count}}
-</ul>
+{{/display}}

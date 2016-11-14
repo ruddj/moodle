@@ -256,27 +256,6 @@ class navigation_node implements renderable {
     }
 
     /**
-     * Recursively walk the tree looking for a node with a valid action.
-     * Depth first search.
-     *
-     * @return bool
-     */
-    public function resolve_action() {
-        if ($this->action) {
-            return $this->action;
-        }
-        if (!empty($this->children)) {
-            foreach ($this->children as $child) {
-                $action = $child->resolve_action();
-                if (!empty($action)) {
-                    return $action;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
      * Get a list of sibling navigation nodes at the same level as this one.
      *
      * @return bool|array of navigation_node
@@ -606,6 +585,26 @@ class navigation_node implements renderable {
     }
 
     /**
+     * To better balance the admin tree, we want to group all the short top branches together.
+     *
+     * This means < 8 nodes and no subtrees.
+     *
+     * @return bool
+     */
+    public function is_short_branch() {
+        $limit = 8;
+        if ($this->children->count() >= $limit) {
+            return false;
+        }
+        foreach ($this->children as $child) {
+            if ($child->has_children()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Finds the active node.
      *
      * Searches this nodes children plus all of the children for the active node
@@ -806,6 +805,21 @@ class navigation_node implements renderable {
                 }
             }
         }
+    }
+
+    /**
+     * Get the action url for this navigation node.
+     * Called from templates.
+     *
+     * @since Moodle 3.2
+     */
+    public function action() {
+        if ($this->action instanceof moodle_url) {
+            return $this->action;
+        } else if ($this->action instanceof action_link) {
+            return $this->action->url;
+        }
+        return $this->action;
     }
 }
 

@@ -43,7 +43,7 @@
     font-weight: 900;
 }
 
-.path-mod-assign.jsenabled .gradingoptionsform .fsubmit {
+.path-mod-assign.jsenabled .gradingoptionsform [type=submit] {
     display: none;
 }
 
@@ -387,6 +387,7 @@
 }
 
 .path-mod-assign [data-region="configure-filters"] label {
+    display: block;
     padding: 3px 20px;
 }
 
@@ -434,6 +435,12 @@
 .path-mod-assign [data-region="user-info"] em {
     display: block;
     font-style: normal;
+}
+
+.path-mod-assign [data-region="user-info"] em.nowrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .path-mod-assign [data-region="grading-actions-form"] label {
