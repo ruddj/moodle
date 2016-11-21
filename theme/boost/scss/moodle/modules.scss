@@ -12,6 +12,7 @@ select {
 .path-mod-feedback .feedback_form .col-form-label {
     display: block !important; /* stylelint-disable-line declaration-no-important */
 }
+
 // Feedback module
 .path-mod-feedback .itemactions {
     float: right;
@@ -148,6 +149,10 @@ select {
 #page-mod-forum-discuss .discussioncontrols {
     width: auto;
     margin: 0;
+
+    .form-inline input {
+        margin-top: -1px;
+    }
 }
 
 .maincalendar .calendarmonth td,
@@ -208,21 +213,6 @@ div#dock {
 
 // Choice module
 
-.path-mod-choice {
-    .horizontal  .choices {
-        margin: 0;
-
-        .option {
-            display: inline-block;
-            padding: 10px;
-        }
-    }
-
-    .results .data {
-        white-space: normal;
-    }
-}
-
 // Lesson module
 
 /** General styles (scope: all of lesson) **/
@@ -262,13 +252,6 @@ div#dock {
         }
     }
 
-    .resultgraph,
-    .reportsummary,
-    .studentreport,
-    .reportbuttons,
-    .centerpara {
-        text-align: center;
-    }
 }
 
 .nav .caret {
@@ -359,6 +342,34 @@ div#dock {
 }
 
 // Quiz module
+.path-mod-quiz .mod-quiz-edit-content {
+    // Force the quiz edit page to always be large enough to prevent scrolling when accessing the menu.
+    margin-bottom: 10rem;
+}
+
+#page-mod-quiz-mod #id_reviewoptionshdr .col-md-3,
+#page-mod-quiz-mod #id_reviewoptionshdr .col-md-9 {
+    width: auto;
+}
+#page-mod-quiz-mod #id_reviewoptionshdr .form-group {
+    float: left;
+    width: 20rem;
+    display: inline-block;
+    height: 12rem;
+}
+
+#page-mod-quiz-mod #id_reviewoptionshdr .btn-link {
+    line-height: 1.5;
+    vertical-align: bottom;
+}
+#page-mod-quiz-mod #id_reviewoptionshdr .form-inline {
+    float: left;
+    clear: left;
+}
+#page-mod-quiz-mod #id_reviewoptionshdr .form-check-inline {
+    width: 90%;
+    height: 22px;
+}
 
 // Question navigation block.
 .path-mod-quiz #mod_quiz_navblock {
@@ -367,7 +378,7 @@ div#dock {
         font-size: 14px;
         line-height: 20px;
         font-weight: normal;
-        background-color: $body-color;
+        background-color: $card-bg;
         background-image: none;
         height: 40px;
         width: 30px;
@@ -409,7 +420,7 @@ div#dock {
 
     .qnbutton .trafficlight {
         border: 0;
-        background: $body-color none center / 10px no-repeat scroll;
+        background: $card-bg none center / 10px no-repeat scroll;
         height: 20px;
         margin-top: 20px;
         border-radius: 0 0 3px 3px;
@@ -417,7 +428,7 @@ div#dock {
 
     .qnbutton.notyetanswered .trafficlight,
     .qnbutton.invalidanswer .trafficlight {
-        background-color: $body-color;
+        background-color: $card-bg;
     }
 
     .qnbutton.invalidanswer .trafficlight {

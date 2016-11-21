@@ -2334,9 +2334,6 @@ class global_navigation extends navigation_node {
                 if ($USER->id != $user->id) {
                     $messageargs['user2'] = $user->id;
                 }
-                if ($course->id != $SITE->id) {
-                    $messageargs['viewing'] = MESSAGE_VIEW_COURSE. $course->id;
-                }
                 $url = new moodle_url('/message/index.php', $messageargs);
                 $usernode->add(get_string('messages', 'message'), $url, self::TYPE_SETTING, null, 'messages');
             }
@@ -3633,6 +3630,24 @@ class flat_navigation_node extends navigation_node {
     }
 
     /**
+     * In flat navigation - sections are active if we are looking at activities in the section.
+     * @return boolean
+     */
+    public function isactive() {
+        global $PAGE;
+
+        if ($this->is_section()) {
+            $active = $PAGE->navigation->find_active_node();
+            while ($active = $active->parent) {
+                if ($active->key == $this->key && $active->type == $this->type) {
+                    return true;
+                }
+            }
+        }
+        return $this->isactive;
+    }
+
+    /**
      * Getter for "showdivider"
      * @return boolean
      */
@@ -4621,9 +4636,6 @@ class settings_navigation extends navigation_node {
                 $messageargs = array('user1' => $USER->id);
                 if ($USER->id != $user->id) {
                     $messageargs['user2'] = $user->id;
-                }
-                if ($course->id != $SITE->id) {
-                    $messageargs['viewing'] = MESSAGE_VIEW_COURSE. $course->id;
                 }
                 $url = new moodle_url('/message/index.php', $messageargs);
                 $dashboard->add(get_string('messages', 'message'), $url, self::TYPE_SETTING, null, 'messages');
