@@ -982,12 +982,7 @@ tr.flagged-tag a {
 .smartselect.compactmenu .smartselect_submenuitem:hover > .smartselect_menuitem_label {
     font-weight: bold;
 }
-/**
-* Registration
-*/
-#page-admin-registration-register .registration_textfield {
-    width: 300px;
-}
+
 /**
 * Enrol
 */
@@ -2091,6 +2086,7 @@ ul {
         opacity: 0;
         visibility: hidden;
         position: absolute;
+        /*rtl:ignore*/
         left: 50%;
         top: calc(-50% - 5px);
         transform: translate(-50%, -50%);
@@ -2168,3 +2164,4 @@ $footer-link-color: $brand-primary !default;
         padding-left: 1.5rem;
     }
 }
+

@@ -162,7 +162,7 @@ a.autolink.glossary:hover {
 }
 /*rtl:raw:
 .collapsible-actions .collapseexpand {
-    background: url([[pix:t/collapsed_rtl]]);
+    background: url([[pix:t/collapsed_rtl]]) right center no-repeat;
 }
 */
 .collapsible-actions .collapse-all {
@@ -2435,6 +2435,7 @@ h3.sectionname .inplaceeditable.inplaceeditingon .editinstructions {
   opacity: 0;
   visibility: hidden;
   position: absolute;
+  /*rtl:ignore*/
   left: 50%;
   top: calc(-50% - 5px);
   transform: translate(-50%, -50%);
@@ -2751,6 +2752,9 @@ img.iconsmall {
   margin-left: auto;
   margin-right: auto;
 }
+#page-admin-tool-spamcleaner-index .spamcleanerform input[type="submit"] {
+  margin-bottom: 0;
+}
 .path-admin-roles .capabilitysearchui input[type="button"] {
   margin-bottom: 0;
 }
@@ -2789,7 +2793,17 @@ img.iconsmall {
 .modal.modal-in-page {
   position: static;
   z-index: 0;
-  margin: 0;
+  margin: 0 auto 0 auto;
+}
+#page-admin-index #notice {
+  width: 60%;
+  min-width: 220px;
+  margin: auto;
+}
+#page-admin-index #notice .buttons {
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
 }
 #page-admin-index .releasenoteslink,
 #page-admin-index .adminwarning,
@@ -3441,20 +3455,10 @@ img.iconsmall {
   margin: 0;
 }
 .path-calendar .maincalendar .eventlist .event {
-  width: 92%;
   border-spacing: 0;
   border-collapse: separate;
   position: relative;
-  padding: 20px 4%;
   margin-bottom: 20px;
-  background-color: #fdfdfd;
-  border: 1px solid #e3e3e3;
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
-  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
   list-style-type: none;
 }
 .path-calendar .maincalendar .eventlist .event > img {
@@ -3467,6 +3471,7 @@ img.iconsmall {
   line-height: 24px;
   float: left;
   margin: 0;
+  margin-right: 0.5rem;
 }
 .path-calendar .maincalendar .eventlist .event .name,
 .path-calendar .maincalendar .eventlist .event .course {
@@ -3487,17 +3492,6 @@ img.iconsmall {
   background-color: #fff;
   padding: 5px;
   clear: both;
-}
-.path-calendar .maincalendar .eventlist .event .description .commands {
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin: 3px;
-}
-.path-calendar .maincalendar .eventlist .event .commands {
-  position: absolute;
-  top: 2px;
-  right: 2px;
 }
 .path-calendar .maincalendar .eventlist .event .commands a {
   margin: 0 3px;
@@ -5838,6 +5832,9 @@ a.ygtvspacer:hover {
   clear: both;
   border-radius: 4px;
 }
+.messaging-area-container .messaging-area img {
+  max-width: 100%;
+}
 .messaging-area-container .messaging-area .contacts-area {
   border-right: 1px solid #e3e3e3;
   height: 600px;
@@ -5885,6 +5882,7 @@ a.ygtvspacer:hover {
 }
 .messaging-area-container .messaging-area .contacts-area .searchtextarea .searchfilterarea {
   line-height: 20px;
+  cursor: pointer;
 }
 .messaging-area-container .messaging-area .contacts-area .searchtextarea .searchfilterarea .searchfilter {
   float: left;
@@ -5892,7 +5890,6 @@ a.ygtvspacer:hover {
 .messaging-area-container .messaging-area .contacts-area .searchtextarea .searchfilterarea .searchfilterdelete {
   float: left;
   margin-left: 5px;
-  cursor: pointer;
 }
 .messaging-area-container .messaging-area .contacts-area .searcharea .heading {
   text-align: center;
@@ -13821,7 +13818,7 @@ form {
 .mform fieldset.collapsible legend a.fheader {
   padding: 0 5px 0 20px;
   margin-left: -20px;
-  background: url([[pix:t/expanded]]) 2px center no-repeat;
+  background: url([[pix:t/expanded]]) left center no-repeat;
 }
 .mform fieldset.collapsed legend a.fheader {
   /*rtl:raw:
@@ -14455,6 +14452,13 @@ body.modal-open {
 /* modules.less */
 select {
   width: auto;
+}
+.path-mod-assign #page-content [data-region="grade-panel"] .mform:not(.unresponsive) #id_attemptsettings .fitem .fitemtitle,
+.path-mod-assign #page-content [data-region="grade-panel"] .mform:not(.unresponsive) #id_attemptsettings .fitem .felement {
+  display: table-cell;
+  float: none;
+  border-top: 1px solid #ddd;
+  padding: 8px 0;
 }
 .path-mod-feedback .mform.feedback_form .fitem .fitemtitle {
   display: block;

@@ -3707,7 +3707,19 @@ function course_get_user_navigation_options($context, $course = null) {
         $sitecontext = context_system::instance();
     }
 
-    $options = new stdClass;
+    // Sets defaults for all options.
+    $options = (object) [
+        'badges' => false,
+        'blogs' => false,
+        'calendar' => false,
+        'competencies' => false,
+        'grades' => false,
+        'notes' => false,
+        'participants' => false,
+        'search' => false,
+        'tags' => false,
+    ];
+
     $options->blogs = !empty($CFG->enableblogs) &&
                         ($CFG->bloglevel == BLOG_GLOBAL_LEVEL ||
                         ($CFG->bloglevel == BLOG_SITE_LEVEL and ($isloggedin and !$isguestuser)))
@@ -3935,7 +3947,7 @@ function course_check_module_updates_since($cm, $from, $fileareas = array(), $fi
     }
     if (!empty($fileareas) and (empty($filter) or in_array('fileareas', $filter))) {
         $fs = get_file_storage();
-        $files = $fs->get_area_files($context->id, $component, $fileareas, false, "filearea, timemodified DESC", true, $from);
+        $files = $fs->get_area_files($context->id, $component, $fileareas, false, "filearea, timemodified DESC", false, $from);
         foreach ($fileareas as $filearea) {
             $updates->{$filearea . 'files'} = (object) array('updated' => false);
         }
@@ -3993,6 +4005,7 @@ function course_check_module_updates_since($cm, $from, $fileareas = array(), $fi
     // Check comments.
     if (plugin_supports('mod', $cm->modname, FEATURE_COMMENT) and (empty($filter) or in_array('comments', $filter))) {
         $updates->comments = (object) array('updated' => false);
+        require_once($CFG->dirroot . '/comment/lib.php');
         require_once($CFG->dirroot . '/comment/locallib.php');
         $manager = new comment_manager();
         $comments = $manager->get_component_comments_since($course, $context, $component, $from, $cm);
