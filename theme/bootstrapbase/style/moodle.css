@@ -1896,31 +1896,30 @@ table.collection tbody > tr:nth-child(odd) > td,
 table.collection tbody > tr:nth-child(odd) > th {
   background-color: #f9f9f9;
 }
-table.collection .name {
+table.collection td.name {
   text-align: left;
   vertical-align: middle;
 }
-table.collection .awards {
-  width: 10%;
-  text-align: center;
-  vertical-align: middle;
-}
-table.collection .criteria {
-  width: 40%;
-  text-align: left;
-  vertical-align: top;
-}
-table.collection .badgeimage,
-table.collection .status {
+table.collection td.awards {
   width: 15%;
   text-align: center;
   vertical-align: middle;
 }
-table.collection .description {
+table.collection td.criteria {
+  width: 40%;
+  text-align: left;
+  vertical-align: top;
+}
+table.collection td.status {
+  width: 15%;
+  text-align: center;
+  vertical-align: middle;
+}
+table.collection td.description {
   width: 25%;
   text-align: left;
 }
-table.collection .actions {
+table.collection td.actions {
   width: 11em;
   text-align: center;
   vertical-align: middle;
@@ -6561,7 +6560,7 @@ a.ygtvspacer:hover {
 .notification-area .content-area .header:empty {
   display: none;
 }
-.notification-area .content-area .content {
+.notification-area .content-area > .content {
   height: 500px;
   box-sizing: border-box;
   overflow: auto;
@@ -6569,14 +6568,14 @@ a.ygtvspacer:hover {
   padding: 15px;
 }
 @media (max-height: 670px) {
-  .notification-area .content-area .content {
+  .notification-area .content-area > .content {
     height: 400px;
   }
 }
-.notification-area .content-area .content:empty {
+.notification-area .content-area > .content:empty {
   display: none;
 }
-.notification-area .content-area .content:empty + .empty-text {
+.notification-area .content-area > .content:empty + .empty-text {
   display: block;
   text-align: center;
   padding-top: 100px;
