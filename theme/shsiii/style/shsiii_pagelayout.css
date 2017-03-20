@@ -715,3 +715,22 @@ table.category_subcategories tr.r1,
 .gradingtable table.generaltable td {
   border: 1px solid #DDD;
 }
+
+/** Moodle 3.1 **/
+
+.block_settings .block_tree p.hasicon,
+.block_navigation .block_tree li.item_with_icon > p {
+  position: relative;
+  text-indent: 0;
+}
+
+.block_site_main_menu img.iconlarge {
+  width: 16px;
+  height: 16px;
+  padding-right: 3px;
+}
+
+.block_site_main_menu .main-menu-content {
+  padding: 3px 0;
+}
+
