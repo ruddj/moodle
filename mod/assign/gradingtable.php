@@ -131,12 +131,6 @@ class assign_grading_table extends table_sql implements renderable {
         $params['assignmentid2'] = (int)$this->assignment->get_instance()->id;
         $params['assignmentid3'] = (int)$this->assignment->get_instance()->id;
 
-        $params['assignmentid5'] = (int)$this->assignment->get_instance()->id;
-        $params['assignmentid6'] = (int)$this->assignment->get_instance()->id;
-        $params['assignmentid7'] = (int)$this->assignment->get_instance()->id;
-        $params['assignmentid8'] = (int)$this->assignment->get_instance()->id;
-        $params['assignmentid9'] = (int)$this->assignment->get_instance()->id;
-
         $extrauserfields = get_extra_user_fields($this->assignment->get_context());
 
         $fields = user_picture::fields('u', $extrauserfields) . ', ';
@@ -187,6 +181,12 @@ class assign_grading_table extends table_sql implements renderable {
         $hasoverrides = $this->assignment->has_overrides();
 
         if ($hasoverrides) {
+            $params['assignmentid5'] = (int)$this->assignment->get_instance()->id;
+            $params['assignmentid6'] = (int)$this->assignment->get_instance()->id;
+            $params['assignmentid7'] = (int)$this->assignment->get_instance()->id;
+            $params['assignmentid8'] = (int)$this->assignment->get_instance()->id;
+            $params['assignmentid9'] = (int)$this->assignment->get_instance()->id;
+
             $fields .= ', priority.priority, ';
             $fields .= 'effective.allowsubmissionsfromdate, ';
             $fields .= 'effective.duedate, ';
@@ -252,8 +252,8 @@ class assign_grading_table extends table_sql implements renderable {
         if (!empty($this->assignment->get_instance()->blindmarking)) {
             $from .= 'LEFT JOIN {assign_user_mapping} um
                              ON u.id = um.userid
-                            AND um.assignment = :assignmentid5 ';
-            $params['assignmentid5'] = (int)$this->assignment->get_instance()->id;
+                            AND um.assignment = :assignmentidblind ';
+            $params['assignmentidblind'] = (int)$this->assignment->get_instance()->id;
             $fields .= ', um.id as recordid ';
         }
 
@@ -855,8 +855,7 @@ class assign_grading_table extends table_sql implements renderable {
 
         if (!$this->assignment->is_active_user($row->id)) {
             $suspendedstring = get_string('userenrolmentsuspended', 'grades');
-            $fullname .= ' ' . html_writer::empty_tag('img', array('src' => $this->output->pix_url('i/enrolmentsuspended'),
-                'title' => $suspendedstring, 'alt' => $suspendedstring, 'class' => 'usersuspendedicon'));
+            $fullname .= ' ' . $this->output->pix_icon('i/enrolmentsuspended', $suspendedstring);
             $fullname = html_writer::tag('span', $fullname, array('class' => 'usersuspended'));
         }
         return $fullname;

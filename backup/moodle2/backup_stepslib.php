@@ -436,6 +436,13 @@ class backup_course_structure_step extends backup_structure_step {
             $courserec->$key = $value;
         }
 
+        // Add 'numsections' in order to be able to restore in previous versions of Moodle.
+        // Even though Moodle does not officially support restore into older verions of Moodle from the
+        // version where backup was made, without 'numsections' restoring will go very wrong.
+        if (!property_exists($courserec, 'numsections') && course_get_format($courserec)->uses_sections()) {
+            $courserec->numsections = course_get_format($courserec)->get_last_section_number();
+        }
+
         $course->set_source_array(array($courserec));
 
         $categoryrec = $DB->get_record('course_categories', array('id' => $courserec->category));
@@ -2601,6 +2608,52 @@ class backup_course_completion_structure_step extends backup_structure_step {
         $criteriacomplete->annotate_ids('user', 'userid');
         $coursecompletions->annotate_ids('user', 'userid');
 
+        return $cc;
+
+    }
+}
+
+/**
+ * Backup completion defaults for each module type.
+ *
+ * @package     core_backup
+ * @copyright   2017 Marina Glancy
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class backup_completion_defaults_structure_step extends backup_structure_step {
+
+    /**
+     * To conditionally decide if one step will be executed or no
+     */
+    protected function execute_condition() {
+        // No completion on front page.
+        if ($this->get_courseid() == SITEID) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * The structure of the course completion backup
+     *
+     * @return backup_nested_element
+     */
+    protected function define_structure() {
+
+        $cc = new backup_nested_element('course_completion_defaults');
+
+        $defaults = new backup_nested_element('course_completion_default', array('id'), array(
+            'modulename', 'completion', 'completionview', 'completionusegrade', 'completionexpected', 'customrules'
+        ));
+
+        // Use module name instead of module id so we can insert into another site later.
+        $sourcesql = "SELECT d.id, m.name as modulename, d.completion, d.completionview, d.completionusegrade,
+                  d.completionexpected, d.customrules
+                FROM {course_completion_defaults} d join {modules} m on d.module = m.id
+                WHERE d.course = ?";
+        $defaults->set_source_sql($sourcesql, array(backup::VAR_COURSEID));
+
+        $cc->add_child($defaults);
         return $cc;
 
     }

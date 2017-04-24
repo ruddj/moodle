@@ -10,6 +10,7 @@ auth/cas/CAS/
 auth/fc/fcFPP.php
 enrol/lti/ims-blti/
 filter/algebra/AlgParser.pm
+filter/mathjaxloader/contrib/a11y/
 filter/tex/mimetex.*
 lib/editor/atto/yui/src/rangy/js/*.*
 lib/editor/tinymce/plugins/pdw/tinymce/
@@ -58,6 +59,7 @@ lib/maxmind/GeoIp2/
 lib/maxmind/MaxMind/
 lib/ltiprovider/
 lib/amd/src/truncate.js
+lib/fonts/
 media/player/videojs/amd/src/video-lazy.js
 media/player/videojs/amd/src/Youtube-lazy.js
 media/player/videojs/videojs/
@@ -76,6 +78,8 @@ theme/boost/amd/src/tab.js
 theme/boost/amd/src/tooltip.js
 theme/boost/amd/src/util.js
 theme/boost/amd/src/tether.js
+theme/boost/scss/fontawesome/
 theme/bootstrapbase/less/bootstrap/
 theme/bootstrapbase/javascript/html5shiv.js
 theme/bootstrapbase/amd/src/bootstrap.js
+theme/bootstrapbase/less/fontawesome/
