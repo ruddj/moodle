@@ -38,8 +38,12 @@ function xmldb_auth_pam_upgrade($oldversion) {
     if ($oldversion < 2017020700) {
         // Convert info in config plugins from auth/pam to auth_pam.
         upgrade_fix_config_auth_plugin_names('pam');
+        upgrade_fix_config_auth_plugin_defaults('pam');
         upgrade_plugin_savepoint(true, 2017020700, 'auth', 'pam');
     }
+
+    // Automatically generated Moodle v3.3.0 release upgrade line.
+    // Put any upgrade step following this.
 
     return true;
 }

@@ -38,8 +38,12 @@ function xmldb_auth_nntp_upgrade($oldversion) {
     if ($oldversion < 2017020700) {
         // Convert info in config plugins from auth/nntp to auth_nntp.
         upgrade_fix_config_auth_plugin_names('nntp');
+        upgrade_fix_config_auth_plugin_defaults('nntp');
         upgrade_plugin_savepoint(true, 2017020700, 'auth', 'nntp');
     }
+
+    // Automatically generated Moodle v3.3.0 release upgrade line.
+    // Put any upgrade step following this.
 
     return true;
 }

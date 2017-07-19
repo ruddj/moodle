@@ -82,6 +82,9 @@ class restore_format_weeks_plugin extends restore_format_plugin {
         } else {
             $update->value = 0;
             $DB->update_record('course_format_options', $update);
+
+            // The end date may have been changed by observers during restore, ensure we set it back to what was in the backup.
+            $DB->set_field('course', 'enddate', $enddate, array('id' => $this->step->get_task()->get_courseid()));
         }
     }
 
@@ -159,8 +162,11 @@ class restore_format_weeks_plugin extends restore_format_plugin {
 
         $data = $this->connectionpoint->get_data();
 
+        // Backup may not include the end date, so set it to 0.
+        $enddate = isset($data['tags']['enddate']) ? $data['tags']['enddate'] : 0;
+
         // Set the automatic end date setting and the course end date (if applicable).
-        $this->update_automatic_end_date($data['tags']['enddate']);
+        $this->update_automatic_end_date($enddate);
 
         if (isset($data['tags']['numsections'])) {
             // Update course sections visibility.

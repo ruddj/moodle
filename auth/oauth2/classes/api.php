@@ -40,6 +40,16 @@ defined('MOODLE_INTERNAL') || die();
 class api {
 
     /**
+     * Remove all linked logins that are using issuers that have been deleted.
+     *
+     * @param int $issuerid The issuer id of the issuer to check, or false to check all (defaults to all)
+     * @return boolean
+     */
+    public static function clean_orphaned_linked_logins($issuerid = false) {
+        return linked_login::delete_orphaned($issuerid);
+    }
+
+    /**
      * List linked logins
      *
      * Requires auth/oauth2:managelinkedlogins capability at the user context.
@@ -105,6 +115,10 @@ class api {
             $userid = $USER->id;
         }
 
+        if (linked_login::has_existing_issuer_match($issuer, $userinfo['username'])) {
+            throw new moodle_exception('alreadylinked', 'auth_oauth2');
+        }
+
         if (\core\session\manager::is_loggedinas()) {
             throw new moodle_exception('notwhileloggedinas', 'auth_oauth2');
         }
@@ -144,9 +158,8 @@ class api {
         $record->issuerid = $issuer->get('id');
         $record->username = $userinfo['username'];
         $record->userid = $userid;
-        $existing = linked_login::get_record((array)$record);
-        if ($existing) {
-            return false;
+        if (linked_login::has_existing_issuer_match($issuer, $userinfo['username'])) {
+            throw new moodle_exception('alreadylinked', 'auth_oauth2');
         }
         $record->email = $userinfo['email'];
         $record->confirmtoken = random_string(32);
@@ -179,10 +192,10 @@ class api {
         ];
         $confirmationurl = new moodle_url('/auth/oauth2/confirm-linkedlogin.php', $params);
 
-        // Remove data parameter just in case it was included in the confirmation so we can add it manually later.
-        $data->link = $confirmationurl->out();
+        $data->link = $confirmationurl->out(false);
+        $message = get_string('confirmlinkedloginemail', 'auth_oauth2', $data);
 
-        $message     = get_string('confirmlinkedloginemail', 'auth_oauth2', $data);
+        $data->link = $confirmationurl->out();
         $messagehtml = text_to_html(get_string('confirmlinkedloginemail', 'auth_oauth2', $data), false, false, true);
 
         $user->mailformat = 1;  // Always send HTML version as well.
@@ -227,6 +240,50 @@ class api {
     }
 
     /**
+     * Create an account with a linked login that is already confirmed.
+     *
+     * @param array $userinfo as returned from an oauth client.
+     * @param \core\oauth2\issuer $issuer
+     * @return bool
+     */
+    public static function create_new_confirmed_account($userinfo, $issuer) {
+        global $CFG, $DB;
+        require_once($CFG->dirroot.'/user/profile/lib.php');
+        require_once($CFG->dirroot.'/user/lib.php');
+
+        $user = new stdClass();
+        $user->username = $userinfo['username'];
+        $user->email = $userinfo['email'];
+        $user->auth = 'oauth2';
+        $user->mnethostid = $CFG->mnet_localhost_id;
+        $user->lastname = isset($userinfo['lastname']) ? $userinfo['lastname'] : '';
+        $user->firstname = isset($userinfo['firstname']) ? $userinfo['firstname'] : '';
+        $user->url = isset($userinfo['url']) ? $userinfo['url'] : '';
+        $user->alternatename = isset($userinfo['alternatename']) ? $userinfo['alternatename'] : '';
+        $user->secret = random_string(15);
+
+        $user->password = '';
+        // This user is confirmed.
+        $user->confirmed = 1;
+
+        $user->id = user_create_user($user, false, true);
+
+        // The linked account is pre-confirmed.
+        $record = new stdClass();
+        $record->issuerid = $issuer->get('id');
+        $record->username = $userinfo['username'];
+        $record->userid = $user->id;
+        $record->email = $userinfo['email'];
+        $record->confirmtoken = '';
+        $record->confirmtokenexpires = 0;
+
+        $linkedlogin = new linked_login(0, $record);
+        $linkedlogin->create();
+
+        return $user;
+    }
+
+    /**
      * Send an email with a link to confirm creating this account.
      *
      * @param array $userinfo as returned from an oauth client.
@@ -238,6 +295,10 @@ class api {
         global $CFG, $DB;
         require_once($CFG->dirroot.'/user/profile/lib.php');
         require_once($CFG->dirroot.'/user/lib.php');
+
+        if (linked_login::has_existing_issuer_match($issuer, $userinfo['username'])) {
+            throw new moodle_exception('alreadylinked', 'auth_oauth2');
+        }
 
         $user = new stdClass();
         $user->username = $userinfo['username'];
@@ -286,9 +347,10 @@ class api {
         ];
         $confirmationurl = new moodle_url('/auth/oauth2/confirm-account.php', $params);
 
-        $data->link = $confirmationurl->out();
+        $data->link = $confirmationurl->out(false);
+        $message = get_string('confirmaccountemail', 'auth_oauth2', $data);
 
-        $message     = get_string('confirmaccountemail', 'auth_oauth2', $data);
+        $data->link = $confirmationurl->out();
         $messagehtml = text_to_html(get_string('confirmaccountemail', 'auth_oauth2', $data), false, false, true);
 
         $user->mailformat = 1;  // Always send HTML version as well.
@@ -318,5 +380,29 @@ class api {
         require_capability('auth/oauth2:managelinkedlogins', $context);
 
         $login->delete();
+    }
+
+    /**
+     * Delete linked logins for a user.
+     *
+     * @param \core\event\user_deleted $event
+     * @return boolean
+     */
+    public static function user_deleted(\core\event\user_deleted $event) {
+        global $DB;
+
+        $userid = $event->objectid;
+
+        return $DB->delete_records(linked_login::TABLE, ['userid' => $userid]);
+    }
+
+    /**
+     * Is the plugin enabled.
+     *
+     * @return bool
+     */
+    public static function is_enabled() {
+        $plugininfo = \core_plugin_manager::instance()->get_plugin_info('auth_oauth2');
+        return $plugininfo->is_enabled();
     }
 }

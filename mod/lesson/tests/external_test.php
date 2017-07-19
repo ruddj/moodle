@@ -1182,6 +1182,17 @@ class mod_lesson_external_testcase extends externallib_advanced_testcase {
     }
 
     /**
+     * Test get_attempts_overview when there aren't attempts.
+     */
+    public function test_get_attempts_overview_no_attempts() {
+        $this->setAdminUser();
+        $result = mod_lesson_external::get_attempts_overview($this->lesson->id);
+        $result = external_api::clean_returnvalue(mod_lesson_external::get_attempts_overview_returns(), $result);
+        $this->assertCount(0, $result['warnings']);
+        $this->assertArrayNotHasKey('data', $result);
+    }
+
+    /**
      * Test get_user_attempt
      */
     public function test_get_user_attempt() {
@@ -1205,6 +1216,14 @@ class mod_lesson_external_testcase extends externallib_advanced_testcase {
         $this->assertEquals(100, $result['userstats']['grade']);    // Correct answer.
         $this->assertEquals(1, $result['userstats']['gradeinfo']['total']);     // Total correct answers.
         $this->assertEquals(100, $result['userstats']['gradeinfo']['grade']);   // Correct answer.
+
+        // Check page object contains the lesson pages answered.
+        $pagesanswered = array();
+        foreach ($result['answerpages'] as $answerp) {
+            $pagesanswered[] = $answerp['page']['id'];
+        }
+        sort($pagesanswered);
+        $this->assertEquals(array($this->page1->id, $this->page2->id), $pagesanswered);
 
         // Test second attempt unfinished.
         $result = mod_lesson_external::get_user_attempt($this->lesson->id, $this->student->id, 1);

@@ -94,11 +94,30 @@ function assign_reset_userdata($data) {
  * only assignment events belonging to the course specified are checked.
  *
  * @param int $courseid
+ * @param int|stdClass $instance Assign module instance or ID.
+ * @param int|stdClass $cm Course module object or ID (not used in this module).
  * @return bool
  */
-function assign_refresh_events($courseid = 0) {
+function assign_refresh_events($courseid = 0, $instance = null, $cm = null) {
     global $CFG, $DB;
     require_once($CFG->dirroot . '/mod/assign/locallib.php');
+
+    // If we have instance information then we can just update the one event instead of updating all events.
+    if (isset($instance)) {
+        if (!is_object($instance)) {
+            $instance = $DB->get_record('assign', array('id' => $instance), '*', MUST_EXIST);
+        }
+        if (isset($cm)) {
+            if (!is_object($cm)) {
+                assign_prepare_update_events($instance);
+                return true;
+            } else {
+                $course = get_course($instance->course);
+                assign_prepare_update_events($instance, $course, $cm);
+                return true;
+            }
+        }
+    }
 
     if ($courseid) {
         // Make sure that the course id is numeric.
@@ -118,29 +137,41 @@ function assign_refresh_events($courseid = 0) {
         }
     }
     foreach ($assigns as $assign) {
-        // Get course and course module for the assignment.
-        list($course, $cm) = get_course_and_cm_from_instance($assign->id, 'assign', $assign->course);
-
-        // Refresh the assignment's calendar events.
-        $context = context_module::instance($cm->id);
-        $assignment = new assign($context, $cm, $course);
-        $assignment->update_calendar($cm->id);
-
-        // Refresh the calendar events also for the assignment overrides.
-        $overrides = $DB->get_records('assign_overrides', ['assignid' => $assign->id], '',
-                                      'id, groupid, userid, duedate, sortorder');
-        foreach ($overrides as $override) {
-            if (empty($override->userid)) {
-                unset($override->userid);
-            }
-            if (empty($override->groupid)) {
-                unset($override->groupid);
-            }
-            assign_update_events($assignment, $override);
-        }
+        assign_prepare_update_events($assign);
     }
 
     return true;
+}
+
+/**
+ * This actually updates the normal and completion calendar events.
+ *
+ * @param  stdClass $assign Assignment object (from DB).
+ * @param  stdClass $course Course object.
+ * @param  stdClass $cm Course module object.
+ */
+function assign_prepare_update_events($assign, $course = null, $cm = null) {
+    global $DB;
+    if (!isset($course)) {
+        // Get course and course module for the assignment.
+        list($course, $cm) = get_course_and_cm_from_instance($assign->id, 'assign', $assign->course);
+    }
+    // Refresh the assignment's calendar events.
+    $context = context_module::instance($cm->id);
+    $assignment = new assign($context, $cm, $course);
+    $assignment->update_calendar($cm->id);
+    // Refresh the calendar events also for the assignment overrides.
+    $overrides = $DB->get_records('assign_overrides', ['assignid' => $assign->id], '',
+                                  'id, groupid, userid, duedate, sortorder');
+    foreach ($overrides as $override) {
+        if (empty($override->userid)) {
+            unset($override->userid);
+        }
+        if (empty($override->groupid)) {
+            unset($override->groupid);
+        }
+        assign_update_events($assignment, $override);
+    }
 }
 
 /**
@@ -231,14 +262,17 @@ function assign_update_events($assign, $override = null) {
             $conds['groupid'] = $override->groupid;
         }
     }
-    $oldevents = $DB->get_records('event', $conds);
+    $oldevents = $DB->get_records('event', $conds, 'id ASC');
 
     // Now make a to-do list of all that needs to be updated.
     if (empty($override)) {
-        // We are updating the primary settings for the assign, so we need to add all the overrides.
-        $overrides = $DB->get_records('assign_overrides', array('assignid' => $assigninstance->id));
-        // As well as the original assign (empty override).
-        $overrides[] = new stdClass();
+        // We are updating the primary settings for the assignment, so we need to add all the overrides.
+        $overrides = $DB->get_records('assign_overrides', array('assignid' => $assigninstance->id), 'id ASC');
+        // It is necessary to add an empty stdClass to the beginning of the array as the $oldevents
+        // list contains the original (non-override) event for the module. If this is not included
+        // the logic below will end up updating the wrong row when we try to reconcile this $overrides
+        // list against the $oldevents list.
+        array_unshift($overrides, new stdClass());
     } else {
         // Just do the one override.
         $overrides = array($override);
@@ -272,6 +306,7 @@ function assign_update_events($assign, $override = null) {
         $event->timesort    = $event->timestart + $event->timeduration;
         $event->visible     = instance_is_visible('assign', $assigninstance);
         $event->eventtype   = ASSIGN_EVENT_TYPE_DUE;
+        $event->priority    = null;
 
         // Determine the event name and priority.
         if ($groupid) {

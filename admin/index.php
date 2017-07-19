@@ -29,14 +29,9 @@ if (!file_exists('../config.php')) {
     die();
 }
 
-// Check that PHP is of a sufficient version as soon as possible
-if (version_compare(phpversion(), '5.6.5') < 0) {
-    $phpversion = phpversion();
-    // do NOT localise - lang strings would not work here and we CAN NOT move it to later place
-    echo "Moodle 3.2 or later requires at least PHP 5.6.5 (currently using version $phpversion).<br />";
-    echo "Please upgrade your server software or install older Moodle version.";
-    die();
-}
+// Check that PHP is of a sufficient version as soon as possible.
+require_once(__DIR__.'/../lib/phpminimumversionlib.php');
+moodle_require_minimum_php_version();
 
 // make sure iconv is available and actually works
 if (!function_exists('iconv')) {
@@ -100,6 +95,12 @@ if (function_exists('opcache_invalidate')) {
 // Make sure the component cache gets rebuilt if necessary, any method that
 // indirectly calls the protected init() method is good here.
 core_component::get_core_subsystems();
+
+if (is_major_upgrade_required() && isloggedin()) {
+    // A major upgrade is required.
+    // Terminate the session and redirect back here before anything DB-related happens.
+    redirect_if_major_upgrade_required();
+}
 
 require_once($CFG->libdir.'/adminlib.php');    // various admin-only functions
 require_once($CFG->libdir.'/upgradelib.php');  // general upgrade/install related functions

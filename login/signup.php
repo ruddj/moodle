@@ -28,12 +28,6 @@ require('../config.php');
 require_once($CFG->dirroot . '/user/editlib.php');
 require_once($CFG->libdir . '/authlib.php');
 
-// Try to prevent searching for sites that allow sign-up.
-if (!isset($CFG->additionalhtmlhead)) {
-    $CFG->additionalhtmlhead = '';
-}
-$CFG->additionalhtmlhead .= '<meta name="robots" content="noindex" />';
-
 if (!$authplugin = signup_is_enabled()) {
     print_error('notlocalisederrormessage', 'error', '', 'Sorry, you may not use this page.');
 }
@@ -97,5 +91,17 @@ $PAGE->set_heading($SITE->fullname);
 
 echo $OUTPUT->header();
 
-echo $OUTPUT->render($mform_signup);
+if ($mform_signup instanceof renderable) {
+    // Try and use the renderer from the auth plugin if it exists.
+    try {
+        $renderer = $PAGE->get_renderer('auth_' . $authplugin->authtype);
+    } catch (coding_exception $ce) {
+        // Fall back on the general renderer.
+        $renderer = $OUTPUT;
+    }
+    echo $renderer->render($mform_signup);
+} else {
+    // Fall back for auth plugins not using renderables.
+    $mform_signup->display();
+}
 echo $OUTPUT->footer();
