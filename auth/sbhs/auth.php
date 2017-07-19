@@ -24,7 +24,7 @@ class auth_plugin_sbhs extends auth_plugin_base {
     /**
      * Constructor.
      */
-    function auth_plugin_sbhs() {
+    function __construct() {
         $this->authtype = 'sbhs';
         $this->config = get_config('auth/sbhs');
     }
@@ -133,7 +133,7 @@ class auth_plugin_sbhs extends auth_plugin_base {
             $config->ssofunc = '/srv/www/sites/apps/sso/functions.php';
         }
         if (!isset ($config->redirect)) {
-            $config->redirect = 'http://www.sydneyboyshigh.com/intranet/portal';
+            $config->redirect = 'https://student.sbhs.net.au';
         }
 
         // save settings
