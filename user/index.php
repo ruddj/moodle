@@ -24,6 +24,7 @@
 
 require_once('../config.php');
 require_once($CFG->dirroot.'/user/lib.php');
+require_once($CFG->dirroot.'/course/lib.php');
 require_once($CFG->libdir.'/tablelib.php');
 require_once($CFG->libdir.'/filelib.php');
 require_once($CFG->dirroot.'/enrol/locallib.php');
@@ -40,13 +41,15 @@ $page         = optional_param('page', 0, PARAM_INT); // Which page to show.
 $perpage      = optional_param('perpage', DEFAULT_PAGE_SIZE, PARAM_INT); // How many per page.
 $contextid    = optional_param('contextid', 0, PARAM_INT); // One of this or.
 $courseid     = optional_param('id', 0, PARAM_INT); // This are required.
+$newcourse    = optional_param('newcourse', false, PARAM_BOOL);
 $selectall    = optional_param('selectall', false, PARAM_BOOL); // When rendering checkboxes against users mark them all checked.
 
 $PAGE->set_url('/user/index.php', array(
         'page' => $page,
         'perpage' => $perpage,
         'contextid' => $contextid,
-        'id' => $courseid));
+        'id' => $courseid,
+        'newcourse' => $newcourse));
 
 if ($contextid) {
     $context = context::instance_by_id($contextid, MUST_EXIST);
@@ -71,10 +74,16 @@ $frontpagectx = context_course::instance(SITEID);
 
 if ($isfrontpage) {
     $PAGE->set_pagelayout('admin');
-    require_capability('moodle/site:viewparticipants', $systemcontext);
+    if (!has_any_capability(['moodle/site:viewparticipants', 'moodle/course:enrolreview'], $systemcontext)) {
+        // We know they do not have any of the capabilities, so lets throw an exception using the capability with the least access.
+        throw new required_capability_exception($systemcontext, 'moodle/site:viewparticipants', 'nopermissions', '');
+    }
 } else {
     $PAGE->set_pagelayout('incourse');
-    require_capability('moodle/course:viewparticipants', $context);
+    if (!has_any_capability(['moodle/course:viewparticipants', 'moodle/course:enrolreview'], $context)) {
+        // We know they do not have any of the capabilities, so lets throw an exception using the capability with the least access.
+        throw new required_capability_exception($context, 'moodle/course:viewparticipants', 'nopermissions', '');
+    }
 }
 
 // Trigger events.
@@ -87,6 +96,13 @@ $PAGE->set_heading($course->fullname);
 $PAGE->set_pagetype('course-view-' . $course->format);
 $PAGE->add_body_class('path-user');                     // So we can style it independently.
 $PAGE->set_other_editing_capability('moodle/course:manageactivities');
+
+// Expand the users node in the settings navigation when it exists because those pages
+// are related to this one.
+$node = $PAGE->settingsnav->find('users', navigation_node::TYPE_CONTAINER);
+if ($node) {
+    $node->force_open();
+}
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('participants'));
@@ -253,19 +269,27 @@ if ($bulkoperations) {
         $displaylist['groupaddnote.php'] = get_string('groupaddnewnote', 'notes');
     }
 
-    $plugins = $manager->get_enrolment_plugins();
-    foreach ($plugins as $plugin) {
-        $bulkoperations = $plugin->get_bulk_operations($manager);
+    if ($context->id != $frontpagectx->id) {
+        $instances = $manager->get_enrolment_instances();
+        $plugins = $manager->get_enrolment_plugins(false);
+        foreach ($instances as $key => $instance) {
+            if (!isset($plugins[$instance->enrol])) {
+                // Weird, some broken stuff in plugin.
+                continue;
+            }
+            $plugin = $plugins[$instance->enrol];
+            $bulkoperations = $plugin->get_bulk_operations($manager);
 
-        $pluginoptions = [];
-        foreach ($bulkoperations as $key => $bulkoperation) {
-            $params = ['plugin' => $plugin->get_name(), 'operation' => $key];
-            $url = new moodle_url('bulkchange.php', $params);
-            $pluginoptions[$url->out(false)] = $bulkoperation->get_title();
-        }
-        if (!empty($pluginoptions)) {
-            $name = get_string('pluginname', 'enrol_' . $plugin->get_name());
-            $displaylist[] = [$name => $pluginoptions];
+            $pluginoptions = [];
+            foreach ($bulkoperations as $key => $bulkoperation) {
+                $params = ['plugin' => $plugin->get_name(), 'operation' => $key];
+                $url = new moodle_url('bulkchange.php', $params);
+                $pluginoptions[$url->out(false)] = $bulkoperation->get_title();
+            }
+            if (!empty($pluginoptions)) {
+                $name = get_string('pluginname', 'enrol_' . $plugin->get_name());
+                $displaylist[] = [$name => $pluginoptions];
+            }
         }
     }
 
@@ -292,5 +316,14 @@ foreach ($enrolbuttons as $enrolbutton) {
     echo $enrolrenderer->render($enrolbutton);
 }
 echo '</div>';
+
+if ($newcourse == 1) {
+    $str = get_string('proceedtocourse', 'enrol');
+    // Floated left so it goes under the enrol users button on mobile.
+    // The margin is to make it line up with the enrol users button when they are both on the same line.
+    $classes = 'm-y-1 pull-xs-left';
+    $url = course_get_url($course);
+    echo $OUTPUT->single_button($url, $str, 'GET', array('class' => $classes));
+}
 
 echo $OUTPUT->footer();

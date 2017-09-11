@@ -15,11 +15,9 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template core/modal_confirm
+    @template report_insights/insight
 
-    Moodle template for a confirmation modal.
-
-    The purpose of this template is to render a modal.
+    Template for a insight.
 
     Classes required for JS:
     * none
@@ -28,18 +26,37 @@
     * none
 
     Context variables required for this template:
-    * body HTML content for the boday
+    * none
 
     Example context (json):
     {
+        "sampleimage": "<a href=\"#\">Link</a>",
+        "sampledescription": "Sample description",
+        "style": "success",
+        "outcomeicon": {
+            "attributes": [
+                {"name": "src", "value": "https://moodle.org/logo/moodle-logo.svg" }
+            ]
+        },
+        "predictiondisplayvalue": "This dev will understand it"
     }
 }}
-
-{{< core/modal }}
-    {{$title}}{{#str}} confirm {{/str}}{{/title}}
-    {{$body}}{{#str}} areyousure {{/str}}{{/body}}
-    {{$footer}}
-        <button type="button" class="btn btn-primary" data-action="yes">{{#str}} yes {{/str}}</button>
-        <button type="button" class="btn btn-secondary" data-action="no">{{#str}} no {{/str}}</button>
-    {{/footer}}
-{{/ core/modal }}
+<tr>
+    <td class="col-sm-6">
+        {{#sampleimage}}
+            {{{sampleimage}}}
+        {{/sampleimage}}
+        {{{sampledescription}}}
+    </td>
+    <td class="col-sm-4">
+        {{#outcomeicon}}
+            {{> core/pix_icon}}
+        {{/outcomeicon}}
+        <span>{{predictiondisplayvalue}}</span>
+    </td>
+    <td class="col-sm-2">
+    {{#actions}}
+        {{> core/action_menu}}
+    {{/actions}}
+    </td>
+</tr>

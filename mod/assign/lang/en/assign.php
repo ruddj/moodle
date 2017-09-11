@@ -196,6 +196,9 @@ $string['expandreviewpanel'] = 'Expand review panel';
 $string['extensionduedate'] = 'Extension due date';
 $string['extensionnotafterduedate'] = 'Extension date must be after the due date';
 $string['extensionnotafterfromdate'] = 'Extension date must be after the allow submissions from date';
+$string['fixrescalednullgrades'] = 'This assignment contains some erroneous grades. You can <a href="{$a->link}">automatically fix these grades</a>. This may affect course totals.';
+$string['fixrescalednullgradesconfirm'] = 'Are you sure you want to fix erroneous grades? All affected grades will be removed. This may affect course totals.';
+$string['fixrescalednullgradesdone'] = 'Grades fixed.';
 $string['gradecanbechanged'] = 'Grade can be changed';
 $string['gradersubmissionupdatedtext'] = '{$a->username} has updated their assignment submission
 for \'{$a->assignment}\' at {$a->timeupdated}
@@ -267,9 +270,9 @@ $string['hideshow'] = 'Hide/Show';
 $string['hiddenuser'] = 'Participant ';
 $string['inactiveoverridehelp'] = '* Student does not have the correct group or role to attempt the assignment';
 $string['indicator:cognitivedepth'] = 'Assignment cognitive';
-$string['indicator:cognitivedepth_help'] = '';
+$string['indicator:cognitivedepth_help'] = 'This indicator is based on the cognitive depth reached by the student in an Assignment activity.';
 $string['indicator:socialbreadth'] = 'Assignment social';
-$string['indicator:socialbreadth_help'] = '';
+$string['indicator:socialbreadth_help'] = 'This indicator is based on the social breadth reached by the student in an Assignment activity.';
 $string['instructionfiles'] = 'Instruction files';
 $string['introattachments'] = 'Additional files';
 $string['introattachments_help'] = 'Additional files for use in the assignment, such as answer templates, may be added. Download links for the files will then be displayed on the assignment page under the description.';

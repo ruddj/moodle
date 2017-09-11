@@ -29,7 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * No teacher indicator.
  *
- * @package   core_analytics
+ * @package   core_course
  * @copyright 2016 David Monllao {@link http://www.davidmonllao.com}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -62,6 +62,23 @@ class no_teacher extends \core_analytics\local\indicator\binary {
         // We require course because, although calculate_sample only reads context, we need the context to be course
         // or below.
         return array('context', 'course');
+    }
+
+    /**
+     * Reversed because the indicator is in 'negative' and the max returned value means teacher present.
+     *
+     * @param float $value
+     * @param string $subtype
+     * @return string
+     */
+    public function get_display_value($value, $subtype = false) {
+
+        // No subtypes for binary values by default.
+        if ($value == -1) {
+            return get_string('yes');
+        } else if ($value == 1) {
+            return get_string('no');
+        }
     }
 
     /**

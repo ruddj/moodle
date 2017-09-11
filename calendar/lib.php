@@ -2175,6 +2175,7 @@ function calendar_get_link_previous($text, $linkbase, $d, $m, $y, $accesshide = 
 
     $attrs = [
         'data-time' => calendar_get_timestamp($d, $m, $y, $time),
+        'data-drop-zone' => 'nav-link',
     ];
 
     return link_arrow_left($text, $href->out(false), $accesshide, 'previous', $attrs);
@@ -2202,6 +2203,7 @@ function calendar_get_link_next($text, $linkbase, $d, $m, $y, $accesshide = fals
 
     $attrs = [
         'data-time' => calendar_get_timestamp($d, $m, $y, $time),
+        'data-drop-zone' => 'nav-link',
     ];
 
     return link_arrow_right($text, $href->out(false), $accesshide, 'next', $attrs);
@@ -3534,6 +3536,8 @@ function calendar_output_fragment_event_form($args) {
     $html = '';
     $data = null;
     $eventid = isset($args['eventid']) ? clean_param($args['eventid'], PARAM_INT) : null;
+    $starttime = isset($args['starttime']) ? clean_param($args['starttime'], PARAM_INT) : null;
+    $courseid = isset($args['courseid']) ? clean_param($args['courseid'], PARAM_INT) : null;
     $event = null;
     $hasformdata = isset($args['formdata']) && !empty($args['formdata']);
     $formoptions = [];
@@ -3546,6 +3550,10 @@ function calendar_output_fragment_event_form($args) {
         $formoptions['haserror'] = clean_param($args['haserror'], PARAM_BOOL);
     }
 
+    if ($starttime) {
+        $formoptions['starttime'] = $starttime;
+    }
+
     if (is_null($eventid)) {
         $mform = new \core_calendar\local\event\forms\create(
             null,
@@ -3556,6 +3564,12 @@ function calendar_output_fragment_event_form($args) {
             true,
             $data
         );
+        if ($courseid != SITEID) {
+            $data['eventtype'] = 'course';
+            $data['courseid'] = $courseid;
+            $data['groupcourseid'] = $courseid;
+        }
+        $mform->set_data($data);
     } else {
         $event = calendar_event::load($eventid);
         $event->count_repeats();

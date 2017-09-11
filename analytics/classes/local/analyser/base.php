@@ -469,6 +469,9 @@ abstract class base {
             return $result;
         }
 
+        // Add extra metadata.
+        $this->add_model_metadata($data);
+
         // Write all calculated data to a file.
         $file = $dataset->store($data);
 
@@ -634,6 +637,34 @@ abstract class base {
             $predictionrange->timecreated = time();
             $predictionrange->timemodified = $predictionrange->timecreated;
             $DB->insert_record('analytics_predict_samples', $predictionrange);
+        }
+    }
+
+    /**
+     * Adds target metadata to the dataset.
+     *
+     * @param array $data
+     * @return void
+     */
+    protected function add_model_metadata(&$data) {
+        global $CFG;
+
+        $metadata = array(
+            'moodleversion' => $CFG->version,
+            'targetcolumn' => $this->analysabletarget->get_id()
+        );
+        if ($this->analysabletarget->is_linear()) {
+            $metadata['targettype'] = 'linear';
+            $metadata['targetmin'] = $this->analysabletarget::get_min_value();
+            $metadata['targetmax'] = $this->analysabletarget::get_max_value();
+        } else {
+            $metadata['targettype'] = 'discrete';
+            $metadata['targetclasses'] = json_encode($this->analysabletarget::get_classes());
+        }
+
+        foreach ($metadata as $varname => $value) {
+            $data[0][] = $varname;
+            $data[1][] = $value;
         }
     }
 }

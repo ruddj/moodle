@@ -71,6 +71,12 @@ $PAGE->set_pagelayout('report');
 $PAGE->set_title($title);
 $PAGE->set_heading($title);
 
+$onlycli = get_config('analytics', 'onlycli');
+if ($onlycli === false) {
+    // Default applied if no config found.
+    $onlycli = 1;
+}
+
 switch ($action) {
 
     case 'enable':
@@ -131,6 +137,10 @@ switch ($action) {
             throw new moodle_exception('errornostaticevaluate', 'tool_analytics');
         }
 
+        if ($onlycli) {
+            throw new moodle_exception('erroronlycli', 'tool_analytics');
+        }
+
         // Web interface is used by people who can not use CLI nor code stuff, always use
         // cached stuff as they will change the model through the web interface as well
         // which invalidates the previously analysed stuff.
@@ -142,13 +152,22 @@ switch ($action) {
     case 'getpredictions':
         echo $OUTPUT->header();
 
+        if ($onlycli) {
+            throw new moodle_exception('erroronlycli', 'tool_analytics');
+        }
+
         $trainresults = $model->train();
         $trainlogs = $model->get_analyser()->get_logs();
 
         // Looks dumb to get a new instance but better be conservative.
         $model = new \core_analytics\model($model->get_model_obj());
-        $predictresults = $model->predict();
-        $predictlogs = $model->get_analyser()->get_logs();
+        if ($model->is_trained()) {
+            $predictresults = $model->predict();
+            $predictlogs = $model->get_analyser()->get_logs();
+        } else {
+            $predictresults = false;
+            $predictlogs = array();
+        }
 
         $renderer = $PAGE->get_renderer('tool_analytics');
         echo $renderer->render_get_predictions_results($trainresults, $trainlogs, $predictresults, $predictlogs);

@@ -42,7 +42,12 @@ class create extends \moodleform {
 
         $mform = $this->_form;
         $haserror = !empty($this->_customdata['haserror']);
+        $starttime = isset($this->_customdata['starttime']) ? $this->_customdata['starttime'] : 0;
         $eventtypes = calendar_get_all_allowed_types();
+
+        if (empty($eventtypes)) {
+            print_error('nopermissiontoupdatecalendar');
+        }
 
         $mform->setDisableShortforms();
         $mform->disable_form_change_checker();
@@ -58,7 +63,7 @@ class create extends \moodleform {
         $mform->setType('name', PARAM_TEXT);
 
         // Event time start field.
-        $mform->addElement('date_time_selector', 'timestart', get_string('date'));
+        $mform->addElement('date_time_selector', 'timestart', get_string('date'), ['defaulttime' => $starttime]);
 
         // Add the select elements for the available event types.
         $this->add_event_type_elements($mform, $eventtypes);
@@ -93,6 +98,12 @@ class create extends \moodleform {
 
         $errors = parent::validation($data, $files);
         $coursekey = isset($data['groupcourseid']) ? 'groupcourseid' : 'courseid';
+        $eventtypes = calendar_get_all_allowed_types();
+        $eventtype = isset($data['eventtype']) ? $data['eventtype'] : null;
+
+        if (empty($eventtype) || !isset($eventtypes[$eventtype])) {
+            $errors['eventtype'] = get_string('invalideventtype', 'calendar');
+        }
 
         if (isset($data[$coursekey]) && $data[$coursekey] > 0) {
             if ($course = $DB->get_record('course', ['id' => $data[$coursekey]])) {
@@ -203,7 +214,7 @@ class create extends \moodleform {
             }
 
             $mform->addElement('select', 'courseid', get_string('course'), $courseoptions);
-            $mform->disabledIf('courseid', 'eventtype', 'noteq', 'course');
+            $mform->hideIf('courseid', 'eventtype', 'noteq', 'course');
         }
 
         if (isset($eventtypes['group'])) {
@@ -214,7 +225,7 @@ class create extends \moodleform {
             }
 
             $mform->addElement('select', 'groupcourseid', get_string('course'), $courseoptions);
-            $mform->disabledIf('groupcourseid', 'eventtype', 'noteq', 'group');
+            $mform->hideIf('groupcourseid', 'eventtype', 'noteq', 'group');
 
             $groupoptions = [];
             foreach ($eventtypes['group'] as $group) {
@@ -226,7 +237,7 @@ class create extends \moodleform {
             }
 
             $mform->addElement('select', 'groupid', get_string('group'), $groupoptions);
-            $mform->disabledIf('groupid', 'eventtype', 'noteq', 'group');
+            $mform->hideIf('groupid', 'eventtype', 'noteq', 'group');
         }
     }
 
