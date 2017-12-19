@@ -68,6 +68,9 @@ class webservice_xmlrpc_client {
      * @throws moodle_exception
      */
     public function call($functionname, $params = array()) {
+        global $CFG;
+        require_once($CFG->libdir . '/filelib.php');
+
         if ($this->token) {
             $this->serverurl->param('wstoken', $this->token);
         }
@@ -83,7 +86,7 @@ class webservice_xmlrpc_client {
         );
 
         // Get the response.
-        $response = download_file_content($this->serverurl, $headers, $request);
+        $response = download_file_content($this->serverurl->out(false), $headers, $request);
 
         // Decode the response.
         $result = xmlrpc_decode($response);

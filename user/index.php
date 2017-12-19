@@ -25,17 +25,13 @@
 require_once('../config.php');
 require_once($CFG->dirroot.'/user/lib.php');
 require_once($CFG->dirroot.'/course/lib.php');
+require_once($CFG->dirroot.'/notes/lib.php');
 require_once($CFG->libdir.'/tablelib.php');
 require_once($CFG->libdir.'/filelib.php');
 require_once($CFG->dirroot.'/enrol/locallib.php');
 
 define('DEFAULT_PAGE_SIZE', 20);
 define('SHOW_ALL_PAGE_SIZE', 5000);
-define('USER_FILTER_ENROLMENT', 1);
-define('USER_FILTER_GROUP', 2);
-define('USER_FILTER_LAST_ACCESS', 3);
-define('USER_FILTER_ROLE', 4);
-define('USER_FILTER_STATUS', 5);
 
 $page         = optional_param('page', 0, PARAM_INT); // Which page to show.
 $perpage      = optional_param('perpage', DEFAULT_PAGE_SIZE, PARAM_INT); // How many per page.
@@ -43,6 +39,8 @@ $contextid    = optional_param('contextid', 0, PARAM_INT); // One of this or.
 $courseid     = optional_param('id', 0, PARAM_INT); // This are required.
 $newcourse    = optional_param('newcourse', false, PARAM_BOOL);
 $selectall    = optional_param('selectall', false, PARAM_BOOL); // When rendering checkboxes against users mark them all checked.
+$roleid       = optional_param('roleid', 0, PARAM_INT);
+$groupparam   = optional_param('group', 0, PARAM_INT);
 
 $PAGE->set_url('/user/index.php', array(
         'page' => $page,
@@ -74,16 +72,10 @@ $frontpagectx = context_course::instance(SITEID);
 
 if ($isfrontpage) {
     $PAGE->set_pagelayout('admin');
-    if (!has_any_capability(['moodle/site:viewparticipants', 'moodle/course:enrolreview'], $systemcontext)) {
-        // We know they do not have any of the capabilities, so lets throw an exception using the capability with the least access.
-        throw new required_capability_exception($systemcontext, 'moodle/site:viewparticipants', 'nopermissions', '');
-    }
+    course_require_view_participants($systemcontext);
 } else {
     $PAGE->set_pagelayout('incourse');
-    if (!has_any_capability(['moodle/course:viewparticipants', 'moodle/course:enrolreview'], $context)) {
-        // We know they do not have any of the capabilities, so lets throw an exception using the capability with the least access.
-        throw new required_capability_exception($context, 'moodle/course:viewparticipants', 'nopermissions', '');
-    }
+    course_require_view_participants($context);
 }
 
 // Trigger events.
@@ -108,15 +100,30 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('participants'));
 
 // Get the currently applied filters.
-$filtersapplied = optional_param_array('unified-filters', [], PARAM_TEXT);
+$filtersapplied = optional_param_array('unified-filters', [], PARAM_NOTAGS);
+$filterwassubmitted = optional_param('unified-filter-submitted', 0, PARAM_BOOL);
+
+// If they passed a role make sure they can view that role.
+if ($roleid) {
+    $viewableroles = get_profile_roles($context);
+
+    // Check if the user can view this role.
+    if (array_key_exists($roleid, $viewableroles)) {
+        $filtersapplied[] = USER_FILTER_ROLE . ':' . $roleid;
+    } else {
+        $roleid = 0;
+    }
+}
 
 // Default group ID.
 $groupid = false;
 $canaccessallgroups = has_capability('moodle/site:accessallgroups', $context);
 if ($course->groupmode != NOGROUPS) {
     if ($canaccessallgroups) {
-        // If the user can see all groups, set default to 0.
-        $groupid = 0;
+        // Change the group if the user can access all groups and has specified group in the URL.
+        if ($groupparam) {
+            $groupid = $groupparam;
+        }
     } else {
         // Otherwise, get the user's default group.
         $groupid = groups_get_course_group($course, true);
@@ -131,7 +138,6 @@ if ($course->groupmode != NOGROUPS) {
 $hasgroupfilter = false;
 $lastaccess = 0;
 $searchkeywords = [];
-$roleid = 0;
 $enrolid = 0;
 $status = -1;
 foreach ($filtersapplied as $filter) {
@@ -142,7 +148,8 @@ foreach ($filtersapplied as $filter) {
         $value = clean_param($filtervalue[1], PARAM_INT);
     } else {
         // Search string.
-        $key = clean_param($filtervalue[0], PARAM_TEXT);
+        $key = USER_FILTER_STRING;
+        $value = clean_param($filtervalue[0], PARAM_TEXT);
     }
 
     switch ($key) {
@@ -167,16 +174,33 @@ foreach ($filtersapplied as $filter) {
             break;
         default:
             // Search string.
-            if (!empty($key) && empty($value)) {
-                $searchkeywords[] = $key;
-            }
+            $searchkeywords[] = $value;
             break;
     }
 }
 
-// If course supports groups, but the user can't access all groups and there's no group filter set, apply a default group filter.
-if ($groupid !== false && !$canaccessallgroups && !$hasgroupfilter) {
-    $filtersapplied[] = USER_FILTER_GROUP . ':' . $groupid;
+// If course supports groups we may need to set a default.
+if ($groupid !== false) {
+    if ($canaccessallgroups) {
+        // User can access all groups, let them filter by whatever was selected.
+        $filtersapplied[] = USER_FILTER_GROUP . ':' . $groupid;
+    } else if (!$filterwassubmitted && $course->groupmode == VISIBLEGROUPS) {
+        // If we are in a course with visible groups and the user has not submitted anything and does not have
+        // access to all groups, then set a default group.
+        $filtersapplied[] = USER_FILTER_GROUP . ':' . $groupid;
+    } else if (!$hasgroupfilter && $course->groupmode != VISIBLEGROUPS) {
+        // The user can't access all groups and has not set a group filter in a course where the groups are not visible
+        // then apply a default group filter.
+        $filtersapplied[] = USER_FILTER_GROUP . ':' . $groupid;
+    } else if (!$hasgroupfilter) { // No need for the group id to be set.
+        $groupid = false;
+    }
+}
+
+if ($groupid && ($course->groupmode != SEPARATEGROUPS || $canaccessallgroups)) {
+    $grouprenderer = $PAGE->get_renderer('core_group');
+    $groupdetailpage = new \core_group\output\group_details($groupid);
+    echo $grouprenderer->group_details($groupdetailpage);
 }
 
 // Manage enrolments.
@@ -219,6 +243,8 @@ if ($bulkoperations) {
 }
 
 echo $participanttablehtml;
+
+$PAGE->requires->js_call_amd('core_user/name_page_filter', 'init');
 
 $perpageurl = clone($baseurl);
 $perpageurl->remove_params('perpage');
@@ -263,10 +289,9 @@ if ($bulkoperations) {
         'value' => get_string('deselectall')));
     echo html_writer::end_tag('div');
     $displaylist = array();
-    $displaylist['messageselect.php'] = get_string('messageselectadd');
+    $displaylist['#messageselect'] = get_string('messageselectadd');
     if (!empty($CFG->enablenotes) && has_capability('moodle/notes:manage', $context) && $context->id != $frontpagectx->id) {
-        $displaylist['addnote.php'] = get_string('addnewnote', 'notes');
-        $displaylist['groupaddnote.php'] = get_string('groupaddnewnote', 'notes');
+        $displaylist['#addgroupnote'] = get_string('addnewnote', 'notes');
     }
 
     if ($context->id != $frontpagectx->id) {
@@ -304,8 +329,11 @@ if ($bulkoperations) {
     echo '</div></div>';
     echo '</form>';
 
-    $module = array('name' => 'core_user', 'fullpath' => '/user/module.js');
-    $PAGE->requires->js_init_call('M.core_user.init_participation', null, false, $module);
+    $options = new stdClass();
+    $options->courseid = $course->id;
+    $options->noteStateNames = note_get_state_names();
+    $options->stateHelpIcon = $OUTPUT->help_icon('publishstate', 'notes');
+    $PAGE->requires->js_call_amd('core_user/participants', 'init', [$options]);
 }
 
 echo '</div>';  // Userlist.

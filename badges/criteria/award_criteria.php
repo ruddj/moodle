@@ -69,6 +69,12 @@ define('BADGE_CRITERIA_TYPE_COURSESET', 5);
 define('BADGE_CRITERIA_TYPE_PROFILE', 6);
 
 /*
+ * Badge completion criteria type
+ * Criteria type constant, primarily for storing criteria type in the database.
+ */
+define('BADGE_CRITERIA_TYPE_BADGE', 7);
+
+/*
  * Criteria type constant to class name mapping
  */
 global $BADGE_CRITERIA_TYPES;
@@ -79,7 +85,8 @@ $BADGE_CRITERIA_TYPES = array(
     BADGE_CRITERIA_TYPE_SOCIAL    => 'social',
     BADGE_CRITERIA_TYPE_COURSE    => 'course',
     BADGE_CRITERIA_TYPE_COURSESET => 'courseset',
-    BADGE_CRITERIA_TYPE_PROFILE   => 'profile'
+    BADGE_CRITERIA_TYPE_PROFILE   => 'profile',
+    BADGE_CRITERIA_TYPE_BADGE     => 'badge',
 );
 
 /**
@@ -383,7 +390,9 @@ abstract class award_criteria {
         $params = array_filter($params);
         // Find out which param matches optional and required ones.
         $match = array_merge($this->optional_params, array($this->required_param));
-        $regex = implode('|', array_map(create_function('$a', 'return $a . "_";'), $match));
+        $regex = implode('|', array_map(function($a) {
+            return $a . "_";
+        }, $match));
         $requiredkeys = preg_grep('/^(' . $regex . ').*$/', array_keys($params));
 
         if ($this->id !== 0) {

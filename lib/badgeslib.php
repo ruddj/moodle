@@ -191,6 +191,7 @@ class badge {
                     BADGE_CRITERIA_TYPE_OVERALL,
                     BADGE_CRITERIA_TYPE_MANUAL,
                     BADGE_CRITERIA_TYPE_COURSE,
+                    BADGE_CRITERIA_TYPE_BADGE,
                     BADGE_CRITERIA_TYPE_ACTIVITY
             );
         } else if ($this->type == BADGE_TYPE_SITE) {
@@ -198,6 +199,7 @@ class badge {
                     BADGE_CRITERIA_TYPE_OVERALL,
                     BADGE_CRITERIA_TYPE_MANUAL,
                     BADGE_CRITERIA_TYPE_COURSESET,
+                    BADGE_CRITERIA_TYPE_BADGE,
                     BADGE_CRITERIA_TYPE_PROFILE,
             );
         }
@@ -1161,6 +1163,7 @@ function badges_download($userid) {
         // Need to make image name user-readable and unique using filename safe characters.
         $name =  $badge->name . ' ' . userdate($issued->dateissued, '%d %b %Y') . ' ' . hash('crc32', $badge->id);
         $name = str_replace(' ', '_', $name);
+        $name = clean_param($name, PARAM_FILE);
         if ($file = $fs->get_file($context->id, 'badges', 'userbadge', $issued->badgeid, '/', $issued->uniquehash . '.png')) {
             $filelist[$name . '.png'] = $file;
         }

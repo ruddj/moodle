@@ -41,7 +41,7 @@ $string['auth_ldapdescription'] = 'This method provides authentication against a
                                   entry in its database. This module can read user attributes from LDAP and prefill
                                   wanted fields in Moodle.  For following logins only the username and
                                   password are checked.';
-$string['auth_ldap_expiration_desc'] = 'Select No to disable expired password checking or LDAP to read passwordexpiration time directly from LDAP';
+$string['auth_ldap_expiration_desc'] = 'Select \'{$a->no}\' to disable expired password checking or \'{$a->ldapserver}\' to read the password expiration time directly from the LDAP server';
 $string['auth_ldap_expiration_key'] = 'Expiration';
 $string['auth_ldap_expiration_warning_desc'] = 'Number of days before password expiration warning is issued.';
 $string['auth_ldap_expiration_warning_key'] = 'Expiration warning';
@@ -121,7 +121,7 @@ $string['didntgetusersfromldap'] = "Did not get any users from LDAP -- error? --
 $string['gotcountrecordsfromldap'] = "Got {\$a} records from LDAP\n";
 $string['ldapnotconfigured'] = 'The LDAP host url is currently not configured';
 $string['morethanoneuser'] = 'Strange! More than one user record found in ldap. Only using the first one.';
-$string['needbcmath'] = 'You need the BCMath extension to use grace logins with Active Directory';
+$string['needbcmath'] = 'You need the BCMath extension to use expired password checking with Active Directory.';
 $string['needmbstring'] = 'You need the mbstring extension to change passwords in Active Directory';
 $string['nodnforusername'] = 'Error in user_update_password(). No DN for: {$a->username}';
 $string['noemail'] = 'Tried to send you an email but failed!';

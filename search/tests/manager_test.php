@@ -46,6 +46,12 @@ class search_manager_testcase extends advanced_testcase {
         $this->mycoursesareaid = \core_search\manager::generate_areaid('core_course', 'mycourse');
     }
 
+    protected function tearDown() {
+        // Stop it from faking time in the search manager (if set by test).
+        testable_core_search::fake_current_time();
+        parent::tearDown();
+    }
+
     public function test_search_enabled() {
 
         $this->resetAfterTest();
@@ -212,6 +218,9 @@ class search_manager_testcase extends advanced_testcase {
         $generator->get_plugin_generator('mod_forum')->create_discussion(['course' => $course->id,
                 'forum' => $forum->id, 'userid' => $USER->id, 'timemodified' => $now + 2,
                 'name' => 'Zombie']);
+        $generator->get_plugin_generator('mod_forum')->create_discussion(['course' => $course->id,
+                'forum' => $forum->id, 'userid' => $USER->id, 'timemodified' => $now + 2,
+                'name' => 'Werewolf']);
         time_sleep_until($now + 3);
 
         // Clear the count of added documents.
@@ -219,6 +228,9 @@ class search_manager_testcase extends advanced_testcase {
 
         // Make the search engine delay while indexing each document.
         $search->get_engine()->set_add_delay(1.2);
+
+        // Use fake time, starting from now.
+        testable_core_search::fake_current_time(time());
 
         // Index with a limit of 2 seconds - it should index 2 of the documents (after the second
         // one, it will have taken 2.4 seconds so it will stop).
@@ -228,6 +240,9 @@ class search_manager_testcase extends advanced_testcase {
         $this->assertEquals('Frog', $added[0]->get('title'));
         $this->assertEquals('Toad', $added[1]->get('title'));
         $this->assertEquals(1, get_config($componentname, $varname . '_partial'));
+        // Whilst 2.4 seconds of "time" have elapsed, the indexing duration is
+        // measured in seconds, so should be 2.
+        $this->assertEquals(2, $searcharea->get_last_indexing_duration());
 
         // Add a label.
         $generator->create_module('label', ['course' => $course->id, 'intro' => 'Vampire']);
@@ -235,6 +250,7 @@ class search_manager_testcase extends advanced_testcase {
         // Wait to next second (so as to not reindex the label more than once, as it will now
         // be timed before the indexing run).
         $this->waitForSecond();
+        testable_core_search::fake_current_time(time());
 
         // Next index with 1 second limit should do the label and not the forum - the logic is,
         // if it spent ages indexing an area last time, do that one last on next run.
@@ -243,15 +259,18 @@ class search_manager_testcase extends advanced_testcase {
         $this->assertCount(1, $added);
         $this->assertEquals('Vampire', $added[0]->get('title'));
 
-        // Index again with a 2 second limit - it will redo last post for safety (because of other
+        // Index again with a 3 second limit - it will redo last post for safety (because of other
         // things possibly having the same time second), and then do the remaining one. (Note:
         // because it always does more than one second worth of items, it would actually index 2
-        // posts even if the limit were less than 2.)
-        $search->index(false, 2);
+        // posts even if the limit were less than 2, we are testing it does 3 posts to make sure
+        // the time limiting is actually working with the specified time.)
+        $search->index(false, 3);
         $added = $search->get_engine()->get_and_clear_added_documents();
-        $this->assertCount(2, $added);
+        $this->assertCount(3, $added);
         $this->assertEquals('Toad', $added[0]->get('title'));
-        $this->assertEquals('Zombie', $added[1]->get('title'));
+        $remainingtitles = [$added[1]->get('title'), $added[2]->get('title')];
+        sort($remainingtitles);
+        $this->assertEquals(['Werewolf', 'Zombie'], $remainingtitles);
         $this->assertFalse(get_config($componentname, $varname . '_partial'));
 
         // Index again - there should be nothing to index this time.
@@ -259,6 +278,241 @@ class search_manager_testcase extends advanced_testcase {
         $added = $search->get_engine()->get_and_clear_added_documents();
         $this->assertCount(0, $added);
         $this->assertFalse(get_config($componentname, $varname . '_partial'));
+    }
+
+    /**
+     * Tests the progress display while indexing.
+     *
+     * This tests the different logic about displaying progress for slow/fast and
+     * complete/incomplete processing.
+     */
+    public function test_index_progress() {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+
+        // Set up the fake search area.
+        $search = testable_core_search::instance();
+        $area = new \core_mocksearch\search\mock_search_area();
+        $search->add_search_area('whatever', $area);
+        $searchgenerator = $generator->get_plugin_generator('core_search');
+        $searchgenerator->setUp();
+
+        // Add records with specific time modified values.
+        $time = strtotime('2017-11-01 01:00');
+        for ($i = 0; $i < 8; $i ++) {
+            $searchgenerator->create_record((object)['timemodified' => $time]);
+            $time += 60;
+        }
+
+        // Simulate slow progress on indexing and initial query.
+        $now = strtotime('2017-11-11 01:00');
+        \testable_core_search::fake_current_time($now);
+        $area->set_indexing_delay(10.123);
+        $search->get_engine()->set_add_delay(15.789);
+
+        // Run search indexing and check output.
+        $progress = new progress_trace_buffer(new text_progress_trace(), false);
+        $search->index(false, 75, $progress);
+        $out = $progress->get_buffer();
+        $progress->reset_buffer();
+
+        // Check for the standard text.
+        $this->assertContains('Processing area: Mock search area', $out);
+        $this->assertContains('Stopping indexing due to time limit', $out);
+
+        // Check for initial query performance indication.
+        $this->assertContains('Initial query took 10.1 seconds.', $out);
+
+        // Check for the two (approximately) every-30-seconds messages.
+        $this->assertContains('01:00:41: Done to 1/11/17, 01:01', $out);
+        $this->assertContains('01:01:13: Done to 1/11/17, 01:03', $out);
+
+        // Check for the 'not complete' indicator showing when it was done until.
+        $this->assertContains('Processed 5 records containing 5 documents, in 89.1 seconds ' .
+                '(not complete; done to 1/11/17, 01:04)', $out);
+
+        // Make the initial query delay less than 5 seconds, so it won't appear. Make the documents
+        // quicker, so that the 30-second delay won't be needed.
+        $area->set_indexing_delay(4.9);
+        $search->get_engine()->set_add_delay(1);
+
+        // Run search indexing (still partial) and check output.
+        $progress = new progress_trace_buffer(new text_progress_trace(), false);
+        $search->index(false, 5, $progress);
+        $out = $progress->get_buffer();
+        $progress->reset_buffer();
+
+        $this->assertContains('Processing area: Mock search area', $out);
+        $this->assertContains('Stopping indexing due to time limit', $out);
+        $this->assertNotContains('Initial query took', $out);
+        $this->assertNotContains(': Done to', $out);
+        $this->assertContains('Processed 2 records containing 2 documents, in 6.9 seconds ' .
+                '(not complete; done to 1/11/17, 01:05).', $out);
+
+        // Run the remaining items to complete it.
+        $progress = new progress_trace_buffer(new text_progress_trace(), false);
+        $search->index(false, 100, $progress);
+        $out = $progress->get_buffer();
+        $progress->reset_buffer();
+
+        $this->assertContains('Processing area: Mock search area', $out);
+        $this->assertNotContains('Stopping indexing due to time limit', $out);
+        $this->assertNotContains('Initial query took', $out);
+        $this->assertNotContains(': Done to', $out);
+        $this->assertContains('Processed 3 records containing 3 documents, in 7.9 seconds.', $out);
+
+        $searchgenerator->tearDown();
+    }
+
+    /**
+     * Tests that documents with modified time in the future are NOT indexed (as this would cause
+     * a problem by preventing it from indexing other documents modified between now and the future
+     * date).
+     */
+    public function test_future_documents() {
+        $this->resetAfterTest();
+
+        // Create a course and a forum.
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $forum = $generator->create_module('forum', ['course' => $course->id]);
+
+        // Index everything up to current. Ensure the course is older than current second so it
+        // definitely doesn't get indexed again next time.
+        $this->waitForSecond();
+        $search = testable_core_search::instance();
+        $search->index(false, 0);
+        $search->get_engine()->get_and_clear_added_documents();
+
+        // Add 2 discussions to the forum, one of which happend just now, but the other is
+        // incorrectly set to the future.
+        $now = time();
+        $userid = get_admin()->id;
+        $generator->get_plugin_generator('mod_forum')->create_discussion(['course' => $course->id,
+                'forum' => $forum->id, 'userid' => $userid, 'timemodified' => $now,
+                'name' => 'Frog']);
+        $generator->get_plugin_generator('mod_forum')->create_discussion(['course' => $course->id,
+                'forum' => $forum->id, 'userid' => $userid, 'timemodified' => $now + 100,
+                'name' => 'Toad']);
+
+        // Wait for a second so we're not actually on the same second as the forum post (there's a
+        // 1 second overlap between indexing; it would get indexed in both checks below otherwise).
+        $this->waitForSecond();
+
+        // Index.
+        $search->index(false);
+        $added = $search->get_engine()->get_and_clear_added_documents();
+        $this->assertCount(1, $added);
+        $this->assertEquals('Frog', $added[0]->get('title'));
+
+        // Check latest time - it should be the same as $now, not the + 100.
+        $searcharea = $search->get_search_area($this->forumpostareaid);
+        list($componentname, $varname) = $searcharea->get_config_var_name();
+        $this->assertEquals($now, get_config($componentname, $varname . '_lastindexrun'));
+
+        // Index again - there should be nothing to index this time.
+        $search->index(false);
+        $added = $search->get_engine()->get_and_clear_added_documents();
+        $this->assertCount(0, $added);
+    }
+
+    /**
+     * Tests that indexing a specified context works correctly.
+     */
+    public function test_context_indexing() {
+        global $USER;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // Create a course and two forums and a page.
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $now = time();
+        $forum1 = $generator->create_module('forum', ['course' => $course->id]);
+        $generator->get_plugin_generator('mod_forum')->create_discussion(['course' => $course->id,
+                'forum' => $forum1->id, 'userid' => $USER->id, 'timemodified' => $now,
+                'name' => 'Frog']);
+        $this->waitForSecond();
+        $generator->get_plugin_generator('mod_forum')->create_discussion(['course' => $course->id,
+                'forum' => $forum1->id, 'userid' => $USER->id, 'timemodified' => $now + 2,
+                'name' => 'Zombie']);
+        $forum2 = $generator->create_module('forum', ['course' => $course->id]);
+        $this->waitForSecond();
+        $generator->get_plugin_generator('mod_forum')->create_discussion(['course' => $course->id,
+                'forum' => $forum2->id, 'userid' => $USER->id, 'timemodified' => $now + 1,
+                'name' => 'Toad']);
+        $generator->create_module('page', ['course' => $course->id]);
+        $generator->create_module('forum', ['course' => $course->id]);
+
+        // Index forum 1 only.
+        $search = testable_core_search::instance();
+        $buffer = new progress_trace_buffer(new text_progress_trace(), false);
+        $result = $search->index_context(\context_module::instance($forum1->cmid), '', 0, $buffer);
+        $this->assertTrue($result->complete);
+        $log = $buffer->get_buffer();
+        $buffer->reset_buffer();
+
+        // Confirm that output only processed 1 forum activity and 2 posts.
+        $this->assertNotFalse(strpos($log, "area: Forum - activity information\n  Processed 1 "));
+        $this->assertNotFalse(strpos($log, "area: Forum - posts\n  Processed 2 "));
+
+        // Confirm that some areas for different types of context were skipped.
+        $this->assertNotFalse(strpos($log, "area: Users\n  Skipping"));
+        $this->assertNotFalse(strpos($log, "area: My courses\n  Skipping"));
+
+        // Confirm that another module area had no results.
+        $this->assertNotFalse(strpos($log, "area: Page\n  No documents"));
+
+        // Index whole course.
+        $result = $search->index_context(\context_course::instance($course->id), '', 0, $buffer);
+        $this->assertTrue($result->complete);
+        $log = $buffer->get_buffer();
+        $buffer->reset_buffer();
+
+        // Confirm that output processed 3 forum activities and 3 posts.
+        $this->assertNotFalse(strpos($log, "area: Forum - activity information\n  Processed 3 "));
+        $this->assertNotFalse(strpos($log, "area: Forum - posts\n  Processed 3 "));
+
+        // The course area was also included this time.
+        $this->assertNotFalse(strpos($log, "area: My courses\n  Processed 1 "));
+
+        // Confirm that another module area had results too.
+        $this->assertNotFalse(strpos($log, "area: Page\n  Processed 1 "));
+
+        // Index whole course, but only forum posts.
+        $result = $search->index_context(\context_course::instance($course->id), 'mod_forum-post',
+                0, $buffer);
+        $this->assertTrue($result->complete);
+        $log = $buffer->get_buffer();
+        $buffer->reset_buffer();
+
+        // Confirm that output processed 3 posts but not forum activities.
+        $this->assertFalse(strpos($log, "area: Forum - activity information"));
+        $this->assertNotFalse(strpos($log, "area: Forum - posts\n  Processed 3 "));
+
+        // Set time limit and retry index of whole course, taking 3 tries to complete it.
+        $search->get_engine()->set_add_delay(0.4);
+        $result = $search->index_context(\context_course::instance($course->id), '', 1, $buffer);
+        $log = $buffer->get_buffer();
+        $buffer->reset_buffer();
+        $this->assertFalse($result->complete);
+        $this->assertNotFalse(strpos($log, "area: Forum - activity information\n  Processed 2 "));
+
+        $result = $search->index_context(\context_course::instance($course->id), '', 1, $buffer,
+                $result->startfromarea, $result->startfromtime);
+        $log = $buffer->get_buffer();
+        $buffer->reset_buffer();
+        $this->assertNotFalse(strpos($log, "area: Forum - activity information\n  Processed 2 "));
+        $this->assertNotFalse(strpos($log, "area: Forum - posts\n  Processed 2 "));
+        $this->assertFalse($result->complete);
+
+        $result = $search->index_context(\context_course::instance($course->id), '', 1, $buffer,
+                $result->startfromarea, $result->startfromtime);
+        $log = $buffer->get_buffer();
+        $buffer->reset_buffer();
+        $this->assertNotFalse(strpos($log, "area: Forum - posts\n  Processed 2 "));
+        $this->assertTrue($result->complete);
     }
 
     /**
@@ -272,6 +526,7 @@ class search_manager_testcase extends advanced_testcase {
         $this->resetAfterTest();
 
         $frontpage = $DB->get_record('course', array('id' => SITEID));
+        $frontpagectx = context_course::instance($frontpage->id);
         $course1 = $this->getDataGenerator()->create_course();
         $course1ctx = context_course::instance($course1->id);
         $course2 = $this->getDataGenerator()->create_course();
@@ -303,14 +558,13 @@ class search_manager_testcase extends advanced_testcase {
         $this->assertTrue($search->get_areas_user_accesses());
 
         $sitectx = \context_course::instance(SITEID);
-        $systemctxid = \context_system::instance()->id;
 
         // Can access the frontpage ones.
         $this->setUser($noaccess);
         $contexts = $search->get_areas_user_accesses();
         $this->assertEquals(array($frontpageforumcontext->id => $frontpageforumcontext->id), $contexts[$this->forumpostareaid]);
         $this->assertEquals(array($sitectx->id => $sitectx->id), $contexts[$this->mycoursesareaid]);
-        $mockctxs = array($noaccessctx->id => $noaccessctx->id, $systemctxid => $systemctxid);
+        $mockctxs = array($noaccessctx->id => $noaccessctx->id, $frontpagectx->id => $frontpagectx->id);
         $this->assertEquals($mockctxs, $contexts[$mockareaid]);
 
         $this->setUser($teacher);
@@ -320,7 +574,8 @@ class search_manager_testcase extends advanced_testcase {
         $this->assertEquals($frontpageandcourse1, $contexts[$this->forumpostareaid]);
         $this->assertEquals(array($sitectx->id => $sitectx->id, $course1ctx->id => $course1ctx->id),
             $contexts[$this->mycoursesareaid]);
-        $mockctxs = array($teacherctx->id => $teacherctx->id, $systemctxid => $systemctxid);
+        $mockctxs = array($teacherctx->id => $teacherctx->id,
+                $frontpagectx->id => $frontpagectx->id, $course1ctx->id => $course1ctx->id);
         $this->assertEquals($mockctxs, $contexts[$mockareaid]);
 
         $this->setUser($student);
@@ -328,7 +583,8 @@ class search_manager_testcase extends advanced_testcase {
         $this->assertEquals($frontpageandcourse1, $contexts[$this->forumpostareaid]);
         $this->assertEquals(array($sitectx->id => $sitectx->id, $course1ctx->id => $course1ctx->id),
             $contexts[$this->mycoursesareaid]);
-        $mockctxs = array($studentctx->id => $studentctx->id, $systemctxid => $systemctxid);
+        $mockctxs = array($studentctx->id => $studentctx->id,
+                $frontpagectx->id => $frontpagectx->id, $course1ctx->id => $course1ctx->id);
         $this->assertEquals($mockctxs, $contexts[$mockareaid]);
 
         // Hide the activity.
@@ -362,6 +618,32 @@ class search_manager_testcase extends advanced_testcase {
         $allcontexts = array($context1->id => $context1->id, $context2->id => $context2->id);
         $this->assertEquals($allcontexts, $contexts[$this->forumpostareaid]);
         $this->assertEquals(array($course1ctx->id => $course1ctx->id), $contexts[$this->mycoursesareaid]);
+
+        // Test context limited search with no course limit.
+        $contexts = $search->get_areas_user_accesses(false,
+                [$frontpageforumcontext->id, $course2ctx->id]);
+        $this->assertEquals([$frontpageforumcontext->id => $frontpageforumcontext->id],
+                $contexts[$this->forumpostareaid]);
+        $this->assertEquals([$course2ctx->id => $course2ctx->id],
+                $contexts[$this->mycoursesareaid]);
+
+        // Test context limited search with course limit.
+        $contexts = $search->get_areas_user_accesses([$course1->id, $course2->id],
+                [$frontpageforumcontext->id, $course2ctx->id]);
+        $this->assertArrayNotHasKey($this->forumpostareaid, $contexts);
+        $this->assertEquals([$course2ctx->id => $course2ctx->id],
+                $contexts[$this->mycoursesareaid]);
+
+        // Single context and course.
+        $contexts = $search->get_areas_user_accesses([$course1->id], [$context1->id]);
+        $this->assertEquals([$context1->id => $context1->id], $contexts[$this->forumpostareaid]);
+        $this->assertArrayNotHasKey($this->mycoursesareaid, $contexts);
+
+        // For admins, this is still limited only if we specify the things, so it should be same.
+        $this->setAdminUser();
+        $contexts = $search->get_areas_user_accesses([$course1->id], [$context1->id]);
+        $this->assertEquals([$context1->id => $context1->id], $contexts[$this->forumpostareaid]);
+        $this->assertArrayNotHasKey($this->mycoursesareaid, $contexts);
     }
 
     /**
@@ -370,6 +652,8 @@ class search_manager_testcase extends advanced_testcase {
      * @return void
      */
     public function test_search_user_accesses_blocks() {
+        global $DB;
+
         $this->resetAfterTest();
         $this->setAdminUser();
 
@@ -461,6 +745,109 @@ class search_manager_testcase extends advanced_testcase {
         $this->setUser($student1);
         $limitedcontexts = $search->get_areas_user_accesses([$course3->id]);
         $this->assertEquals($contexts['block_html-content'], $limitedcontexts['block_html-content']);
+
+        // Get block context ids for the blocks that appear.
+        global $DB;
+        $blockcontextids = $DB->get_fieldset_sql('
+            SELECT x.id
+              FROM {block_instances} bi
+              JOIN {context} x ON x.instanceid = bi.id AND x.contextlevel = ?
+             WHERE (parentcontextid = ? OR parentcontextid = ?)
+                   AND blockname = ?
+          ORDER BY bi.id', [CONTEXT_BLOCK, $context1->id, $context3->id, 'html']);
+
+        // Context limited search (no course).
+        $contexts = $search->get_areas_user_accesses(false,
+                [$blockcontextids[0], $blockcontextids[2]]);
+        $this->assertCount(2, $contexts['block_html-content']);
+
+        // Context limited search (with course 3).
+        $contexts = $search->get_areas_user_accesses([$course2->id, $course3->id],
+                [$blockcontextids[0], $blockcontextids[2]]);
+        $this->assertCount(1, $contexts['block_html-content']);
+    }
+
+    /**
+     * Test get_areas_user_accesses with regard to the 'all available courses' config option.
+     *
+     * @return void
+     */
+    public function test_search_user_accesses_allavailable() {
+        global $DB, $CFG;
+
+        $this->resetAfterTest();
+
+        // Front page, including a forum.
+        $frontpage = $DB->get_record('course', array('id' => SITEID));
+        $forumfront = $this->getDataGenerator()->create_module('forum', array('course' => $frontpage->id));
+        $forumfrontctx = context_module::instance($forumfront->cmid);
+
+        // Course 1 does not allow guest access.
+        $course1 = $this->getDataGenerator()->create_course((object)array(
+                'enrol_guest_status_0' => ENROL_INSTANCE_DISABLED,
+                'enrol_guest_password_0' => ''));
+        $forum1 = $this->getDataGenerator()->create_module('forum', array('course' => $course1->id));
+        $forum1ctx = context_module::instance($forum1->cmid);
+
+        // Course 2 does not allow guest but is accessible by all users.
+        $course2 = $this->getDataGenerator()->create_course((object)array(
+                'enrol_guest_status_0' => ENROL_INSTANCE_DISABLED,
+                'enrol_guest_password_0' => ''));
+        $course2ctx = context_course::instance($course2->id);
+        $forum2 = $this->getDataGenerator()->create_module('forum', array('course' => $course2->id));
+        $forum2ctx = context_module::instance($forum2->cmid);
+        assign_capability('moodle/course:view', CAP_ALLOW, $CFG->defaultuserroleid, $course2ctx->id);
+
+        // Course 3 allows guest access without password.
+        $course3 = $this->getDataGenerator()->create_course((object)array(
+                'enrol_guest_status_0' => ENROL_INSTANCE_ENABLED,
+                'enrol_guest_password_0' => ''));
+        $forum3 = $this->getDataGenerator()->create_module('forum', array('course' => $course2->id));
+        $forum3ctx = context_module::instance($forum3->cmid);
+
+        // Student user is enrolled in course 1.
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course1->id, 'student');
+
+        // No access user is just a user with no permissions.
+        $noaccess = $this->getDataGenerator()->create_user();
+
+        // First test without the all available option.
+        $search = testable_core_search::instance();
+
+        // Admin user can access everything.
+        $this->setAdminUser();
+        $this->assertTrue($search->get_areas_user_accesses());
+
+        // No-access user can access only the front page forum.
+        $this->setUser($noaccess);
+        $contexts = $search->get_areas_user_accesses();
+        $this->assertEquals([$forumfrontctx->id], array_keys($contexts[$this->forumpostareaid]));
+
+        // Student can access the front page forum plus the enrolled one.
+        $this->setUser($student);
+        $contexts = $search->get_areas_user_accesses();
+        $this->assertEquals([$forum1ctx->id, $forumfrontctx->id],
+                array_keys($contexts[$this->forumpostareaid]));
+
+        // Now turn on the all available option.
+        set_config('searchallavailablecourses', 1);
+
+        // Admin user can access everything.
+        $this->setAdminUser();
+        $this->assertTrue($search->get_areas_user_accesses());
+
+        // No-access user can access the front page forum and course 2, 3.
+        $this->setUser($noaccess);
+        $contexts = $search->get_areas_user_accesses();
+        $this->assertEquals([$forum2ctx->id, $forum3ctx->id, $forumfrontctx->id],
+                array_keys($contexts[$this->forumpostareaid]));
+
+        // Student can access the front page forum plus the enrolled one plus courses 2, 3.
+        $this->setUser($student);
+        $contexts = $search->get_areas_user_accesses();
+        $this->assertEquals([$forum1ctx->id, $forum2ctx->id, $forum3ctx->id, $forumfrontctx->id],
+                array_keys($contexts[$this->forumpostareaid]));
     }
 
     /**
@@ -476,5 +863,178 @@ class search_manager_testcase extends advanced_testcase {
         $this->assertTrue(testable_core_search::is_search_area('\mod_forum\search\post'));
         $this->assertTrue(testable_core_search::is_search_area('\\mod_forum\\search\\post'));
         $this->assertTrue(testable_core_search::is_search_area('mod_forum\\search\\post'));
+    }
+
+    /**
+     * Tests the request_index function used for reindexing certain contexts. This only tests
+     * adding things to the request list, it doesn't test that they are actually indexed by the
+     * scheduled task.
+     */
+    public function test_request_index() {
+        global $DB;
+
+        $this->resetAfterTest();
+
+        $course1 = $this->getDataGenerator()->create_course();
+        $course1ctx = context_course::instance($course1->id);
+        $course2 = $this->getDataGenerator()->create_course();
+        $course2ctx = context_course::instance($course2->id);
+        $forum1 = $this->getDataGenerator()->create_module('forum', ['course' => $course1->id]);
+        $forum1ctx = context_module::instance($forum1->cmid);
+        $forum2 = $this->getDataGenerator()->create_module('forum', ['course' => $course2->id]);
+        $forum2ctx = context_module::instance($forum2->cmid);
+
+        // Initially no requests.
+        $this->assertEquals(0, $DB->count_records('search_index_requests'));
+
+        // Request update for course 1, all areas.
+        \core_search\manager::request_index($course1ctx);
+
+        // Check all details of entry.
+        $results = array_values($DB->get_records('search_index_requests'));
+        $this->assertCount(1, $results);
+        $this->assertEquals($course1ctx->id, $results[0]->contextid);
+        $this->assertEquals('', $results[0]->searcharea);
+        $now = time();
+        $this->assertLessThanOrEqual($now, $results[0]->timerequested);
+        $this->assertGreaterThan($now - 10, $results[0]->timerequested);
+        $this->assertEquals('', $results[0]->partialarea);
+        $this->assertEquals(0, $results[0]->partialtime);
+
+        // Request forum 1, all areas; not added as covered by course 1.
+        \core_search\manager::request_index($forum1ctx);
+        $this->assertEquals(1, $DB->count_records('search_index_requests'));
+
+        // Request forum 1, specific area; not added as covered by course 1 all areas.
+        \core_search\manager::request_index($forum1ctx, 'forum-post');
+        $this->assertEquals(1, $DB->count_records('search_index_requests'));
+
+        // Request course 1 again, specific area; not added as covered by all areas.
+        \core_search\manager::request_index($course1ctx, 'forum-post');
+        $this->assertEquals(1, $DB->count_records('search_index_requests'));
+
+        // Request course 1 again, all areas; not needed as covered already.
+        \core_search\manager::request_index($course1ctx);
+        $this->assertEquals(1, $DB->count_records('search_index_requests'));
+
+        // Request course 2, specific area.
+        \core_search\manager::request_index($course2ctx, 'label-activity');
+        // Note: I'm ordering by ID for convenience - this is dangerous in real code (see MDL-43447)
+        // but in a unit test it shouldn't matter as nobody is using clustered databases for unit
+        // test.
+        $results = array_values($DB->get_records('search_index_requests', null, 'id'));
+        $this->assertCount(2, $results);
+        $this->assertEquals($course1ctx->id, $results[0]->contextid);
+        $this->assertEquals($course2ctx->id, $results[1]->contextid);
+        $this->assertEquals('label-activity', $results[1]->searcharea);
+
+        // Request forum 2, same specific area; not added.
+        \core_search\manager::request_index($forum2ctx, 'label-activity');
+        $this->assertEquals(2, $DB->count_records('search_index_requests'));
+
+        // Request forum 2, different specific area; added.
+        \core_search\manager::request_index($forum2ctx, 'forum-post');
+        $this->assertEquals(3, $DB->count_records('search_index_requests'));
+
+        // Request forum 2, all areas; also added. (Note: This could obviously remove the previous
+        // one, but for simplicity, I didn't make it do that; also it could perhaps cause problems
+        // if we had already begun processing the previous entry.)
+        \core_search\manager::request_index($forum2ctx);
+        $this->assertEquals(4, $DB->count_records('search_index_requests'));
+    }
+
+    /**
+     * Tests the process_index_requests function.
+     */
+    public function test_process_index_requests() {
+        global $DB;
+
+        $this->resetAfterTest();
+
+        $search = testable_core_search::instance();
+
+        // When there are no index requests, nothing gets logged.
+        $progress = new progress_trace_buffer(new text_progress_trace(), false);
+        $search->process_index_requests(0.0, $progress);
+        $out = $progress->get_buffer();
+        $progress->reset_buffer();
+        $this->assertEquals('', $out);
+
+        // Set up the course with 3 forums.
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['fullname' => 'TCourse']);
+        $forum1 = $generator->create_module('forum', ['course' => $course->id, 'name' => 'TForum1']);
+        $forum2 = $generator->create_module('forum', ['course' => $course->id, 'name' => 'TForum2']);
+        $forum3 = $generator->create_module('forum', ['course' => $course->id, 'name' => 'TForum3']);
+
+        // Hack the forums so they have different creation times.
+        $now = time();
+        $DB->set_field('forum', 'timemodified', $now - 3, ['id' => $forum1->id]);
+        $DB->set_field('forum', 'timemodified', $now - 2, ['id' => $forum2->id]);
+        $DB->set_field('forum', 'timemodified', $now - 1, ['id' => $forum3->id]);
+        $forum2time = $now - 2;
+
+        // Make 2 index requests.
+        $search::request_index(context_course::instance($course->id), 'mod_label-activity');
+        $this->waitForSecond();
+        $search::request_index(context_module::instance($forum1->cmid));
+
+        // Run with no time limit.
+        $search->process_index_requests(0.0, $progress);
+        $out = $progress->get_buffer();
+        $progress->reset_buffer();
+
+        // Check that it's done both areas.
+        $this->assertContains(
+                'Indexing requested context: Course: TCourse (search area: mod_label-activity)',
+                $out);
+        $this->assertContains(
+                'Completed requested context: Course: TCourse (search area: mod_label-activity)',
+                $out);
+        $this->assertContains('Indexing requested context: Forum: TForum1', $out);
+        $this->assertContains('Completed requested context: Forum: TForum1', $out);
+
+        // Check the requests database table is now empty.
+        $this->assertEquals(0, $DB->count_records('search_index_requests'));
+
+        // Request indexing the course a couple of times.
+        $search::request_index(context_course::instance($course->id), 'mod_forum-activity');
+        $search::request_index(context_course::instance($course->id), 'mod_forum-post');
+
+        // Do the processing again with a time limit and indexing delay. The time limit is too
+        // small; because of the way the logic works, this means it will index 2 activities.
+        testable_core_search::fake_current_time(time());
+        $search->get_engine()->set_add_delay(0.2);
+        $search->process_index_requests(0.1, $progress);
+        $out = $progress->get_buffer();
+        $progress->reset_buffer();
+
+        // Confirm the right wrapper information was logged.
+        $this->assertContains(
+                'Indexing requested context: Course: TCourse (search area: mod_forum-activity)',
+                $out);
+        $this->assertContains('Stopping indexing due to time limit', $out);
+        $this->assertContains(
+                'Ending requested context: Course: TCourse (search area: mod_forum-activity)',
+                $out);
+
+        // Check the database table has been updated with progress.
+        $records = array_values($DB->get_records('search_index_requests', null, 'searcharea'));
+        $this->assertEquals('mod_forum-activity', $records[0]->partialarea);
+        $this->assertEquals($forum2time, $records[0]->partialtime);
+
+        // Run again and confirm it now finishes.
+        $search->process_index_requests(0.1, $progress);
+        $out = $progress->get_buffer();
+        $progress->reset_buffer();
+        $this->assertContains(
+                'Completed requested context: Course: TCourse (search area: mod_forum-activity)',
+                $out);
+        $this->assertContains(
+                'Completed requested context: Course: TCourse (search area: mod_forum-post)',
+                $out);
+
+        // Confirm table is now empty.
+        $this->assertEquals(0, $DB->count_records('search_index_requests'));
     }
 }
