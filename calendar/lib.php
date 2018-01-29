@@ -1819,6 +1819,13 @@ function calendar_time_representation($time) {
         $timeformat = get_config(null, 'calendar_site_timeformat');
     }
 
+    // Allow language customization of selected time format.
+    if ($timeformat === CALENDAR_TF_12) {
+        $timeformat = get_string('strftimetime12', 'langconfig');
+    } else if ($timeformat === CALENDAR_TF_24) {
+        $timeformat = get_string('strftimetime24', 'langconfig');
+    }
+
     return userdate($time, empty($timeformat) ? $langtimeformat : $timeformat);
 }
 
@@ -3361,9 +3368,10 @@ function calendar_get_legacy_events($tstart, $tend, $users, $groups, $courses,
  * @param   \calendar_information $calendar The calendar being represented
  * @param   string  $view The type of calendar to have displayed
  * @param   bool    $includenavigation Whether to include navigation
+ * @param   bool    $skipevents Whether to load the events or not
  * @return  array[array, string]
  */
-function calendar_get_view(\calendar_information $calendar, $view, $includenavigation = true) {
+function calendar_get_view(\calendar_information $calendar, $view, $includenavigation = true, bool $skipevents = false) {
     global $PAGE, $CFG;
 
     $renderer = $PAGE->get_renderer('core_calendar');
@@ -3436,36 +3444,40 @@ function calendar_get_view(\calendar_information $calendar, $view, $includenavig
         return $param;
     }, [$calendar->users, $calendar->groups, $calendar->courses, $calendar->categories]);
 
-    $events = \core_calendar\local\api::get_events(
-        $tstart,
-        $tend,
-        null,
-        null,
-        null,
-        null,
-        $eventlimit,
-        null,
-        $userparam,
-        $groupparam,
-        $courseparam,
-        $categoryparam,
-        true,
-        true,
-        function ($event) {
-            if ($proxy = $event->get_course_module()) {
-                $cminfo = $proxy->get_proxied_instance();
-                return $cminfo->uservisible;
+    if ($skipevents) {
+        $events = [];
+    } else {
+        $events = \core_calendar\local\api::get_events(
+            $tstart,
+            $tend,
+            null,
+            null,
+            null,
+            null,
+            $eventlimit,
+            null,
+            $userparam,
+            $groupparam,
+            $courseparam,
+            $categoryparam,
+            true,
+            true,
+            function ($event) {
+                if ($proxy = $event->get_course_module()) {
+                    $cminfo = $proxy->get_proxied_instance();
+                    return $cminfo->uservisible;
+                }
+
+                if ($proxy = $event->get_category()) {
+                    $category = $proxy->get_proxied_instance();
+
+                    return $category->is_uservisible();
+                }
+
+                return true;
             }
-
-            if ($proxy = $event->get_category()) {
-                $category = $proxy->get_proxied_instance();
-
-                return $category->is_uservisible();
-            }
-
-            return true;
-        }
-    );
+        );
+    }
 
     $related = [
         'events' => $events,
@@ -3477,6 +3489,8 @@ function calendar_get_view(\calendar_information $calendar, $view, $includenavig
     if ($view == "month" || $view == "mini" || $view == "minithree") {
         $month = new \core_calendar\external\month_exporter($calendar, $type, $related);
         $month->set_includenavigation($includenavigation);
+        $month->set_initialeventsloaded(!$skipevents);
+        $month->set_showcoursefilter($view == "month");
         $data = $month->export($renderer);
     } else if ($view == "day") {
         $day = new \core_calendar\external\calendar_day_exporter($calendar, $related);
