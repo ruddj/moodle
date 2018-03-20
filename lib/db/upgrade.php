@@ -1935,5 +1935,90 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2017122200.01);
     }
 
+    if ($oldversion < 2018020500.00) {
+
+        $topcategory = new stdClass();
+        $topcategory->name = 'top'; // A non-real name for the top category. It will be localised at the display time.
+        $topcategory->info = '';
+        $topcategory->parent = 0;
+        $topcategory->sortorder = 0;
+
+        // Get the total record count - used for the progress bar.
+        $total = $DB->count_records_sql("SELECT COUNT(DISTINCT contextid) FROM {question_categories} WHERE parent = 0");
+
+        // Get the records themselves - a list of contextids.
+        $rs = $DB->get_recordset_sql("SELECT DISTINCT contextid FROM {question_categories} WHERE parent = 0");
+
+        // For each context, create a single top-level category.
+        $i = 0;
+        $pbar = new progress_bar('createtopquestioncategories', 500, true);
+        foreach ($rs as $contextid => $notused) {
+            $topcategory->contextid = $contextid;
+            $topcategory->stamp = make_unique_id_code();
+
+            $topcategoryid = $DB->insert_record('question_categories', $topcategory);
+
+            $DB->set_field_select('question_categories', 'parent', $topcategoryid,
+                    'contextid = ? AND id <> ? AND parent = 0',
+                    array($contextid, $topcategoryid));
+
+            // Update progress.
+            $i++;
+            $pbar->update($i, $total, "Creating top-level question categories - $i/$total.");
+        }
+
+        $rs->close();
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2018020500.00);
+    }
+
+    if ($oldversion < 2018022800.01) {
+        // Fix old block configurations that use the deprecated (and now removed) object class.
+        upgrade_fix_block_instance_configuration();
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2018022800.01);
+    }
+
+    if ($oldversion < 2018022800.02) {
+        // Define index taggeditem (unique) to be dropped form tag_instance.
+        $table = new xmldb_table('tag_instance');
+        $index = new xmldb_index('taggeditem', XMLDB_INDEX_UNIQUE, array('component',
+            'itemtype', 'itemid', 'tiuserid', 'tagid'));
+
+        // Conditionally launch drop index taggeditem.
+        if ($dbman->index_exists($table, $index)) {
+            $dbman->drop_index($table, $index);
+        }
+
+        $index = new xmldb_index('taggeditem', XMLDB_INDEX_UNIQUE, array('component',
+            'itemtype', 'itemid', 'contextid', 'tiuserid', 'tagid'));
+
+        // Conditionally launch add index taggeditem.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2018022800.02);
+    }
+
+    if ($oldversion < 2018022800.03) {
+
+        // Define field multiplecontexts to be added to tag_area.
+        $table = new xmldb_table('tag_area');
+        $field = new xmldb_field('multiplecontexts', XMLDB_TYPE_INTEGER, '1', null,
+            XMLDB_NOTNULL, null, '0', 'showstandard');
+
+        // Conditionally launch add field multiplecontexts.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2018022800.03);
+    }
+
     return true;
 }
