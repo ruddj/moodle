@@ -75,6 +75,12 @@ define('BADGE_CRITERIA_TYPE_PROFILE', 6);
 define('BADGE_CRITERIA_TYPE_BADGE', 7);
 
 /*
+ * Cohort criteria type
+ * Criteria type constant, primarily for storing criteria type in the database.
+ */
+define('BADGE_CRITERIA_TYPE_COHORT', 8);
+
+/*
  * Criteria type constant to class name mapping
  */
 global $BADGE_CRITERIA_TYPES;
@@ -87,6 +93,7 @@ $BADGE_CRITERIA_TYPES = array(
     BADGE_CRITERIA_TYPE_COURSESET => 'courseset',
     BADGE_CRITERIA_TYPE_PROFILE   => 'profile',
     BADGE_CRITERIA_TYPE_BADGE     => 'badge',
+    BADGE_CRITERIA_TYPE_COHORT    => 'cohort',
 );
 
 /**
@@ -203,7 +210,8 @@ abstract class award_criteria {
             $mform->addGroup($parameter, 'param_' . $prefix . $param['id'], '', array(' '), false);
         } else {
             $parameter[] =& $mform->createElement('advcheckbox', $prefix . $param['id'], '', $param['name'], null, array(0, $param['id']));
-            $parameter[] =& $mform->createElement('static', 'break_start_' . $param['id'], null, '<div style="margin-left: 3em;">');
+            $parameter[] =& $mform->createElement('static', 'break_start_' . $param['id'], null,
+                '<div class="ml-3 mt-1 w-100 align-items-center">');
 
             if (in_array('grade', $this->optional_params)) {
                 $parameter[] =& $mform->createElement('static', 'mgrade_' . $param['id'], null, get_string('mingrade', 'badges'));

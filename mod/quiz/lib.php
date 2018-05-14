@@ -183,7 +183,9 @@ function quiz_delete_instance($id) {
              WHERE slot.quizid = ? AND q.qtype = ?";
     $questionids = $DB->get_fieldset_sql($sql, array($quiz->id, 'random'));
 
-    // We need to do this before we try and delete randoms, otherwise they would still be 'in use'.
+    // We need to do the following deletes before we try and delete randoms, otherwise they would still be 'in use'.
+    $quizslots = $DB->get_fieldset_select('quiz_slots', 'id', 'quizid = ?', array($quiz->id));
+    $DB->delete_records_list('quiz_slot_tags', 'slotid', $quizslots);
     $DB->delete_records('quiz_slots', array('quizid' => $quiz->id));
     $DB->delete_records('quiz_sections', array('quizid' => $quiz->id));
 
@@ -212,9 +214,10 @@ function quiz_delete_instance($id) {
  *
  * @param object $quiz The quiz object.
  * @param int $overrideid The id of the override being deleted
+ * @param bool $log Whether to trigger logs.
  * @return bool true on success
  */
-function quiz_delete_override($quiz, $overrideid) {
+function quiz_delete_override($quiz, $overrideid, $log = true) {
     global $DB;
 
     if (!isset($quiz->cmid)) {
@@ -242,26 +245,28 @@ function quiz_delete_override($quiz, $overrideid) {
 
     $DB->delete_records('quiz_overrides', array('id' => $overrideid));
 
-    // Set the common parameters for one of the events we will be triggering.
-    $params = array(
-        'objectid' => $override->id,
-        'context' => context_module::instance($quiz->cmid),
-        'other' => array(
-            'quizid' => $override->quiz
-        )
-    );
-    // Determine which override deleted event to fire.
-    if (!empty($override->userid)) {
-        $params['relateduserid'] = $override->userid;
-        $event = \mod_quiz\event\user_override_deleted::create($params);
-    } else {
-        $params['other']['groupid'] = $override->groupid;
-        $event = \mod_quiz\event\group_override_deleted::create($params);
-    }
+    if ($log) {
+        // Set the common parameters for one of the events we will be triggering.
+        $params = array(
+            'objectid' => $override->id,
+            'context' => context_module::instance($quiz->cmid),
+            'other' => array(
+                'quizid' => $override->quiz
+            )
+        );
+        // Determine which override deleted event to fire.
+        if (!empty($override->userid)) {
+            $params['relateduserid'] = $override->userid;
+            $event = \mod_quiz\event\user_override_deleted::create($params);
+        } else {
+            $params['other']['groupid'] = $override->groupid;
+            $event = \mod_quiz\event\group_override_deleted::create($params);
+        }
 
-    // Trigger the override deleted event.
-    $event->add_record_snapshot('quiz_overrides', $override);
-    $event->trigger();
+        // Trigger the override deleted event.
+        $event->add_record_snapshot('quiz_overrides', $override);
+        $event->trigger();
+    }
 
     return true;
 }
@@ -270,13 +275,14 @@ function quiz_delete_override($quiz, $overrideid) {
  * Deletes all quiz overrides from the database and clears any corresponding calendar events
  *
  * @param object $quiz The quiz object.
+ * @param bool $log Whether to trigger logs.
  */
-function quiz_delete_all_overrides($quiz) {
+function quiz_delete_all_overrides($quiz, $log = true) {
     global $DB;
 
     $overrides = $DB->get_records('quiz_overrides', array('quiz' => $quiz->id), 'id');
     foreach ($overrides as $override) {
-        quiz_delete_override($quiz, $override->id);
+        quiz_delete_override($quiz, $override->id, $log);
     }
 }
 
@@ -401,6 +407,24 @@ function quiz_delete_all_attempts($quiz) {
     question_engine::delete_questions_usage_by_activities(new qubaids_for_quiz($quiz->id));
     $DB->delete_records('quiz_attempts', array('quiz' => $quiz->id));
     $DB->delete_records('quiz_grades', array('quiz' => $quiz->id));
+}
+
+/**
+ * Delete all the attempts belonging to a user in a particular quiz.
+ *
+ * @param object $quiz The quiz object.
+ * @param object $user The user object.
+ */
+function quiz_delete_user_attempts($quiz, $user) {
+    global $CFG, $DB;
+    require_once($CFG->dirroot . '/mod/quiz/locallib.php');
+    question_engine::delete_questions_usage_by_activities(new qubaids_for_quiz_user($quiz->get_quizid(), $user->id));
+    $params = [
+        'quiz' => $quiz->get_quizid(),
+        'userid' => $user->id,
+    ];
+    $DB->delete_records('quiz_attempts', $params);
+    $DB->delete_records('quiz_grades', $params);
 }
 
 /**
@@ -2404,7 +2428,7 @@ function mod_quiz_core_calendar_event_timestart_updated(\calendar_event $event, 
 }
 
 /**
- * Generates the question bank in a fargment output. This allows
+ * Generates the question bank in a fragment output. This allows
  * the question bank to be displayed in a modal.
  *
  * The only expected argument provided in the $args array is
@@ -2442,4 +2466,47 @@ function mod_quiz_output_fragment_quiz_question_bank($args) {
     // Output.
     $renderer = $PAGE->get_renderer('mod_quiz', 'edit');
     return $renderer->question_bank_contents($questionbank, $pagevars);
+}
+
+/**
+ * Generates the add random question in a fragment output. This allows the
+ * form to be rendered in javascript, for example inside a modal.
+ *
+ * The required arguments as keys in the $args array are:
+ *      cat {string} The category and category context ids comma separated.
+ *      addonpage {int} The page id to add this question to.
+ *      returnurl {string} URL to return to after form submission.
+ *      cmid {int} The course module id the questions are being added to.
+ *
+ * @param array $args The fragment arguments.
+ * @return string The rendered mform fragment.
+ */
+function mod_quiz_output_fragment_add_random_question_form($args) {
+    global $CFG;
+    require_once($CFG->dirroot . '/mod/quiz/addrandomform.php');
+
+    $contexts = new \question_edit_contexts($args['context']);
+    $formoptions = [
+        'contexts' => $contexts,
+        'cat' => $args['cat']
+    ];
+    $formdata = [
+        'category' => $args['cat'],
+        'addonpage' => $args['addonpage'],
+        'returnurl' => $args['returnurl'],
+        'cmid' => $args['cmid']
+    ];
+
+    $form = new quiz_add_random_form(
+        new \moodle_url('/mod/quiz/addrandom.php'),
+        $formoptions,
+        'post',
+        '',
+        null,
+        true,
+        $formdata
+    );
+    $form->set_data($formdata);
+
+    return $form->render();
 }
