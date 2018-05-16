@@ -82,14 +82,12 @@ class enrol_lti_privacy_provider_testcase extends \core_privacy\tests\provider_t
 
         $this->assertCount(2, $contextlist);
 
-        $contextforcourse = $contextlist->current();
-        $context = context_course::instance($this->course->id);
-        $this->assertEquals($context->id, $contextforcourse->id);
+        $coursectx = context_course::instance($this->course->id);
+        $activityctx = context_module::instance($this->activity->cmid);
+        $expectedids = [$coursectx->id, $activityctx->id];
 
-        $contextlist->next();
-        $contextforactivity = $contextlist->current();
-        $context = context_module::instance($this->activity->cmid);
-        $this->assertEquals($context->id, $contextforactivity->id);
+        $actualids = $contextlist->get_contextids();
+        $this->assertEquals($expectedids, $actualids, '', 0.0, 10, true);
     }
 
     /**
@@ -158,8 +156,8 @@ class enrol_lti_privacy_provider_testcase extends \core_privacy\tests\provider_t
         $count = $DB->count_records('enrol_lti_users');
         $this->assertEquals(4, $count);
 
-        $contextlist = new \core_privacy\local\request\approved_contextlist($this->user, 'core_backup',
-            [$coursecontext->id, $cmcontext->id]);
+        $contextlist = new \core_privacy\local\request\approved_contextlist($this->user, 'enrol_lti',
+            [context_system::instance()->id, $coursecontext->id, $cmcontext->id]);
         provider::delete_data_for_user($contextlist);
 
         $ltiusers = $DB->get_records('enrol_lti_users');
